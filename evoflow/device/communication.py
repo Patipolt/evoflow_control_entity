@@ -1,371 +1,288 @@
 """
-Low-level communication protocol for EvoFlow and Pick&Place systems.
+EvoFlow protocol implementation based on EvoFlow_Protocol.xlsm.
 
-Provides COBS encoding, CRC16 validation, and packet building/parsing for the custom
-binary protocol used by both EvoFlow and Pick&Place Nucleo microcontrollers.
+Frame format before COBS:
+  [sender][receiver+rw][id1][id2][npayload][payload...][crc16_le]
 
-Project: EvoFlow Innosuisse
-Author: Adapted from existing protocol
-Created: April 2026
+Transport format on wire:
+  COBS(frame) + 0x00 delimiter
 """
 
 import struct
-from typing import Optional, Tuple
 from dataclasses import dataclass
+from enum import IntEnum
+from typing import Dict, Optional, Tuple
+
 
 # ===============================
-# Protocol Constants
+# Core constants
 # ===============================
 
-# Message IDs
-MSG_TELEM = 0x01
-MSG_CMD_SET = 0x10
-MSG_ACK_CMD_SET = 0x11
-MSG_CMD_ACTION = 0x20
-MSG_ACK_ACTION = 0x21
-
-# Pick&Place message IDs (extend as needed)
-MSG_PP_MOVE = 0x30
-MSG_PP_GRIPPER = 0x31
-MSG_PP_TELEM = 0x32
-MSG_PP_ACK = 0x33
-
-# Action opcodes
-ACTION_SET_RUN_STATE = 0x01
-
-# COBS framing
 COBS_DELIM = 0x00
 COBS_MAX_CODE = 0xFF
 
-# CRC16-CCITT-FALSE parameters
 CRC16_INIT = 0xFFFF
 CRC16_POLY = 0x1021
+CRC16_MASK = 0xFFFF
 
-# Packet structure
 MAX_PAYLOAD_LEN = 255
 
+N_PUMP = 4
+N_VALVE = 2
+N_TEMP_MODULE = 2
+N_OD_MODULE = 2
+N_MAG_MODULE = 2
+N_PHOTON_COUNTER = 1
+N_TRAY = 1
+
+N_SINGLE_BYTE = 1
+N_BYTE_POS = 2
+N_BYTE_FLOAT = 4
+
 
 # ===============================
-# Data Classes
+# Addresses
 # ===============================
+
+ADDR_GUI = 1
+ADDR_EVOFLOW_NUCLEO = 100
+ADDR_SAMPLE_EXTRACTION_NUCLEO = 101
+
+
+# ===============================
+# Components (id1)
+# ===============================
+
+class Component(IntEnum):
+	PUMP = 10
+	VALVE = 11
+	TEMP_MODULE = 12
+	OD_MODULE = 13
+	MAG_MODULE = 14
+	PHOTON_COUNTER = 15
+	TRAY = 16
+
+
+# ===============================
+# Commands (id2)
+# ===============================
+class CMD(IntEnum):
+	ON_OFF = 0
+	SET_POINT = 1
+	SPEED = 2
+	TEMPERATURE = 2
+	HEATER_DUTY_CYCLE = 3
+	OD_VALUE = 1
+	FAN_DUTY_CYCLE = 3
+	PHOTON_COUNTS = 1
+	OVERLIGHT_DETECTION = 2
+	POSITION = 0
+	START = 1
+
 
 @dataclass
-class EvoFlowTelemetry:
-    """Parsed telemetry from EvoFlow Nucleo."""
-    uptime_s: int
-    dtime_us: float
-    vel_target_m1: float
-    vel_target_m2: float
-    vel_m1: float
-    vel_m2: float
-    heater_cur_m1: float
-    heater_cur_m2: float
-    temp_filt_m1: float
-    temp_filt_m2: float
-    cmd_vel_m1: float
-    cmd_vel_m2: float
-    cmd_temp_m1: float
-    cmd_temp_m2: float
-    cmd_stir_m1: float
-    cmd_stir_m2: float
+class ProtocolPacket:
+	sender: int
+	receiver_addr: int
+	is_write: bool
+	id1: int
+	id2: int
+	payload: bytes
 
+@dataclass(frozen=True)
+class CommandSpec:
+	payload_len: int
+	allow_read: bool
+	allow_write: bool
 
-@dataclass
-class PickPlaceTelemetry:
-    """Parsed telemetry from Pick&Place Nucleo (extend as needed)."""
-    uptime_s: int
-    x_pos: float
-    y_pos: float
-    z_pos: float
-    gripper_state: int
+# To help check that commands have correct payload lengths and read/write permissions
+COMMAND_SPECS: Dict[Tuple[int, int], CommandSpec] = {
+	# Pump
+	(Component.PUMP, 0): CommandSpec(payload_len=N_PUMP*N_SINGLE_BYTE, allow_read=True, allow_write=True),
+	(Component.PUMP, 1): CommandSpec(payload_len=N_PUMP*N_BYTE_FLOAT, allow_read=True, allow_write=True),
+	(Component.PUMP, 2): CommandSpec(payload_len=N_PUMP*N_BYTE_FLOAT, allow_read=True, allow_write=False),
+	# Valve
+	(Component.VALVE, 0): CommandSpec(payload_len=N_VALVE*N_SINGLE_BYTE, allow_read=True, allow_write=True),
+	# Temp module
+	(Component.TEMP_MODULE, 0): CommandSpec(payload_len=N_TEMP_MODULE*N_SINGLE_BYTE, allow_read=True, allow_write=True),
+	(Component.TEMP_MODULE, 1): CommandSpec(payload_len=N_TEMP_MODULE*N_BYTE_FLOAT, allow_read=True, allow_write=True),
+	(Component.TEMP_MODULE, 2): CommandSpec(payload_len=N_TEMP_MODULE*N_BYTE_FLOAT, allow_read=True, allow_write=False),
+	(Component.TEMP_MODULE, 3): CommandSpec(payload_len=N_TEMP_MODULE*N_BYTE_FLOAT, allow_read=True, allow_write=False),
+	# OD module
+	(Component.OD_MODULE, 0): CommandSpec(payload_len=N_OD_MODULE*N_SINGLE_BYTE, allow_read=True, allow_write=True),
+	(Component.OD_MODULE, 1): CommandSpec(payload_len=N_OD_MODULE*N_BYTE_FLOAT, allow_read=True, allow_write=False),
+	# Magnetic stirrer module
+	(Component.MAG_MODULE, 0): CommandSpec(payload_len=N_MAG_MODULE*N_SINGLE_BYTE, allow_read=True, allow_write=True),
+	(Component.MAG_MODULE, 1): CommandSpec(payload_len=N_MAG_MODULE*N_BYTE_FLOAT, allow_read=True, allow_write=True),
+	(Component.MAG_MODULE, 2): CommandSpec(payload_len=N_MAG_MODULE*N_BYTE_FLOAT, allow_read=True, allow_write=False),
+	(Component.MAG_MODULE, 3): CommandSpec(payload_len=N_MAG_MODULE*N_BYTE_FLOAT, allow_read=True, allow_write=False),
+	# Photon counter
+	(Component.PHOTON_COUNTER, 0): CommandSpec(payload_len=N_PHOTON_COUNTER*N_SINGLE_BYTE, allow_read=True, allow_write=True),
+	(Component.PHOTON_COUNTER, 1): CommandSpec(payload_len=N_PHOTON_COUNTER*N_BYTE_FLOAT, allow_read=True, allow_write=False),
+	(Component.PHOTON_COUNTER, 2): CommandSpec(payload_len=N_PHOTON_COUNTER*N_SINGLE_BYTE, allow_read=True, allow_write=False),
+	# Tray
+	(Component.TRAY, 0): CommandSpec(payload_len=N_TRAY*N_BYTE_POS, allow_read=True, allow_write=True),
+	(Component.TRAY, 1): CommandSpec(payload_len=N_TRAY*N_SINGLE_BYTE, allow_read=False, allow_write=True),
+}
 
-
-# ===============================
-# CRC16-CCITT-FALSE
-# ===============================
 
 def crc16_ccitt_false(data: bytes) -> int:
-    """Calculate CRC16-CCITT-FALSE checksum."""
-    crc = CRC16_INIT
-    for b in data:
-        crc ^= b << 8
-        for _ in range(8):
-            if crc & 0x8000:
-                crc = ((crc << 1) ^ CRC16_POLY) & 0xFFFF
-            else:
-                crc = (crc << 1) & 0xFFFF
-    return crc
+	"""Calculate CRC-16-CCITT-FALSE checksum for the given data"""
+	crc = CRC16_INIT
+	for b in data:
+		crc ^= b << 8
+		for _ in range(8):
+			if crc & 0x8000:
+				crc = ((crc << 1) ^ CRC16_POLY) & CRC16_MASK
+			else:
+				crc = (crc << 1) & CRC16_MASK
+	return crc
 
-
-# ===============================
-# COBS Encoding/Decoding
-# ===============================
 
 def cobs_encode(inp: bytes) -> bytes:
-    """Encode bytes using COBS (Consistent Overhead Byte Stuffing)."""
-    if not inp:
-        return bytes([0x01])
-    
-    out = bytearray()
-    code_index = 0
-    out.append(0)  # placeholder
-    code = 1
-    
-    for b in inp:
-        if b == 0:
-            out[code_index] = code
-            code_index = len(out)
-            out.append(0)  # placeholder
-            code = 1
-        else:
-            out.append(b)
-            code += 1
-            if code == COBS_MAX_CODE:
-                out[code_index] = code
-                code_index = len(out)
-                out.append(0)  # placeholder
-                code = 1
-    
-    out[code_index] = code
-    return bytes(out)
+	"""Encode the input bytes using Consistent Overhead Byte Stuffing (COBS)"""
+	if not inp:
+		return bytes([0x01])
+
+	out = bytearray([0])
+	code_index = 0
+	code = 1
+
+	for b in inp:
+		if b == 0:
+			out[code_index] = code
+			code_index = len(out)
+			out.append(0)
+			code = 1
+			continue
+
+		out.append(b)
+		code += 1
+		if code == COBS_MAX_CODE:
+			out[code_index] = code
+			code_index = len(out)
+			out.append(0)
+			code = 1
+
+	out[code_index] = code
+	return bytes(out)
 
 
 def cobs_decode(inp: bytes) -> Optional[bytes]:
-    """Decode COBS-encoded bytes. Returns None on error."""
-    out = bytearray()
-    i = 0
-    n = len(inp)
-    
-    while i < n:
-        code = inp[i]
-        if code == 0:
-            return None  # Invalid COBS
-        i += 1
-        
-        for _ in range(1, code):
-            if i >= n:
-                return None
-            out.append(inp[i])
-            i += 1
-        
-        if code != COBS_MAX_CODE and i < n:
-            out.append(0)
-    
-    return bytes(out)
+	"""Decode the input bytes using Consistent Overhead Byte Stuffing (COBS)"""
+	out = bytearray()
+	i = 0
+	n = len(inp)
+
+	while i < n:
+		code = inp[i]
+		if code == 0:
+			return None
+		i += 1
+
+		for _ in range(1, code):
+			if i >= n:
+				return None
+			out.append(inp[i])
+			i += 1
+
+		if code != COBS_MAX_CODE and i < n:
+			out.append(0)
+
+	return bytes(out)
 
 
-# ===============================
-# Packet Building
-# ===============================
-
-def build_packet(msg_id: int, node_id: int, payload: bytes) -> bytes:
-    """
-    Build a complete packet with header, payload, CRC16, COBS encoding, and delimiter.
-    
-    Args:
-        msg_id: Message type ID
-        node_id: Target node ID
-        payload: Raw payload bytes
-    
-    Returns:
-        Complete packet ready for transmission
-    """
-    if len(payload) > MAX_PAYLOAD_LEN:
-        raise ValueError(f"Payload too large: {len(payload)} > {MAX_PAYLOAD_LEN}")
-    
-    # Build header
-    hdr = struct.pack("<BBB", msg_id & 0xFF, node_id & 0xFF, len(payload) & 0xFF)
-    raw = hdr + payload
-    
-    # Add CRC16
-    crc = crc16_ccitt_false(raw)
-    raw += struct.pack("<H", crc)
-    
-    # COBS encode and add delimiter
-    return cobs_encode(raw) + bytes([COBS_DELIM])
+def encode_receiver_field(receiver_addr: int, is_write: bool) -> int:
+	"""Encode the receiver address and read/write flag into a single byte
+	7-bit address in [0, 127], LSB is 0 for read and 1 for write"""
+	if receiver_addr < 0 or receiver_addr > 0x7F:
+		raise ValueError(f"receiver_addr must be in [0, 127], got {receiver_addr}")
+	return ((receiver_addr & 0x7F) << 1) | (1 if is_write else 0)
 
 
-def parse_packet(raw: bytes) -> Optional[Tuple[int, int, bytes]]:
-    """
-    Parse and validate a raw packet.
-    
-    Args:
-        raw: Decoded packet bytes (after COBS decode)
-    
-    Returns:
-        Tuple of (msg_id, node_id, payload) or None if invalid
-    """
-    if len(raw) < 5:  # min: 3 bytes header + 2 bytes CRC
-        return None
-    
-    msg_id, node_id, payload_len = struct.unpack("<BBB", raw[:3])
-    expected_len = 3 + payload_len + 2
-    
-    if len(raw) != expected_len:
-        return None
-    
-    # Validate CRC
-    rx_crc = struct.unpack("<H", raw[3 + payload_len:3 + payload_len + 2])[0]
-    calc_crc = crc16_ccitt_false(raw[:3 + payload_len])
-    
-    if rx_crc != calc_crc:
-        return None
-    
-    payload = raw[3:3 + payload_len]
-    return (msg_id, node_id, payload)
+def decode_receiver_field(raw_receiver: int) -> Tuple[int, bool]:
+	"""Decode the receiver address and read/write flag from a single byte"""
+	return ((raw_receiver >> 1) & 0x7F, bool(raw_receiver & 0x01))
 
 
-# ===============================
-# COBS Stream Parser
-# ===============================
+def _validate_against_spec(id1: int, id2: int, is_write: bool, payload: bytes) -> None:
+	spec = COMMAND_SPECS.get((id1, id2))
+	if spec is None:
+		return
 
-class CobsStreamParser:
-    """
-    Stateful parser for COBS-encoded frames from a byte stream.
-    Feed incoming bytes and yields decoded packets.
-    """
-    
-    def __init__(self, max_frame_len: int = 4096):
-        self.buffer = bytearray()
-        self.max_frame_len = max_frame_len
-    
-    def feed(self, data: bytes):
-        """
-        Feed incoming bytes and yield decoded packets.
-        
-        Args:
-            data: Raw bytes from serial port
-        
-        Yields:
-            Tuples of (msg_id, node_id, payload) for each valid packet
-        """
-        for byte in data:
-            if byte == COBS_DELIM:
-                if self.buffer:
-                    # Decode COBS frame
-                    raw = cobs_decode(bytes(self.buffer))
-                    self.buffer.clear()
-                    
-                    if raw is not None:
-                        # Parse packet
-                        parsed = parse_packet(raw)
-                        if parsed is not None:
-                            yield parsed
-            else:
-                if len(self.buffer) < self.max_frame_len:
-                    self.buffer.append(byte)
-                else:
-                    # Overflow - discard
-                    self.buffer.clear()
-    
-    def reset(self):
-        """Clear the internal buffer."""
-        self.buffer.clear()
+	if is_write and not spec.allow_write:
+		raise ValueError(f"Command id1={id1}, id2={id2} is read-only")
+	if (not is_write) and not spec.allow_read:
+		raise ValueError(f"Command id1={id1}, id2={id2} is write-only")
+	if len(payload) != spec.payload_len:
+		raise ValueError(
+			f"Invalid payload length for id1={id1}, id2={id2}: "
+			f"{len(payload)} != {spec.payload_len}"
+		)
 
 
-# ===============================
-# Protocol Encoders
-# ===============================
+def build_packet(
+	protocol_packet: ProtocolPacket,
+	validate_spec: bool = True,
+) -> bytes:
+	sender = protocol_packet.sender
+	receiver_addr = protocol_packet.receiver_addr
+	is_write = protocol_packet.is_write
+	id1 = protocol_packet.id1
+	id2 = protocol_packet.id2
+	payload = protocol_packet.payload
 
-class ProtocolEncoder:
-    """Encodes commands into protocol packets."""
-    
-    def __init__(self):
-        self.seq = 0
-    
-    def encode_evoflow_setpoints(
-        self,
-        node_id: int,
-        vel_m1: float,
-        vel_m2: float,
-        temp_m1: float,
-        temp_m2: float,
-        stir_m1: float,
-        stir_m2: float
-    ) -> bytes:
-        """Build CMD_SET packet for EvoFlow system."""
-        seq = self._next_seq()
-        payload = struct.pack(
-            "<Bffffff",
-            seq, vel_m1, vel_m2, temp_m1, temp_m2, stir_m1, stir_m2
-        )
-        return build_packet(MSG_CMD_SET, node_id, payload)
-    
-    def encode_action(self, node_id: int, run_state: bool) -> bytes:
-        """Build ACTION packet (start/stop)."""
-        seq = self._next_seq()
-        payload = struct.pack(
-            "<BBB",
-            seq, ACTION_SET_RUN_STATE, 1 if run_state else 0
-        )
-        return build_packet(MSG_CMD_ACTION, node_id, payload)
-    
-    def encode_pickplace_move(self, node_id: int, x: float, y: float, z: float) -> bytes:
-        """Build movement command for pick&place (extend as needed)."""
-        seq = self._next_seq()
-        payload = struct.pack("<Bfff", seq, x, y, z)
-        return build_packet(MSG_PP_MOVE, node_id, payload)
-    
-    def encode_pickplace_gripper(self, node_id: int, open_gripper: bool) -> bytes:
-        """Build gripper command for pick&place."""
-        seq = self._next_seq()
-        payload = struct.pack("<BB", seq, 1 if open_gripper else 0)
-        return build_packet(MSG_PP_GRIPPER, node_id, payload)
-    
-    def _next_seq(self) -> int:
-        """Get next sequence number (wraps at 255)."""
-        seq = self.seq
-        self.seq = (self.seq + 1) & 0xFF
-        return seq
+	if len(payload) > MAX_PAYLOAD_LEN:
+		raise ValueError(f"Payload too large: {len(payload)} > {MAX_PAYLOAD_LEN}")
+	if validate_spec:
+		_validate_against_spec(id1, id2, is_write, payload)
+
+	receiver = encode_receiver_field(receiver_addr, is_write)
+	raw = struct.pack(
+		"<BBBBB",
+		sender & 0xFF,
+		receiver & 0xFF,
+		id1 & 0xFF,
+		id2 & 0xFF,
+		len(payload) & 0xFF,
+	) + payload
+
+	# return raw	# For debugging without COBS and CRC
+
+	crc = crc16_ccitt_false(raw)
+	raw += struct.pack("<H", crc)
+	return cobs_encode(raw) + bytes([COBS_DELIM])
 
 
-# ===============================
-# Protocol Decoders
-# ===============================
+def parse_packet(raw: bytes) -> Optional[ProtocolPacket]:
+	if len(raw) < 7:
+		print(f"Packet too short: {len(raw)} bytes")
+		return None
+	
+	raw = cobs_decode(raw)
+	if raw is None:
+		print("COBS decoding failed")
+		return None
 
-def decode_evoflow_telemetry(payload: bytes) -> Optional[EvoFlowTelemetry]:
-    """Parse EvoFlow telemetry payload."""
-    expected_len = 4 + 15 * 4  # uptime (u32) + 15 floats
-    if len(payload) != expected_len:
-        return None
-    
-    uptime_s = struct.unpack("<I", payload[:4])[0]
-    floats = struct.unpack("<" + "f" * 15, payload[4:])
-    
-    return EvoFlowTelemetry(
-        uptime_s=uptime_s,
-        dtime_us=floats[0],
-        vel_target_m1=floats[1],
-        vel_target_m2=floats[2],
-        vel_m1=floats[3],
-        vel_m2=floats[4],
-        heater_cur_m1=floats[5],
-        heater_cur_m2=floats[6],
-        temp_filt_m1=floats[7],
-        temp_filt_m2=floats[8],
-        cmd_vel_m1=floats[9],
-        cmd_vel_m2=floats[10],
-        cmd_temp_m1=floats[11],
-        cmd_temp_m2=floats[12],
-        cmd_stir_m1=floats[13],
-        cmd_stir_m2=floats[14],
-    )
+	sender, receiver_raw, id1, id2, n_payload = struct.unpack("<BBBBB", raw[:5])
+	expected_len = 5 + n_payload + 2
+	if len(raw) != expected_len:
+		print(f"Invalid packet length: {len(raw)} != expected {expected_len}")
+		return None
 
+	payload = raw[5 : 5 + n_payload]
+	rx_crc = struct.unpack("<H", raw[5 + n_payload : 5 + n_payload + 2])[0]
+	calc_crc = crc16_ccitt_false(raw[: 5 + n_payload])
+	if rx_crc != calc_crc:
+		print(f"Invalid packet CRC: {rx_crc} != expected {calc_crc}")
+		return None
 
-def decode_pickplace_telemetry(payload: bytes) -> Optional[PickPlaceTelemetry]:
-    """Parse Pick&Place telemetry (extend based on your protocol)."""
-    # Example implementation - adjust to your actual protocol
-    if len(payload) < 20:  # uptime + 4 floats
-        return None
-    
-    uptime_s = struct.unpack("<I", payload[:4])[0]
-    x, y, z = struct.unpack("<fff", payload[4:16])
-    gripper = struct.unpack("<I", payload[16:20])[0]
-    
-    return PickPlaceTelemetry(
-        uptime_s=uptime_s,
-        x_pos=x,
-        y_pos=y,
-        z_pos=z,
-        gripper_state=gripper
-    )
+	receiver_addr, is_write = decode_receiver_field(receiver_raw)
+	return ProtocolPacket(
+		sender=sender,
+		receiver_addr=receiver_addr,
+		is_write=is_write,
+		id1=id1,
+		id2=id2,
+		payload=payload,
+	)

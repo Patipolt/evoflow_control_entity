@@ -1,11 +1,11 @@
-# EvoFlow GUI Architecture
+# EvoFlow HMI Architecture
 
 Complete communication framework for EvoFlow bioreactor and Pick&Place machine control, following MVC pattern with PySide6.
 
 ## Project Structure
 
 ```
-gui/
+evoflow_control_entity/
 ├── evoflow/                          # Low-level device communication
 │   └── device/
 │       ├── __init__.py
@@ -23,7 +23,7 @@ gui/
 │   │   ├── evoflow_worker.py        # EvoFlow Qt worker (runs in thread)
 │   │   └── pickplace_worker.py      # Pick&Place Qt worker
 │   │
-│   └── pages/                       # GUI views (TODO: create your tabs here)
+│   └── pages/                       # HMI views (TODO: create your tabs here)
 │       ├── main_ui.py
 │       └── evoflow_tab.py
 ```
@@ -52,7 +52,7 @@ gui/
 
 ### **Layer 2: Worker Classes** (`controlEntity/logic/`)
 
-**Purpose:** Qt workers that run in threads, emit signals to GUI.
+**Purpose:** Qt workers that run in threads, emit signals to HMI.
 
 - `evoflow_worker.py`:
   - Creates `EvoFlowDevice` instance
@@ -75,7 +75,7 @@ gui/
 - Connects worker signals → UI updates
 - Maintains connection state
 
-### **Layer 4: GUI** (`controlEntity/pages/`)
+### **Layer 4: HMI** (`controlEntity/pages/`)
 
 **Purpose:** PySide6 UI components.
 
@@ -150,7 +150,7 @@ Uses COBS+CRC with different message IDs:
 
 ## Usage Examples
 
-### **Example 1: Basic GUI Tab**
+### **Example 1: Basic HMI Tab**
 
 ```python
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QSlider, QLabel
@@ -337,7 +337,7 @@ logic.pickplace_home_requested.emit()
    worker.connect("/dev/ttyUSB0", 1)
    ```
 
-3. **Build GUI:**
+3. **Build HMI:**
    - Create tabs in `controlEntity/pages/`
    - Connect to logic signals
    - Update displays based on telemetry
@@ -349,7 +349,7 @@ Workers emit error signals for:
 - Communication timeouts
 - Invalid data
 
-Connect to error signals to display in GUI:
+Connect to error signals to display in HMI:
 ```python
 logic.evoflow_error.connect(lambda msg: print(f"ERROR: {msg}"))
 ```
@@ -357,7 +357,7 @@ logic.evoflow_error.connect(lambda msg: print(f"ERROR: {msg}"))
 ## Threading Architecture
 
 ```
-Main Thread (GUI)
+Main Thread (HMI)
     ↓ creates
 Logic
     ↓ creates and manages
@@ -375,7 +375,7 @@ QThreads:
 - Device classes use `threading.Lock` for serial I/O
 - Workers run in separate QThreads
 - Signals/slots handle cross-thread communication
-- GUI never directly calls device methods
+- HMI never directly calls device methods
 
 ## Next Steps
 
@@ -383,7 +383,7 @@ QThreads:
 2. ✅ Device classes (EvoFlow + Pick&Place)
 3. ✅ Worker classes with Qt signals
 4. ✅ Logic coordinator
-5. ⏳ **TODO:** Create GUI tabs (`main_ui.py`, `evoflow_tab.py`)
+5. ⏳ **TODO:** Create HMI tabs (`main_ui.py`, `evoflow_tab.py`)
 6. ⏳ **TODO:** Custom widgets (sliders, displays, status indicators)
 7. ⏳ **TODO:** Configuration file handling
 8. ⏳ **TODO:** Data logging/CSV export
@@ -396,4 +396,4 @@ QThreads:
 - **MCU reset detection** - Automatically re-bootstraps if uptime drops
 - **Thread-safe** - All serial I/O protected by locks
 
-Enjoy building your GUI! 🚀
+Enjoy building your HMI! 🚀

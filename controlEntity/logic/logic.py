@@ -1,19 +1,26 @@
 """
-Central logic coordinator for the EvoFlow GUI application.
+Central logic coordinator for the EvoFlow HMI application.
 
-Sets up worker threads for EvoFlow and Pick&Place devices, wiring Qt signals
+Sets up worker threads for EvoFlow and Sample Extraction devices, wiring Qt signals
 between UI components and device handlers.
 
 Project: EvoFlow Innosuisse
-Author: Based on existing Enantios pattern
+Author: Patipol Thanuphol, Scientific Researcher at ZHAW — thau @zhaw.ch | patipol.thanu@gmail.com
 Created: April 2026
 """
 
-from PySide6.QtCore import QObject, Signal, QThread, Slot
-from controlEntity.logic.evoflow_worker import EvoFlowWorker
-from controlEntity.logic.pickplace_worker import PickPlaceWorker, PickPlaceProtocol
-from evoflow.device.communication import EvoFlowTelemetry
+import configparser
+import struct
 from typing import Optional, List
+from PySide6.QtWidgets import QApplication, QMainWindow, QMessageBox, QWidget, QVBoxLayout, QLCDNumber, QLineEdit, QComboBox, QCalendarWidget, QTextEdit, QTimeEdit
+from PySide6.QtWidgets import QPushButton, QGroupBox, QTabWidget, QTableView, QMenuBar, QStatusBar, QLabel, QCheckBox, QColorDialog
+from PySide6.QtUiTools import QUiLoader
+from PySide6.QtCore import Qt, QFile, QTimer, QDate, QTime, QIODeviceBase, QEvent, Signal, Slot, QObject
+from PySide6.QtGui import QKeyEvent, QTextCharFormat, QStandardItemModel, QStandardItem, QWheelEvent, QCloseEvent, QAction, QPixmap
+
+from controlEntity.utils import resource_path
+from controlEntity.widgets.evoflowWidget import EvoFlowTelemetry
+from evoflow.device.communication import ProtocolPacket, Component, CMD, build_packet, cobs_decode, parse_packet
 
 
 class Logic(QObject):
@@ -22,175 +29,122 @@ class Logic(QObject):
     # ===============================
     # EvoFlow Signals
     # ===============================
-    
-    # Signals FROM workers TO UI
-    evoflow_command_result = Signal(str, object)  # command, result dict
-    evoflow_telemetry = Signal(object)  # EvoFlowTelemetry
-    evoflow_status = Signal(str)  # Status messages
-    evoflow_error = Signal(str)  # Error messages
-    
-    # Signals FROM UI TO workers (requests)
-    evoflow_connect_requested = Signal(str, int)  # port, node_id
-    evoflow_disconnect_requested = Signal()
-    evoflow_set_velocity_requested = Signal(int, float)  # pump_id, velocity
-    evoflow_set_temperature_requested = Signal(int, float)  # heater_id, temp
-    evoflow_set_stirrer_requested = Signal(int, float)  # stir_id, voltage
-    evoflow_start_requested = Signal()
-    evoflow_stop_requested = Signal()
+    telemetry_changed = Signal(EvoFlowTelemetry)
     
     # ===============================
-    # Pick&Place Signals
+    # Sample Extraction Signals
     # ===============================
     
-    # Signals FROM workers TO UI
-    pickplace_command_result = Signal(str, object)  # command, result dict
-    pickplace_status = Signal(str)
-    pickplace_error = Signal(str)
-    
-    # Signals FROM UI TO workers (requests)
-    pickplace_connect_requested = Signal(str)  # port
-    pickplace_disconnect_requested = Signal()
-    pickplace_move_requested = Signal(float, float, float)  # x, y, z
-    pickplace_gripper_requested = Signal(bool)  # open (True/False)
-    pickplace_home_requested = Signal()
     
     def __init__(self):
         super().__init__()
         
+        config = self.read_settings_file()
+        sampling_rate_ms = config.getint("HMI", "sampling_rate_ms", fallback=200)
+
         # ===============================
         # EvoFlow Worker Setup
         # ===============================
-        self.evoflow_thread = QThread(self)
-        self.evoflow_worker = EvoFlowWorker()
-        self.evoflow_worker.moveToThread(self.evoflow_thread)
-        
-        # Wire worker initialization
-        self.evoflow_thread.started.connect(self.evoflow_worker.start)
-        
-        # Wire worker signals to logic signals (forward to UI)
-        self.evoflow_worker.result.connect(self._on_evoflow_result)
-        self.evoflow_worker.telemetry.connect(self._on_evoflow_telemetry)
-        self.evoflow_worker.status.connect(self._on_evoflow_status)
-        self.evoflow_worker.error.connect(self._on_evoflow_error)
-        
-        # Wire logic request signals to worker slots
-        self.evoflow_connect_requested.connect(self.evoflow_worker.connect)
-        self.evoflow_disconnect_requested.connect(self.evoflow_worker.disconnect)
-        self.evoflow_set_velocity_requested.connect(self.evoflow_worker.set_velocity)
-        self.evoflow_set_temperature_requested.connect(self.evoflow_worker.set_temperature)
-        self.evoflow_set_stirrer_requested.connect(self.evoflow_worker.set_stirrer)
-        self.evoflow_start_requested.connect(lambda: self.evoflow_worker.send_action(True))
-        self.evoflow_stop_requested.connect(lambda: self.evoflow_worker.send_action(False))
-        
-        # Start EvoFlow thread
-        self.evoflow_thread.start()
+        self.evoflow_telemetry = EvoFlowTelemetry()
         
         # ===============================
-        # Pick&Place Worker Setup
+        # Sample Extraction Worker Setup
         # ===============================
-        self.pickplace_thread = QThread(self)
-        self.pickplace_worker = PickPlaceWorker(protocol=PickPlaceProtocol.SIMPLE)
-        self.pickplace_worker.moveToThread(self.pickplace_thread)
-        
-        # Wire worker initialization
-        self.pickplace_thread.started.connect(self.pickplace_worker.start)
-        
-        # Wire worker signals to logic signals
-        self.pickplace_worker.result.connect(self._on_pickplace_result)
-        self.pickplace_worker.status.connect(self._on_pickplace_status)
-        self.pickplace_worker.error.connect(self._on_pickplace_error)
-        
-        # Wire logic request signals to worker slots
-        self.pickplace_connect_requested.connect(self.pickplace_worker.connect)
-        self.pickplace_disconnect_requested.connect(self.pickplace_worker.disconnect)
-        self.pickplace_move_requested.connect(self.pickplace_worker.move_xyz)
-        self.pickplace_gripper_requested.connect(self.pickplace_worker.control_gripper)
-        self.pickplace_home_requested.connect(self.pickplace_worker.home)
-        
-        # Start Pick&Place thread
-        self.pickplace_thread.start()
-        
-        # ===============================
-        # Internal State
-        # ===============================
-        self.evoflow_connected = False
-        self.pickplace_connected = False
-        self.latest_evoflow_telemetry: Optional[EvoFlowTelemetry] = None
+
     
-    # ===============================
-    # EvoFlow Result Handlers
-    # ===============================
-    
-    @Slot(str, object)
-    def _on_evoflow_result(self, command: str, payload: dict):
-        """Handle results from EvoFlow worker."""
-        # Update connection state
-        if command == 'connect':
-            self.evoflow_connected = payload.get('result').success
-        elif command == 'disconnect':
-            self.evoflow_connected = False
-        
-        # Forward to UI
-        self.evoflow_command_result.emit(command, payload)
-    
-    @Slot(object)
-    def _on_evoflow_telemetry(self, telem: EvoFlowTelemetry):
-        """Handle telemetry from EvoFlow worker."""
-        self.latest_evoflow_telemetry = telem
-        self.evoflow_telemetry.emit(telem)
-    
-    @Slot(str)
-    def _on_evoflow_status(self, message: str):
-        """Handle status messages from EvoFlow worker."""
-        print(f"[EvoFlow] {message}")
-        self.evoflow_status.emit(message)
-    
-    @Slot(str)
-    def _on_evoflow_error(self, message: str):
-        """Handle errors from EvoFlow worker."""
-        print(f"[EvoFlow ERROR] {message}")
-        self.evoflow_error.emit(message)
-    
-    # ===============================
-    # Pick&Place Result Handlers
-    # ===============================
-    
-    @Slot(str, object)
-    def _on_pickplace_result(self, command: str, payload: dict):
-        """Handle results from Pick&Place worker."""
-        # Update connection state
-        if command == 'connect':
-            self.pickplace_connected = payload.get('result').success
-        elif command == 'disconnect':
-            self.pickplace_connected = False
-        
-        # Forward to UI
-        self.pickplace_command_result.emit(command, payload)
-    
-    @Slot(str)
-    def _on_pickplace_status(self, message: str):
-        """Handle status messages from Pick&Place worker."""
-        print(f"[Pick&Place] {message}")
-        self.pickplace_status.emit(message)
-    
-    @Slot(str)
-    def _on_pickplace_error(self, message: str):
-        """Handle errors from Pick&Place worker."""
-        print(f"[Pick&Place ERROR] {message}")
-        self.pickplace_error.emit(message)
-    
-    # ===============================
-    # Public Helper Methods
-    # ===============================
-    
-    def is_evoflow_connected(self) -> bool:
-        """Check if EvoFlow is connected."""
-        return self.evoflow_connected
-    
-    def is_pickplace_connected(self) -> bool:
-        """Check if Pick&Place is connected."""
-        return self.pickplace_connected
-    
-    def get_latest_evoflow_telemetry(self) -> Optional[EvoFlowTelemetry]:
-        """Get the most recent EvoFlow telemetry."""
-        return self.latest_evoflow_telemetry
+        # For testing, just setting a timer to update telemetry
+        self.simulate_timer = QTimer(self)
+        self.simulate_timer.timeout.connect(self.simulate_telemetry_update)
+        self.simulate_timer.start(sampling_rate_ms)
+
+        # For testing protocol encoding/decoding
+        self.simulate_protocol_timer = QTimer(self)
+        self.simulate_protocol_timer.timeout.connect(self.simulate_protocol_test)
+        self.simulate_protocol_timer.start(5000)
+        self.simulate_protocol_test()
+
+    def simulate_telemetry_update(self):
+        """Simulate incoming telemetry updates for testing."""
+        import random
+        self.evoflow_telemetry.pump_1_status = random.choice([True, False])
+        self.evoflow_telemetry.pump_1_sp = random.uniform(0, 100)
+        self.evoflow_telemetry.pump_1_speed = random.uniform(0, 100)
+        self.evoflow_telemetry.pump_2_status = random.choice([True, False])
+        self.evoflow_telemetry.pump_2_sp = random.uniform(0, 100)
+        self.evoflow_telemetry.pump_2_speed = random.uniform(0, 100)
+        self.evoflow_telemetry.pump_3_status = random.choice([True, False])
+        self.evoflow_telemetry.pump_3_sp = random.uniform(0, 100)
+        self.evoflow_telemetry.pump_3_speed = random.uniform(0, 100)
+        self.evoflow_telemetry.pump_4_status = random.choice([True, False])
+        self.evoflow_telemetry.pump_4_sp = random.uniform(0, 100)
+        self.evoflow_telemetry.pump_4_speed = random.uniform(0, 100)
+
+        self.evoflow_telemetry.magneticStirrer_bioreactor_status = random.choice([True, False])
+        self.evoflow_telemetry.magneticStirrer_bioreactor_sp = random.uniform(0, 100)
+        self.evoflow_telemetry.magneticStirrer_bioreactor_speed = random.uniform(0, 100)
+        self.evoflow_telemetry.magneticStirrer_bioreactor_fan_duty_cycle = random.uniform(0, 100)
+
+        self.evoflow_telemetry.magneticStirrer_lagoon_status = random.choice([True, False])
+        self.evoflow_telemetry.magneticStirrer_lagoon_sp = random.uniform(0, 100)
+        self.evoflow_telemetry.magneticStirrer_lagoon_speed = random.uniform(0, 100)
+        self.evoflow_telemetry.magneticStirrer_lagoon_fan_duty_cycle = random.uniform(0, 100)
+
+        self.evoflow_telemetry.valve_bio2lag_status = random.choice([True, False])
+        self.evoflow_telemetry.valve_sug2lag_status = random.choice([True, False])
+
+        self.evoflow_telemetry.od_bioreactor_status = random.choice([True, False])
+        self.evoflow_telemetry.od_bioreactor_value = random.uniform(0, 2)
+        self.evoflow_telemetry.od_lagoon_status = random.choice([True, False])
+        self.evoflow_telemetry.od_lagoon_value = random.uniform(0, 2)
+
+        self.evoflow_telemetry.tempCtrl_bioreactor_status = random.choice([True, False])
+        self.evoflow_telemetry.tempCtrl_bioreactor_sp = random.uniform(20, 40)
+        self.evoflow_telemetry.tempCtrl_bioreactor_value = random.uniform(20, 40)
+        self.evoflow_telemetry.tempCtrl_bioreactor_heater_duty_cycle = random.uniform(0, 100)
+
+        self.evoflow_telemetry.tempCtrl_lagoon_status = random.choice([True, False])
+        self.evoflow_telemetry.tempCtrl_lagoon_sp = random.uniform(20, 40)
+        self.evoflow_telemetry.tempCtrl_lagoon_value = random.uniform(20, 40)
+        self.evoflow_telemetry.tempCtrl_lagoon_heater_duty_cycle = random.uniform(0, 100)
+
+        self.evoflow_telemetry.phtCount_lagoon_status = random.choice([True, False])
+        self.evoflow_telemetry.phtCount_lagoon_value = random.uniform(0, 14)
+        self.evoflow_telemetry.phtCount_lagoon_overlight = random.choice([True, False])
+
+        self.telemetry_changed.emit(self.evoflow_telemetry)
+
+    def simulate_protocol_test(self):
+        """Simulate encoding and decoding a protocol packet for testing."""
+        # Simulate encoding a command to set pump speed to 3.56, 0.0, 0.0, 0.0 rpm (for example)
+        sender_addr = 0  # HMI
+        receiver_addr = 100  # EvoFlow Nucleo
+
+        packet = ProtocolPacket(
+            sender=sender_addr,
+            receiver_addr=receiver_addr,
+            is_write=True,
+            id1=Component.PUMP,
+            id2=CMD.SET_POINT,
+            # because it sends 4 floats for the 4 pumps, we need to pack them into bytes.
+            payload=bytes(struct.pack('<4f', 3.56, 0.0, 0.0, 0.0))
+        )
+
+        # Encoding the packet
+        encoded_packet = build_packet(packet)
+        print(f"Simulated encoded packet (hex): {encoded_packet.hex()}")
+
+
+        # Simulate decoding the same packet
+        delimiter_cut_out = encoded_packet[:-1]  # Remove trailing delimiters for testing
+        print(f"Simulated raw packet for decoding (hex): {delimiter_cut_out.hex()}")
+
+        decoded_packet = parse_packet(delimiter_cut_out)
+        print(f"Simulated decoded packet bytes: {decoded_packet}")
+
+    def read_settings_file(self):
+        """Load automation step defaults from config/settings.ini."""
+        # config_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'config', 'settings.ini')      # for development
+        config_path = resource_path("config/settings.ini")       # for bundling with PyInstaller
+        config = configparser.ConfigParser()
+        config.read(str(config_path))
+        return config
