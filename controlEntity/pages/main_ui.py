@@ -35,13 +35,22 @@ class MainUI(QMainWindow):
         main_layout.setContentsMargins(0, 0, 0, 0)
 
         self.evoflow_widget = EvoFlowWidget(1200, 720)
+        self.read_telemetry_btn = QPushButton("Read telemetry")
 
         main_layout.addWidget(self.evoflow_widget)
+        main_layout.addWidget(self.read_telemetry_btn)
         main_layout.addStretch()
         self.setCentralWidget(central_widget)
 
     def connect_signals(self):
         """Connect signals to their respective slots."""
-        self.logic.telemetry_changed.connect(self.evoflow_widget.update_telemetry)
+        # Evoflow signals
+        self.logic.evoflow_worker.telemetry_updated.connect(self.evoflow_widget.update_telemetry)
+        self.evoflow_widget.pump_on_off_requested.connect(self.logic.evoflow_worker.set_on_off_pumps)
+        self.evoflow_widget.magneticStirrer_on_off_requested.connect(self.logic.evoflow_worker.set_on_off_magnetic_stirrers)
+        self.evoflow_widget.od_on_off_requested.connect(self.logic.evoflow_worker.set_on_off_od_ctrls)
+        self.evoflow_widget.tempCtrl_on_off_requested.connect(self.logic.evoflow_worker.set_on_off_temp_ctrls)
+        self.evoflow_widget.valve_on_off_requested.connect(self.logic.evoflow_worker.set_on_off_valves)
+        self.evoflow_widget.phtCount_on_off_requested.connect(self.logic.evoflow_worker.set_on_off_pht_count)
 
-
+        self.read_telemetry_btn.clicked.connect(self.logic.evoflow_worker.get_telemetry)

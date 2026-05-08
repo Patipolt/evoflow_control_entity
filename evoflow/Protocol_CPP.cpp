@@ -1,6 +1,6 @@
-#include "communication_CPP.h"
+#include "Protocol_CPP.h"
 
-uint16_t Communication_CPP::crc16_ccitt_false(const std::vector<uint8_t>& data)
+uint16_t Protocol_CPP::crc16_ccitt_false(const std::vector<uint8_t>& data)
 {
     uint16_t crc = CRC16_INIT;
 
@@ -19,7 +19,7 @@ uint16_t Communication_CPP::crc16_ccitt_false(const std::vector<uint8_t>& data)
     return crc;
 }
 
-std::vector<uint8_t> Communication_CPP::cobs_encode(const std::vector<uint8_t>& input)
+std::vector<uint8_t> Protocol_CPP::cobs_encode(const std::vector<uint8_t>& input)
 {
     std::vector<uint8_t> output;
 
@@ -60,7 +60,7 @@ std::vector<uint8_t> Communication_CPP::cobs_encode(const std::vector<uint8_t>& 
     return output;
 }
 
-bool Communication_CPP::cobs_decode(const std::vector<uint8_t>& input, std::vector<uint8_t>& output)
+bool Protocol_CPP::cobs_decode(const std::vector<uint8_t>& input, std::vector<uint8_t>& output)
 {
     output.clear();
 
@@ -92,7 +92,7 @@ bool Communication_CPP::cobs_decode(const std::vector<uint8_t>& input, std::vect
     return true;
 }
 
-uint8_t Communication_CPP::encode_receiver_field(uint8_t receiver_addr, bool is_write)
+uint8_t Protocol_CPP::encode_receiver_field(uint8_t receiver_addr, bool is_write)
 {
     if (receiver_addr > 0x7FU) {
         return 0U;
@@ -101,13 +101,13 @@ uint8_t Communication_CPP::encode_receiver_field(uint8_t receiver_addr, bool is_
     return (uint8_t)(((receiver_addr & 0x7FU) << 1) | (is_write ? 1U : 0U));
 }
 
-void Communication_CPP::decode_receiver_field(uint8_t raw_receiver, uint8_t& receiver_addr, bool& is_write)
+void Protocol_CPP::decode_receiver_field(uint8_t raw_receiver, uint8_t& receiver_addr, bool& is_write)
 {
     receiver_addr = (uint8_t)((raw_receiver >> 1) & 0x7FU);
     is_write = ((raw_receiver & 0x01U) != 0U);
 }
 
-bool Communication_CPP::get_command_spec(uint8_t id1, uint8_t id2, size_t& payload_len, bool& allow_read, bool& allow_write)
+bool Protocol_CPP::get_command_spec(uint8_t id1, uint8_t id2, size_t& payload_len, bool& allow_read, bool& allow_write)
 {
     switch (id1) {
     case COMPONENT_PUMP:
@@ -169,7 +169,7 @@ bool Communication_CPP::get_command_spec(uint8_t id1, uint8_t id2, size_t& paylo
     }
 }
 
-bool Communication_CPP::validate_against_spec(uint8_t id1, uint8_t id2, bool is_write, const std::vector<uint8_t>& payload)
+bool Protocol_CPP::validate_against_spec(uint8_t id1, uint8_t id2, bool is_write, const std::vector<uint8_t>& payload)
 {
     size_t payload_len = 0;
     bool allow_read = false;
@@ -196,7 +196,7 @@ bool Communication_CPP::validate_against_spec(uint8_t id1, uint8_t id2, bool is_
     return true;
 }
 
-bool Communication_CPP::build_packet(const ProtocolPacket& protocol_packet, std::vector<uint8_t>& out_packet, bool validate_spec)
+bool Protocol_CPP::build_packet(const ProtocolPacket& protocol_packet, std::vector<uint8_t>& out_packet, bool validate_spec)
 {
     out_packet.clear();
 
@@ -239,7 +239,7 @@ bool Communication_CPP::build_packet(const ProtocolPacket& protocol_packet, std:
     return true;
 }
 
-bool Communication_CPP::parse_packet(const std::vector<uint8_t>& raw_cobs_frame_no_delim, ProtocolPacket& out_packet)
+bool Protocol_CPP::parse_packet(const std::vector<uint8_t>& raw_cobs_frame_no_delim, ProtocolPacket& out_packet)
 {
     if (raw_cobs_frame_no_delim.size() < 7) {
         return false;
@@ -298,7 +298,7 @@ bool Communication_CPP::parse_packet(const std::vector<uint8_t>& raw_cobs_frame_
     return true;
 }
 
-bool Communication_CPP::parse_packet_wire(const std::vector<uint8_t>& wire_data, ProtocolPacket& out_packet)
+bool Protocol_CPP::parse_packet_wire(const std::vector<uint8_t>& wire_data, ProtocolPacket& out_packet)
 {
     if (wire_data.size() == 0) {
         return false;

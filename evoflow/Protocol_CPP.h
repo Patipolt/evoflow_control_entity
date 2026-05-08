@@ -1,5 +1,5 @@
-#ifndef COMMUNICATION_CPP_H_
-#define COMMUNICATION_CPP_H_
+#ifndef PROTOCOL_CPP_H_
+#define PROTOCOL_CPP_H_
 
 #include <cstddef>
 #include <cstdint>
@@ -62,10 +62,10 @@ struct ProtocolPacket {
     std::vector<uint8_t> payload;
 };
 
-class Communication_CPP {
+class Protocol_CPP {
 public:
-    Communication_CPP() {};
-    virtual ~Communication_CPP() {};
+    Protocol_CPP() {};
+    virtual ~Protocol_CPP() {};
 
     uint16_t crc16_ccitt_false(const std::vector<uint8_t>& data);
 
@@ -85,4 +85,4 @@ private:
     bool get_command_spec(uint8_t id1, uint8_t id2, size_t& payload_len, bool& allow_read, bool& allow_write);
 };
 
-#endif // COMMUNICATION_CPP_H_
+#endif // PROTOCOL_CPP_H_

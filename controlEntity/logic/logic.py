@@ -15,12 +15,13 @@ from typing import Optional, List
 from PySide6.QtWidgets import QApplication, QMainWindow, QMessageBox, QWidget, QVBoxLayout, QLCDNumber, QLineEdit, QComboBox, QCalendarWidget, QTextEdit, QTimeEdit
 from PySide6.QtWidgets import QPushButton, QGroupBox, QTabWidget, QTableView, QMenuBar, QStatusBar, QLabel, QCheckBox, QColorDialog
 from PySide6.QtUiTools import QUiLoader
-from PySide6.QtCore import Qt, QFile, QTimer, QDate, QTime, QIODeviceBase, QEvent, Signal, Slot, QObject
+from PySide6.QtCore import QThread, Qt, QFile, QTimer, QDate, QTime, QIODeviceBase, QEvent, Signal, Slot, QObject
 from PySide6.QtGui import QKeyEvent, QTextCharFormat, QStandardItemModel, QStandardItem, QWheelEvent, QCloseEvent, QAction, QPixmap
 
 from controlEntity.utils import resource_path
 from controlEntity.widgets.evoflowWidget import EvoFlowTelemetry
-from evoflow.device.communication import ProtocolPacket, Component, CMD, build_packet, cobs_decode, parse_packet
+from controlEntity.logic.evoflow_worker import EvoFlowWorker
+from evoflow.protocol import ProtocolPacket, Component, CMD, build_packet, cobs_decode, parse_packet
 
 
 class Logic(QObject):
@@ -29,7 +30,7 @@ class Logic(QObject):
     # ===============================
     # EvoFlow Signals
     # ===============================
-    telemetry_changed = Signal(EvoFlowTelemetry)
+
     
     # ===============================
     # Sample Extraction Signals
@@ -45,73 +46,20 @@ class Logic(QObject):
         # ===============================
         # EvoFlow Worker Setup
         # ===============================
-        self.evoflow_telemetry = EvoFlowTelemetry()
-        
+        self.evoflow_thread = QThread()
+        self.evoflow_worker = EvoFlowWorker(port= config.get("Evoflow", "port"),
+                                            baudrate= config.getint("Evoflow", "baudrate"),
+                                            sender_addr= config.getint("HMI", "address"),
+                                            receiver_addr= config.getint("Evoflow", "address"))
+        self.evoflow_worker.moveToThread(self.evoflow_thread)
+        self.evoflow_thread.started.connect(self.evoflow_worker.start)
+        self.evoflow_thread.start()
+
+
         # ===============================
         # Sample Extraction Worker Setup
         # ===============================
 
-    
-        # For testing, just setting a timer to update telemetry
-        self.simulate_timer = QTimer(self)
-        self.simulate_timer.timeout.connect(self.simulate_telemetry_update)
-        self.simulate_timer.start(sampling_rate_ms)
-
-        # For testing protocol encoding/decoding
-        self.simulate_protocol_timer = QTimer(self)
-        self.simulate_protocol_timer.timeout.connect(self.simulate_protocol_test)
-        self.simulate_protocol_timer.start(5000)
-        self.simulate_protocol_test()
-
-    def simulate_telemetry_update(self):
-        """Simulate incoming telemetry updates for testing."""
-        import random
-        self.evoflow_telemetry.pump_1_status = random.choice([True, False])
-        self.evoflow_telemetry.pump_1_sp = random.uniform(0, 100)
-        self.evoflow_telemetry.pump_1_speed = random.uniform(0, 100)
-        self.evoflow_telemetry.pump_2_status = random.choice([True, False])
-        self.evoflow_telemetry.pump_2_sp = random.uniform(0, 100)
-        self.evoflow_telemetry.pump_2_speed = random.uniform(0, 100)
-        self.evoflow_telemetry.pump_3_status = random.choice([True, False])
-        self.evoflow_telemetry.pump_3_sp = random.uniform(0, 100)
-        self.evoflow_telemetry.pump_3_speed = random.uniform(0, 100)
-        self.evoflow_telemetry.pump_4_status = random.choice([True, False])
-        self.evoflow_telemetry.pump_4_sp = random.uniform(0, 100)
-        self.evoflow_telemetry.pump_4_speed = random.uniform(0, 100)
-
-        self.evoflow_telemetry.magneticStirrer_bioreactor_status = random.choice([True, False])
-        self.evoflow_telemetry.magneticStirrer_bioreactor_sp = random.uniform(0, 100)
-        self.evoflow_telemetry.magneticStirrer_bioreactor_speed = random.uniform(0, 100)
-        self.evoflow_telemetry.magneticStirrer_bioreactor_fan_duty_cycle = random.uniform(0, 100)
-
-        self.evoflow_telemetry.magneticStirrer_lagoon_status = random.choice([True, False])
-        self.evoflow_telemetry.magneticStirrer_lagoon_sp = random.uniform(0, 100)
-        self.evoflow_telemetry.magneticStirrer_lagoon_speed = random.uniform(0, 100)
-        self.evoflow_telemetry.magneticStirrer_lagoon_fan_duty_cycle = random.uniform(0, 100)
-
-        self.evoflow_telemetry.valve_bio2lag_status = random.choice([True, False])
-        self.evoflow_telemetry.valve_sug2lag_status = random.choice([True, False])
-
-        self.evoflow_telemetry.od_bioreactor_status = random.choice([True, False])
-        self.evoflow_telemetry.od_bioreactor_value = random.uniform(0, 2)
-        self.evoflow_telemetry.od_lagoon_status = random.choice([True, False])
-        self.evoflow_telemetry.od_lagoon_value = random.uniform(0, 2)
-
-        self.evoflow_telemetry.tempCtrl_bioreactor_status = random.choice([True, False])
-        self.evoflow_telemetry.tempCtrl_bioreactor_sp = random.uniform(20, 40)
-        self.evoflow_telemetry.tempCtrl_bioreactor_value = random.uniform(20, 40)
-        self.evoflow_telemetry.tempCtrl_bioreactor_heater_duty_cycle = random.uniform(0, 100)
-
-        self.evoflow_telemetry.tempCtrl_lagoon_status = random.choice([True, False])
-        self.evoflow_telemetry.tempCtrl_lagoon_sp = random.uniform(20, 40)
-        self.evoflow_telemetry.tempCtrl_lagoon_value = random.uniform(20, 40)
-        self.evoflow_telemetry.tempCtrl_lagoon_heater_duty_cycle = random.uniform(0, 100)
-
-        self.evoflow_telemetry.phtCount_lagoon_status = random.choice([True, False])
-        self.evoflow_telemetry.phtCount_lagoon_value = random.uniform(0, 14)
-        self.evoflow_telemetry.phtCount_lagoon_overlight = random.choice([True, False])
-
-        self.telemetry_changed.emit(self.evoflow_telemetry)
 
     def simulate_protocol_test(self):
         """Simulate encoding and decoding a protocol packet for testing."""
@@ -132,7 +80,6 @@ class Logic(QObject):
         # Encoding the packet
         encoded_packet = build_packet(packet)
         print(f"Simulated encoded packet (hex): {encoded_packet.hex()}")
-
 
         # Simulate decoding the same packet
         delimiter_cut_out = encoded_packet[:-1]  # Remove trailing delimiters for testing
