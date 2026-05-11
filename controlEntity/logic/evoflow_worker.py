@@ -6,7 +6,7 @@ Author: Patipol Thanuphol, Scientific Researcher at ZHAW — thau @zhaw.ch | pat
 Created: April 2026
 """
 
-from PySide6.QtCore import QObject, Signal, Slot
+from PySide6.QtCore import QObject, QThread, Signal, Slot
 from evoflow.device.evoflow import EvoFlowDevice, EvoFlowTelemetry
 
 class EvoFlowWorker(QObject):
@@ -14,15 +14,23 @@ class EvoFlowWorker(QObject):
     
     telemetry_updated = Signal(EvoFlowTelemetry)
     
-    def __init__(self, port: str, baudrate: int = 115200, sender_addr: int = 0x01, receiver_addr: int = 0xC9):
+    def __init__(self, port: str, baudrate: int = 115200, sender_addr: int = 0x01, receiver_addr: int = 0xC9, sampling_rate_ms: int = 200):
         super().__init__()
         self.evoflow = EvoFlowDevice(port, baudrate, sender_addr, receiver_addr)
-    
+        self.sampling_rate_ms = sampling_rate_ms
+
     @Slot()
     def start(self):
         """Start the worker thread and begin reading telemetry."""
         try:
             self.evoflow.connect()
+            # Optionally, you could start a timer here to read telemetry at regular intervals
+            # Set up another thread reading telemetry every X ms and emitting the telemetry_updated signal
+            self.reading_thread = QThread()
+            self.reading_thread.run = self.get_all_telemetry
+            self.reading_thread.start()
+
+            
         except Exception as e:
             print(f"Failed to connect to EvoFlow device: {e}")
             return
@@ -115,3 +123,11 @@ class EvoFlowWorker(QObject):
             self.telemetry_updated.emit(self.evoflow.evoflow_telemetry)
         except Exception as e:
             print(f"Failed to read telemetry: {e}")
+
+    @Slot()
+    def get_all_telemetry(self):
+        """Continuously read telemetry data from the EvoFlow device and emit it."""
+        while True:
+            self.evoflow.get_all_telemetry()
+            self.telemetry_updated.emit(self.evoflow.evoflow_telemetry)
+            QThread.msleep(self.sampling_rate_ms)

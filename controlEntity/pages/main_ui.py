@@ -53,4 +53,4 @@ class MainUI(QMainWindow):
         self.evoflow_widget.valve_on_off_requested.connect(self.logic.evoflow_worker.set_on_off_valves)
         self.evoflow_widget.phtCount_on_off_requested.connect(self.logic.evoflow_worker.set_on_off_pht_count)
 
-        self.read_telemetry_btn.clicked.connect(self.logic.evoflow_worker.get_telemetry)
+        self.read_telemetry_btn.clicked.connect(self.logic.evoflow_worker.get_all_telemetry)

@@ -17,51 +17,7 @@ class EvoFlowWidget(QWidget):
     # ================================
     # Signals required for widget
     # ================================
-
-    # # Outgoing signals (to request actions)
-    # pump_1_start_requested = Signal(bool)
-    # pump_1_stop_requested = Signal(bool)
-    # pump_2_start_requested = Signal(bool)
-    # pump_2_stop_requested = Signal(bool)
-    # pump_3_start_requested = Signal(bool)
-    # pump_3_stop_requested = Signal(bool)
-    # pump_4_start_requested = Signal(bool)
-    # pump_4_stop_requested = Signal(bool)
-
-    # magneticStirrer_bioreactor_start_requested = Signal(bool)
-    # magneticStirrer_bioreactor_stop_requested = Signal(bool)
-    # magneticStirrer_lagoon_start_requested = Signal(bool)
-    # magneticStirrer_lagoon_stop_requested = Signal(bool)
-
-    # od_bioreactor_start_requested = Signal(bool)
-    # od_bioreactor_stop_requested = Signal(bool)
-    # od_lagoon_start_requested = Signal(bool)
-    # od_lagoon_stop_requested = Signal(bool)
-
-    # tempCtrl_bioreactor_start_requested = Signal(bool)
-    # tempCtrl_bioreactor_stop_requested = Signal(bool)
-    # tempCtrl_lagoon_start_requested = Signal(bool)
-    # tempCtrl_lagoon_stop_requested = Signal(bool)
-
-    # valve_bio2lag_open_requested = Signal(bool)
-    # valve_bio2lag_close_requested = Signal(bool)
-    # valve_sug2lag_open_requested = Signal(bool)
-    # valve_sug2lag_close_requested = Signal(bool)
-
-    # phtCount_start_requested = Signal(bool)
-    # phtCount_stop_requested = Signal(bool)
-
-    # pump_1_sp_changed = Signal(float)
-    # pump_2_sp_changed = Signal(float)
-    # pump_3_sp_changed = Signal(float)
-    # pump_4_sp_changed = Signal(float)
-
-    # magneticStirrer_bioreactor_sp_changed = Signal(float)
-    # magneticStirrer_lagoon_sp_changed = Signal(float)
-
-    # tempCtrl_bioreactor_sp_changed = Signal(float)
-    # tempCtrl_lagoon_sp_changed = Signal(float)
-
+    
     # Outgoing signals (to request actions, handle for all components of the same type as the protocol is designed that way)
     pump_on_off_requested = Signal(bool, bool, bool, bool)
     magneticStirrer_on_off_requested = Signal(bool, bool)
@@ -270,7 +226,6 @@ class EvoFlowWidget(QWidget):
         self.slide_switch_pump_4 = TapSwitch(self)
         self.slide_switch_pump_4.setGeometry(1007, 482, 40, 20)
 
-
         self.slide_switch_magneticStirrer_bioreactor = TapSwitch(self)
         self.slide_switch_magneticStirrer_bioreactor.setGeometry(296, 313, 40, 20)
         self.slide_switch_magneticStirrer_lagoon = TapSwitch(self)
@@ -316,7 +271,7 @@ class EvoFlowWidget(QWidget):
         self.pump_2_sp_update_btn.setGeometry(701, 383, 75, 20)
         self.pump_2_sp_update_btn.setStyleSheet(button_style)
         self.pump_3_sp_update_btn = QPushButton("Update SP", self)
-        self.pump_3_sp_update_btn.setGeometry(184, 579, 75, 20)
+        self.pump_3_sp_update_btn.setGeometry(182, 579, 75, 20)
         self.pump_3_sp_update_btn.setStyleSheet(button_style)
         self.pump_4_sp_update_btn = QPushButton("Update SP", self)
         self.pump_4_sp_update_btn.setGeometry(991, 579, 75, 20)
@@ -337,16 +292,39 @@ class EvoFlowWidget(QWidget):
         self.tempCtrl_lagoon_sp_update_btn.setStyleSheet(button_style)
 
         # LED
-        # self.led_pump_1 = QLabel("🔴",self) #⚪🟢
-        # self.led_pump_1.setGeometry(90, 265, 20, 20)
-        # self.led_pump_2 = QLabel("🔴",self) #⚪🟢
-        # self.led_pump_2.setGeometry(688, 265, 20, 20)
-        # self.led_pump_3 = QLabel("🔴",self) #⚪🟢
-        # self.led_pump_3.setGeometry(184, 461, 20, 20)
-        # self.led_pump_4 = QLabel("🔴",self) #⚪🟢
-        # self.led_pump_4.setGeometry(991, 461, 20, 20)
+        self.led_pump_1 = QLabel("⚪",self) #🔴🟢
+        self.led_pump_1.setGeometry(90, 265, 20, 20)
+        self.led_pump_2 = QLabel("⚪",self) #🔴🟢
+        self.led_pump_2.setGeometry(699, 265, 20, 20)
+        self.led_pump_3 = QLabel("⚪",self) #🔴🟢
+        self.led_pump_3.setGeometry(182, 461, 20, 20)
+        self.led_pump_4 = QLabel("⚪",self) #🔴🟢
+        self.led_pump_4.setGeometry(989, 461, 20, 20)
 
-        self.led_overlight = QLabel("🟢",self) #⚪🟢
+        self.led_magneticStirrer_bioreactor = QLabel("⚪",self) #🔴🟢
+        self.led_magneticStirrer_bioreactor.setGeometry(240, 280, 20, 20)
+        self.led_magneticStirrer_lagoon = QLabel("⚪",self) #🔴🟢
+        self.led_magneticStirrer_lagoon.setGeometry(814, 280, 20, 20)
+
+        self.led_valve_bio2lag = QLabel("⚪",self) #🔴🟢
+        self.led_valve_bio2lag.setGeometry(554, 260, 20, 20)
+        self.led_valve_sug2lag = QLabel("⚪",self) #🔴🟢
+        self.led_valve_sug2lag.setGeometry(585, 161, 20, 20)
+
+        self.led_od_bioreactor = QLabel("⚪",self) #🔴🟢
+        self.led_od_bioreactor.setGeometry(225, 161, 20, 20)
+        self.led_od_lagoon = QLabel("⚪",self) #🔴🟢
+        self.led_od_lagoon.setGeometry(799, 161, 20, 20)
+
+        self.led_tempCtrl_bioreactor = QLabel("⚪",self) #🔴🟢
+        self.led_tempCtrl_bioreactor.setGeometry(390, 175, 20, 20)
+        self.led_tempCtrl_lagoon = QLabel("⚪",self) #🔴🟢
+        self.led_tempCtrl_lagoon.setGeometry(964, 175, 20, 20)
+
+        self.led_phtCount_lagoon = QLabel("⚪",self) #🔴🟢
+        self.led_phtCount_lagoon.setGeometry(964, 130, 20, 20)
+
+        self.led_overlight = QLabel("⚪",self) #🔴🟢
         self.led_overlight.setGeometry(993, 68, 22, 22)
         self.led_overlight.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
         self.led_overlight.setStyleSheet("""font-size: 18px;""")
@@ -546,202 +524,80 @@ class EvoFlowWidget(QWidget):
         except ValueError:
             pass  # Invalid input, ignore
 
-    # def handle_pump_1_toggle(self, checked):
-    #     """Handle pump 1 toggle"""
-    #     if checked:
-    #         self.pump_1_start_requested.emit(True)
-    #     else:
-    #         self.pump_1_stop_requested.emit(True)
-    
-    # def handle_pump_2_toggle(self, checked):
-    #     """Handle pump 2 toggle"""
-    #     if checked:
-    #         self.pump_2_start_requested.emit(True)
-    #     else:
-    #         self.pump_2_stop_requested.emit(True)
-
-    # def handle_pump_3_toggle(self, checked):
-    #     """Handle pump 3 toggle"""
-    #     if checked:
-    #         self.pump_3_start_requested.emit(True)
-    #     else:
-    #         self.pump_3_stop_requested.emit(True)
-
-    # def handle_pump_4_toggle(self, checked):
-    #     """Handle pump 4 toggle"""
-    #     if checked:
-    #         self.pump_4_start_requested.emit(True)
-    #     else:
-    #         self.pump_4_stop_requested.emit(True)
-
-    # def handle_magneticStirrer_bioreactor_toggle(self, checked):
-    #     """Handle magnetic stirrer bioreactor toggle"""
-    #     if checked:
-    #         self.magneticStirrer_bioreactor_start_requested.emit(True)
-    #     else:
-    #         self.magneticStirrer_bioreactor_stop_requested.emit(True)
-    
-    # def handle_magneticStirrer_lagoon_toggle(self, checked):
-    #     """Handle magnetic stirrer lagoon toggle"""
-    #     if checked:
-    #         self.magneticStirrer_lagoon_start_requested.emit(True)
-    #     else:
-    #         self.magneticStirrer_lagoon_stop_requested.emit(True)
-    
-    # def handle_od_bioreactor_toggle(self, checked):
-    #     """Handle OD bioreactor toggle"""
-    #     if checked:
-    #         self.od_bioreactor_start_requested.emit(True)
-    #     else:
-    #         self.od_bioreactor_stop_requested.emit(True)
-
-    # def handle_od_lagoon_toggle(self, checked):
-    #     """Handle OD lagoon toggle"""
-    #     if checked:
-    #         self.od_lagoon_start_requested.emit(True)
-    #     else:
-    #         self.od_lagoon_stop_requested.emit(True)
-            
-    # def handle_tempCtrl_bioreactor_toggle(self, checked):
-    #     """Handle temperature controller bioreactor toggle"""
-    #     if checked:
-    #         self.tempCtrl_bioreactor_start_requested.emit(True)
-    #     else:
-    #         self.tempCtrl_bioreactor_stop_requested.emit(True)
-
-    # def handle_tempCtrl_lagoon_toggle(self, checked):
-    #     """Handle temperature controller lagoon toggle"""
-    #     if checked:
-    #         self.tempCtrl_lagoon_start_requested.emit(True)
-    #     else:
-    #         self.tempCtrl_lagoon_stop_requested.emit(True)
-
-    # def handle_valve_bio2lag_toggle(self, checked):
-    #     """Handle valve bio2lag toggle"""
-    #     if checked:
-    #         self.valve_bio2lag_open_requested.emit(True)
-    #     else:
-    #         self.valve_bio2lag_close_requested.emit(True)
-
-    # def handle_valve_sug2lag_toggle(self, checked):
-    #     """Handle valve sug2lag toggle"""
-    #     if checked:
-    #         self.valve_sug2lag_open_requested.emit(True)
-    #     else:
-    #         self.valve_sug2lag_close_requested.emit(True)
-
-    # def handle_phtCount_lagoon_toggle(self, checked):
-    #     """Handle photon counter lagoon toggle"""
-    #     if checked:
-    #         self.phtCount_lagoon_start_requested.emit(True)
-    #     else:
-    #         self.phtCount_lagoon_stop_requested.emit(True)
-
-    # def handle_pump_1_sp_update(self):
-    #     """Handle pump 1 setpoint update"""
-    #     try:
-    #         new_sp = float(self.pump_1_sp_edit.text())
-    #         self.pump_1_sp_update_requested.emit(new_sp)
-    #     except ValueError:
-    #         pass  # Invalid input, ignore
-    
-    # def handle_pump_2_sp_update(self):
-    #     """Handle pump 2 setpoint update"""
-    #     try:
-    #         new_sp = float(self.pump_2_sp_edit.text())
-    #         self.pump_2_sp_update_requested.emit(new_sp)
-    #     except ValueError:
-    #         pass  # Invalid input, ignore
-
-    # def handle_pump_3_sp_update(self):
-    #     """Handle pump 3 setpoint update"""
-    #     try:
-    #         new_sp = float(self.pump_3_sp_edit.text())
-    #         self.pump_3_sp_update_requested.emit(new_sp)
-    #     except ValueError:
-    #         pass  # Invalid input, ignore
-
-    # def handle_pump_4_sp_update(self):
-    #     """Handle pump 4 setpoint update"""
-    #     try:
-    #         new_sp = float(self.pump_4_sp_edit.text())
-    #         self.pump_4_sp_update_requested.emit(new_sp)
-    #     except ValueError:
-    #         pass  # Invalid input, ignore
-    
-    # def handle_magneticStirrer_bioreactor_sp_update(self):
-    #     """Handle magnetic stirrer bioreactor setpoint update"""
-    #     try:
-    #         new_sp = float(self.magneticStirrer_bioreactor_sp_edit.text())
-    #         self.magneticStirrer_bioreactor_sp_update_requested.emit(new_sp)
-    #     except ValueError:
-    #         pass  # Invalid input, ignore
-
-    # def handle_magneticStirrer_lagoon_sp_update(self):
-    #     """Handle magnetic stirrer lagoon setpoint update"""
-    #     try:
-    #         new_sp = float(self.magneticStirrer_lagoon_sp_edit.text())
-    #         self.magneticStirrer_lagoon_sp_update_requested.emit(new_sp)
-    #     except ValueError:
-    #         pass  # Invalid input, ignore
-    
-    # def handle_tempCtrl_bioreactor_sp_update(self):
-    #     """Handle temperature controller bioreactor setpoint update"""
-    #     try:
-    #         new_sp = float(self.tempCtrl_bioreactor_sp_edit.text())
-    #         self.tempCtrl_bioreactor_sp_update_requested.emit(new_sp)
-    #     except ValueError:
-    #         pass  # Invalid input, ignore
-    
-    # def handle_tempCtrl_lagoon_sp_update(self):
-    #     """Handle temperature controller lagoon setpoint update"""
-    #     try:
-    #         new_sp = float(self.tempCtrl_lagoon_sp_edit.text())
-    #         self.tempCtrl_lagoon_sp_update_requested.emit(new_sp)
-    #     except ValueError:
-    #         pass  # Invalid input, ignore
-
     @Slot(EvoFlowTelemetry)
     def update_telemetry(self, evoflow_telemetry):
         """Update the widget based on incoming telemetry"""
         # Update pump 1
-        self.slide_switch_pump_1.setChecked(evoflow_telemetry.pump_1_status)
+        if evoflow_telemetry.pump_1_status:
+            self.led_pump_1.setText("🟢")
+        else:
+            self.led_pump_1.setText("🔴")
         self.pump_1_feedback.setText(f"FB: {evoflow_telemetry.pump_1_sp:.2f} rpm\n{evoflow_telemetry.pump_1_speed:.2f} rpm, {(self.pump_1_flow_conv * evoflow_telemetry.pump_1_speed):.3f} ml/min")
         # Update pump 2
-        self.slide_switch_pump_2.setChecked(evoflow_telemetry.pump_2_status)
+        if evoflow_telemetry.pump_2_status:
+            self.led_pump_2.setText("🟢")
+        else:
+            self.led_pump_2.setText("🔴")
         self.pump_2_feedback.setText(f"FB: {evoflow_telemetry.pump_2_sp:.2f} rpm\n{evoflow_telemetry.pump_2_speed:.2f} rpm, {(self.pump_2_flow_conv * evoflow_telemetry.pump_2_speed):.3f} ml/min")
         # Update pump 3
-        self.slide_switch_pump_3.setChecked(evoflow_telemetry.pump_3_status)
+        if evoflow_telemetry.pump_3_status:
+            self.led_pump_3.setText("🟢")
+        else:
+            self.led_pump_3.setText("🔴")
         self.pump_3_feedback.setText(f"FB: {evoflow_telemetry.pump_3_sp:.2f} rpm\n{evoflow_telemetry.pump_3_speed:.2f} rpm, {(self.pump_3_flow_conv * evoflow_telemetry.pump_3_speed):.3f} ml/min")
         # Update pump 4
-        self.slide_switch_pump_4.setChecked(evoflow_telemetry.pump_4_status)
+        if evoflow_telemetry.pump_4_status:
+            self.led_pump_4.setText("🟢")
+        else:
+            self.led_pump_4.setText("🔴")
         self.pump_4_feedback.setText(f"FB: {evoflow_telemetry.pump_4_sp:.2f} rpm\n{evoflow_telemetry.pump_4_speed:.2f} rpm, {(self.pump_4_flow_conv * evoflow_telemetry.pump_4_speed):.3f} ml/min")
 
         # Update magnetic stirrer bioreactor
-        self.slide_switch_magneticStirrer_bioreactor.setChecked(evoflow_telemetry.magneticStirrer_bioreactor_status)
+        if evoflow_telemetry.magneticStirrer_bioreactor_status:
+            self.led_magneticStirrer_bioreactor.setText("🟢")
+        else:
+            self.led_magneticStirrer_bioreactor.setText("🔴")
         self.magneticStirrer_bioreactor_feedback.setText(f"FB: {evoflow_telemetry.magneticStirrer_bioreactor_sp:.2f} rpm\n{evoflow_telemetry.magneticStirrer_bioreactor_speed:.2f} rpm, {evoflow_telemetry.magneticStirrer_bioreactor_fan_duty_cycle:.2f} %")
         # Update magnetic stirrer lagoon
-        self.slide_switch_magneticStirrer_lagoon.setChecked(evoflow_telemetry.magneticStirrer_lagoon_status)
+        if evoflow_telemetry.magneticStirrer_lagoon_status:
+            self.led_magneticStirrer_lagoon.setText("🟢")
+        else:
+            self.led_magneticStirrer_lagoon.setText("🔴")
         self.magneticStirrer_lagoon_feedback.setText(f"FB: {evoflow_telemetry.magneticStirrer_lagoon_sp:.2f} rpm\n{evoflow_telemetry.magneticStirrer_lagoon_speed:.2f} rpm, {evoflow_telemetry.magneticStirrer_lagoon_fan_duty_cycle:.2f} %")
 
         # Update temperature controller bioreactor
-        self.slide_switch_tempCtrl_bioreactor.setChecked(evoflow_telemetry.tempCtrl_bioreactor_status)
+        if evoflow_telemetry.tempCtrl_bioreactor_status:
+            self.led_tempCtrl_bioreactor.setText("🟢")
+        else:
+            self.led_tempCtrl_bioreactor.setText("🔴")
         self.tempCtrl_bioreactor_feedback.setText(f"{evoflow_telemetry.tempCtrl_bioreactor_value:.2f} °C")
         self.tempCtrl_bioreactor_feedback_sp_htr.setText(f"FB: {evoflow_telemetry.tempCtrl_bioreactor_sp:.2f} °C, HTR Duty: {evoflow_telemetry.tempCtrl_bioreactor_heater_duty_cycle:.2f} %")
         # Update temperature controller lagoon
-        self.slide_switch_tempCtrl_lagoon.setChecked(evoflow_telemetry.tempCtrl_lagoon_status)
+        if evoflow_telemetry.tempCtrl_lagoon_status:
+            self.led_tempCtrl_lagoon.setText("🟢")
+        else:
+            self.led_tempCtrl_lagoon.setText("🔴")
         self.tempCtrl_lagoon_feedback.setText(f"{evoflow_telemetry.tempCtrl_lagoon_value:.2f} °C")
         self.tempCtrl_lagoon_feedback_sp_htr.setText(f"FB: {evoflow_telemetry.tempCtrl_lagoon_sp:.2f} °C, HTR Duty: {evoflow_telemetry.tempCtrl_lagoon_heater_duty_cycle:.2f} %")
 
         # Update OD bioreactor
-        self.slide_switch_od_bioreactor.setChecked(evoflow_telemetry.od_bioreactor_status)
+        if evoflow_telemetry.od_bioreactor_status:
+            self.led_od_bioreactor.setText("🟢")
+        else:
+            self.led_od_bioreactor.setText("🔴")
         self.od_bioreactor_feedback.setText(f"{evoflow_telemetry.od_bioreactor_value:.3f}")
         # Update OD lagoon
-        self.slide_switch_od_lagoon.setChecked(evoflow_telemetry.od_lagoon_status)
+        if evoflow_telemetry.od_lagoon_status:
+            self.led_od_lagoon.setText("🟢")
+        else:
+            self.led_od_lagoon.setText("🔴")
         self.od_lagoon_feedback.setText(f"{evoflow_telemetry.od_lagoon_value:.3f}")
 
         # Update photon counter lagoon
-        self.slide_switch_phtCount_Lagoon.setChecked(evoflow_telemetry.phtCount_lagoon_status)
+        if evoflow_telemetry.phtCount_lagoon_status:
+            self.led_phtCount_lagoon.setText("🟢")
+        else:
+            self.led_phtCount_lagoon.setText("🔴")
         self.phtCount_feedback.setText(f"{evoflow_telemetry.phtCount_lagoon_value:.3f}")
         if evoflow_telemetry.phtCount_lagoon_overlight:
             self.led_overlight.setText("🔴")
@@ -749,9 +605,15 @@ class EvoFlowWidget(QWidget):
             self.led_overlight.setText("🟢")
 
         # Update valve bio2lag
-        self.slide_switch_valve_bio2lag.setChecked(evoflow_telemetry.valve_bio2lag_status)
+        if evoflow_telemetry.valve_bio2lag_status:
+            self.led_valve_bio2lag.setText("🟢")
+        else:
+            self.led_valve_bio2lag.setText("🔴")
         # Update valve sug2lag
-        self.slide_switch_valve_sug2lag.setChecked(evoflow_telemetry.valve_sug2lag_status)
+        if evoflow_telemetry.valve_sug2lag_status:
+            self.led_valve_sug2lag.setText("🟢")
+        else:
+            self.led_valve_sug2lag.setText("🔴")
 
     def read_settings_file(self):
         """Load default configuration values from settings.ini"""

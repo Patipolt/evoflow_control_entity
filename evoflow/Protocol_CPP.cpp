@@ -161,8 +161,15 @@ bool Protocol_CPP::get_command_spec(uint8_t id1, uint8_t id2, size_t& payload_le
         switch (id2) {
         case 0: payload_len = N_TRAY * N_BYTE_POS;    allow_read = true;  allow_write = true; return true;
         case 1: payload_len = N_TRAY * N_SINGLE_BYTE; allow_read = false; allow_write = true; return true;
+        case 2: payload_len = N_TRAY * N_SINGLE_BYTE; allow_read = true; allow_write = false; return true;
         default: return false;
         }
+
+    case COMPONENT_TELEMETRY:
+        if (id2 == 0) {
+            payload_len = N_BYTE_READ_ALL; allow_read = true; allow_write = false; return true;
+        }
+        return false;
 
     default:
         return false;

@@ -25,6 +25,7 @@
 #define N_SINGLE_BYTE                   1U
 #define N_BYTE_POS                      2U
 #define N_BYTE_FLOAT                    4U
+#define N_BYTE_READ_ALL                 106U  // for all read-commands for evoflow telemetry, (SUM of all payload lengths)
 
 // Addresses
 #define ADDR_GUI                        1U
@@ -39,6 +40,7 @@
 #define COMPONENT_MAG_MODULE            14U
 #define COMPONENT_PHOTON_COUNTER        15U
 #define COMPONENT_TRAY                  16U
+#define COMPONENT_TELEMETRY             100U
 
 // Commands (id2)
 #define CMD_ON_OFF                      0U
@@ -52,6 +54,8 @@
 #define CMD_OVERLIGHT_DETECTION         2U
 #define CMD_POSITION                    0U
 #define CMD_START                       1U
+#define CMD_DONE_FLAG                   2U
+#define CMD_READ_ALL                    0U
 
 struct ProtocolPacket {
     uint8_t sender = 0;

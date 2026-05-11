@@ -50,10 +50,16 @@ class Logic(QObject):
         self.evoflow_worker = EvoFlowWorker(port= config.get("Evoflow", "port"),
                                             baudrate= config.getint("Evoflow", "baudrate"),
                                             sender_addr= config.getint("HMI", "address"),
-                                            receiver_addr= config.getint("Evoflow", "address"))
+                                            receiver_addr= config.getint("Evoflow", "address"),
+                                            sampling_rate_ms= sampling_rate_ms)
         self.evoflow_worker.moveToThread(self.evoflow_thread)
         self.evoflow_thread.started.connect(self.evoflow_worker.start)
         self.evoflow_thread.start()
+
+        # self.timer1 = QTimer()
+        # self.timer1.timeout.connect(self.evoflow_worker.get_telemetry)
+        # self.timer1.start(500)
+
 
 
         # ===============================
