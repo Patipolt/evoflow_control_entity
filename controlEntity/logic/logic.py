@@ -15,7 +15,7 @@ from typing import Optional, List
 from PySide6.QtWidgets import QApplication, QMainWindow, QMessageBox, QWidget, QVBoxLayout, QLCDNumber, QLineEdit, QComboBox, QCalendarWidget, QTextEdit, QTimeEdit
 from PySide6.QtWidgets import QPushButton, QGroupBox, QTabWidget, QTableView, QMenuBar, QStatusBar, QLabel, QCheckBox, QColorDialog
 from PySide6.QtUiTools import QUiLoader
-from PySide6.QtCore import QThread, Qt, QFile, QTimer, QDate, QTime, QIODeviceBase, QEvent, Signal, Slot, QObject
+from PySide6.QtCore import QThread, Qt, QFile, QTimer, QDate, QTime, QIODeviceBase, QEvent, Signal, Slot, QObject, QMetaObject
 from PySide6.QtGui import QKeyEvent, QTextCharFormat, QStandardItemModel, QStandardItem, QWheelEvent, QCloseEvent, QAction, QPixmap
 
 from controlEntity.utils import resource_path
@@ -101,3 +101,20 @@ class Logic(QObject):
         config = configparser.ConfigParser()
         config.read(str(config_path))
         return config
+
+    def shutdown(self):
+        """Stop worker threads before Qt destroys objects."""
+        try:
+            # Execute stop() in the worker thread so it can stop its own child thread safely.
+            QMetaObject.invokeMethod(self.evoflow_worker, "stop", Qt.BlockingQueuedConnection)
+        except Exception as e:
+            print(f"Failed to stop EvoFlow worker cleanly: {e}")
+
+        try:
+            if self.evoflow_thread.isRunning():
+                self.evoflow_thread.quit()
+                if not self.evoflow_thread.wait(2000):
+                    self.evoflow_thread.terminate()
+                    self.evoflow_thread.wait(1000)
+        except Exception as e:
+            print(f"Failed to stop EvoFlow thread cleanly: {e}")

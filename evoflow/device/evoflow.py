@@ -101,7 +101,7 @@ class EvoFlowDevice:
     def connect(self):
         """Establish serial connection to the EvoFlow device."""
         try:
-            self.serial = serial.Serial(self.port, self.baudrate, timeout=0.5)
+            self.serial = serial.Serial(self.port, self.baudrate, timeout=0.1)
             print(f"Connected to EvoFlow device on {self.port} at {self.baudrate} baud.")
         except serial.SerialException as e:
             print(f"Failed to connect to EvoFlow device: {e}")
@@ -156,7 +156,7 @@ class EvoFlowDevice:
                     print(f"Sent pump status command: {packet_bytes.hex()}")
         except serial.SerialException as e:
             print(f"Failed to send pump status command: {e}")
-            raise
+            pass # ignore for now
 
     def get_on_off_pumps(self):
         """Read start/stop pump status from the EvoFlow device."""
@@ -184,7 +184,7 @@ class EvoFlowDevice:
                     print(f"Received pump status: {pump_statuses.hex()}")
         except serial.SerialException as e:
             print(f"Failed to read pump status: {e}")
-            raise
+            pass # ignore for now
     
     def set_setpoint_pumps(self, pump_1_sp: float, pump_2_sp: float, pump_3_sp: float, pump_4_sp: float):
         """Send command to set pump speed based on their setpoints."""
@@ -201,7 +201,7 @@ class EvoFlowDevice:
                     print(f"Sent pump setpoint command: {packet_bytes.hex()}")
         except serial.SerialException as e:
             print(f"Failed to send pump setpoint command: {e}")
-            raise
+            pass # ignore for now
 
     def get_setpoint_pumps(self):
         """Read pump speed setpoints from the EvoFlow device."""
@@ -227,7 +227,7 @@ class EvoFlowDevice:
                     print(f"Received pump setpoints: {pump_sps}")
         except serial.SerialException as e:
             print(f"Failed to read pump setpoints: {e}")
-            raise
+            pass # ignore for now
 
     def get_speed_pumps(self):
         """Read pump speeds from the EvoFlow device."""
@@ -253,7 +253,7 @@ class EvoFlowDevice:
                     print(f"Received pump speeds: {pump_speeds}")
         except serial.SerialException as e:
             print(f"Failed to read pump speeds: {e}")
-            raise
+            pass # ignore for now
 
     def set_on_off_valves(self, valve_bio2lag_status: bool, valve_sug2lag_status: bool):
         """Send command to open/close valves based on their status."""
@@ -273,7 +273,7 @@ class EvoFlowDevice:
                     print(f"Sent valve status command: {packet_bytes.hex()}")
         except serial.SerialException as e:
             print(f"Failed to send valve status command: {e}")
-            raise
+            pass # ignore for now
 
     def get_on_off_valves(self):
         """Read open/close valve status from the EvoFlow device."""
@@ -297,7 +297,7 @@ class EvoFlowDevice:
                     print(f"Received valve status: {valve_statuses.hex()}")
         except serial.SerialException as e:
             print(f"Failed to read valve status: {e}")
-            raise
+            pass # ignore for now
 
     def set_on_off_temp_ctrls(self, tempCtrl_bioreactor_status: bool, tempCtrl_lagoon_status: bool):
         """Send command to turn on/off temperature controllers based on their status."""
@@ -317,7 +317,7 @@ class EvoFlowDevice:
                     print(f"Sent temperature controller status command: {packet_bytes.hex()}")
         except serial.SerialException as e:
             print(f"Failed to send temperature controller status command: {e}")
-            raise
+            pass # ignore for now
     
     def get_on_off_temp_ctrls(self):
         """Read on/off temperature controller status from the EvoFlow device."""
@@ -341,7 +341,7 @@ class EvoFlowDevice:
                     print(f"Received temperature controller status: {temp_ctrl_statuses.hex()}")
         except serial.SerialException as e:
             print(f"Failed to read temperature controller status: {e}")
-            raise
+            pass # ignore for now
     
     def set_setpoint_temp_ctrls(self, tempCtrl_bioreactor_sp: float, tempCtrl_lagoon_sp: float):
         """Send command to set temperature controller setpoints."""
@@ -358,7 +358,7 @@ class EvoFlowDevice:
                     print(f"Sent temperature controller setpoint command: {packet_bytes.hex()}")
         except serial.SerialException as e:
             print(f"Failed to send temperature controller setpoint command: {e}")
-            raise
+            pass # ignore for now
 
     def get_setpoint_temp_ctrls(self):
         """Read temperature controller setpoints from the EvoFlow device."""
@@ -382,8 +382,8 @@ class EvoFlowDevice:
                     print(f"Received temperature controller setpoints: {temp_ctrl_sps}")
         except serial.SerialException as e:
             print(f"Failed to read temperature controller setpoints: {e}")
-            raise
-    
+            pass # ignore for now
+
     def get_temperature_temp_ctrls(self):
         """Read temperature controller values from the EvoFlow device."""
         try:
@@ -406,8 +406,8 @@ class EvoFlowDevice:
                     print(f"Received temperature controller values: {temp_ctrl_values}")
         except serial.SerialException as e:
             print(f"Failed to read temperature controller values: {e}")
-            raise
-    
+            pass # ignore for now
+
     def get_heater_duty_cycle_temp_ctrls(self):
         """Read temperature controller heater duty cycles from the EvoFlow device."""
         try:
@@ -430,7 +430,7 @@ class EvoFlowDevice:
                     print(f"Received temperature controller heater duty cycles: {temp_ctrl_heater_duty_cycles}")
         except serial.SerialException as e:
             print(f"Failed to read temperature controller heater duty cycles: {e}")
-            raise
+            pass # ignore for now
 
     def set_on_off_od_ctrls(self, od_bioreactor_status: bool, od_lagoon_status: bool):
         """Send command to turn on/off OD controllers based on their status."""
@@ -450,8 +450,8 @@ class EvoFlowDevice:
                     print(f"Sent OD controller status command: {packet_bytes.hex()}")
         except serial.SerialException as e:
             print(f"Failed to send OD controller status command: {e}")
-            raise
-    
+            pass # ignore for now
+
     def get_on_off_od_ctrls(self):
         """Read on/off OD controller status from the EvoFlow device."""
         try:
@@ -474,7 +474,7 @@ class EvoFlowDevice:
                     print(f"Received OD controller status: {od_ctrl_statuses.hex()}")
         except serial.SerialException as e:
             print(f"Failed to read OD controller status: {e}")
-            raise
+            pass # ignore for now
     
     def get_od_value_od_ctrls(self):
         """Read OD values from the EvoFlow device."""
@@ -498,7 +498,7 @@ class EvoFlowDevice:
                     print(f"Received OD controller values: {od_values}")
         except serial.SerialException as e:
             print(f"Failed to read OD controller values: {e}")
-            raise
+            pass # ignore for now
 
     def set_on_off_magnetic_stirrers(self, magneticStirrer_bioreactor_status: bool, magneticStirrer_lagoon_status: bool):
         """Send command to turn on/off magnetic stirrers based on their status."""
@@ -518,7 +518,7 @@ class EvoFlowDevice:
                     print(f"Sent magnetic stirrer status command: {packet_bytes.hex()}")
         except serial.SerialException as e:
             print(f"Failed to send magnetic stirrer status command: {e}")
-            raise
+            pass # ignore for now
 
     def get_on_off_magnetic_stirrers(self):
         """Read on/off magnetic stirrer status from the EvoFlow device."""
@@ -542,7 +542,7 @@ class EvoFlowDevice:
                     print(f"Received magnetic stirrer status: {magnetic_stirrer_statuses.hex()}")
         except serial.SerialException as e:
             print(f"Failed to read magnetic stirrer status: {e}")
-            raise
+            pass # ignore for now
 
     def set_setpoint_magnetic_stirrers(self, magneticStirrer_bioreactor_sp: float, magneticStirrer_lagoon_sp: float):
         """Send command to set magnetic stirrer setpoints."""
@@ -559,7 +559,7 @@ class EvoFlowDevice:
                     print(f"Sent magnetic stirrer setpoint command: {packet_bytes.hex()}")
         except serial.SerialException as e:
             print(f"Failed to send magnetic stirrer setpoint command: {e}")
-            raise
+            pass # ignore for now
         
     def get_setpoint_magnetic_stirrers(self):
         """Read magnetic stirrer setpoints from the EvoFlow device."""
@@ -583,7 +583,7 @@ class EvoFlowDevice:
                     print(f"Received magnetic stirrer setpoints: {magnetic_stirrer_sps}")
         except serial.SerialException as e:
             print(f"Failed to read magnetic stirrer setpoints: {e}")
-            raise
+            pass # ignore for now
 
     def get_speed_magnetic_stirrers(self):
         """Read magnetic stirrer speeds from the EvoFlow device."""
@@ -607,7 +607,7 @@ class EvoFlowDevice:
                     print(f"Received magnetic stirrer speeds: {magnetic_stirrer_speeds}")
         except serial.SerialException as e:
             print(f"Failed to read magnetic stirrer speeds: {e}")
-            raise
+            pass # ignore for now
     
     def get_fan_duty_cycle_magnetic_stirrers(self):
         """Read magnetic stirrer fan duty cycles from the EvoFlow device."""
@@ -631,7 +631,7 @@ class EvoFlowDevice:
                     print(f"Received magnetic stirrer fan duty cycles: {magnetic_stirrer_fan_duty_cycles}")
         except serial.SerialException as e:
             print(f"Failed to read magnetic stirrer fan duty cycles: {e}")
-            raise
+            pass # ignore for now
 
     def set_on_off_pht_count(self, phtCount_lagoon_status: bool):
         """Send command to turn on/off pH count based on its status."""
@@ -650,7 +650,7 @@ class EvoFlowDevice:
                     print(f"Sent pH count status command: {packet_bytes.hex()}")
         except serial.SerialException as e:
             print(f"Failed to send pH count status command: {e}")
-            raise
+            pass # ignore for now
     
     def get_on_off_pht_count(self):
         """Read on/off pH count status from the EvoFlow device."""
@@ -673,7 +673,7 @@ class EvoFlowDevice:
                     print(f"Received pH count status: {pht_count_statuses.hex()}")
         except serial.SerialException as e:
             print(f"Failed to read pH count status: {e}")
-            raise
+            pass # ignore for now
 
     def get_photon_counts_pht_count(self):
         """Read pH count photon counts from the EvoFlow device."""
@@ -696,7 +696,7 @@ class EvoFlowDevice:
                     print(f"Received pH count photon counts: {pht_count_photon_counts}")
         except serial.SerialException as e:
             print(f"Failed to read pH count photon counts: {e}")
-            raise
+            pass # ignore for now
     
     def get_overlight_pht_count(self):
         """Read pH count overlight status from the EvoFlow device."""
@@ -719,7 +719,7 @@ class EvoFlowDevice:
                     print(f"Received pH count overlight status: {pht_count_overlight_statuses.hex()}")
         except serial.SerialException as e:
             print(f"Failed to read pH count overlight status: {e}")
-            raise
+            pass # ignore for now
     
     def get_telemetry(self):
         """Convenience method to read all statuses from the EvoFlow device."""
@@ -762,6 +762,9 @@ class EvoFlowDevice:
 
     def get_all_telemetry(self):
         """Continuously read telemetry data from the EvoFlow device and emit it."""
+        def read_f32(offset: int) -> float:
+                    return struct.unpack_from('<f', payload, offset)[0]
+        
         try:
             self.protocol_packet.is_write = False
             self.protocol_packet.id1 = Component.TELEMETRY
@@ -785,12 +788,7 @@ class EvoFlowDevice:
                 if len(payload) < expected_payload_length:
                     # ignore the payload
                     return
-                    # raise ValueError(
-                    #     f"Telemetry payload too short: {len(payload)} < {expected_payload_length}"
-                    # )
 
-                def read_f32(offset: int) -> float:
-                    return struct.unpack_from('<f', payload, offset)[0]
                 # [0-3] pump on/off status
                 # [4-19] pump setpoints (4 floats)
                 # [20-35] pump speeds (4 floats)
@@ -850,6 +848,112 @@ class EvoFlowDevice:
                     print(f"Received live feed telemetry: {payload.hex()}")
         except (serial.SerialException, struct.error, ValueError) as e:
             print(f"Failed to read live feed telemetry: {e}")
-            raise
+            pass # ignore for now
+
+    def get_temperature_temp_ctrls_wo_asking(self):
+        """Read temperature controller values from the EvoFlow device."""
+        try:
+            raw_response = self.read_serial()
+            decoded_protocol_packet = parse_packet(raw_response)
+            if decoded_protocol_packet and decoded_protocol_packet.payload:
+                temp_ctrl_values = struct.unpack('<2f', decoded_protocol_packet.payload)
+                self.evoflow_telemetry.tempCtrl_bioreactor_value = temp_ctrl_values[0]
+                self.evoflow_telemetry.tempCtrl_lagoon_value = temp_ctrl_values[1]
+                if verbose:
+                    print(f"Received temperature controller values: {temp_ctrl_values}")
+        except serial.SerialException as e:
+            if verbose:
+                print(f"Failed to read temperature controller values: {e}")
+            pass # ignore for now
+
+    def get_all_telemetry_wo_asking(self):
+        """Continuously read telemetry data from the EvoFlow device and emit it."""
+        def read_f32(offset: int) -> float:
+                    return struct.unpack_from('<f', payload, offset)[0]
+        
+        try:
+            # self.protocol_packet.is_write = False
+            # self.protocol_packet.id1 = Component.TELEMETRY
+            # self.protocol_packet.id2 = CMD.READ_ALL
+            # # payload needs 106 bytes, setup 106 of 0 bytes
+            # dummy_payload_length = 106
+            # self.protocol_packet.payload = bytes([0] * dummy_payload_length)
+            
+            # if self.serial and self.serial.is_open:
+            #     packet_bytes = build_packet(self.protocol_packet)
+            #     self.serial.write(packet_bytes) 
+            #     if verbose:
+            #         print(f"Sent telemetry read command: {packet_bytes.hex()}")
+
+            raw_response = self.read_serial()
+            decoded_protocol_packet = parse_packet(raw_response)
+            if decoded_protocol_packet and decoded_protocol_packet.payload:
+                payload = decoded_protocol_packet.payload
+
+                expected_payload_length = 106
+                if len(payload) < expected_payload_length:
+                    # ignore the payload
+                    return
+
+                # [0-3] pump on/off status
+                # [4-19] pump setpoints (4 floats)
+                # [20-35] pump speeds (4 floats)
+                # [36-37] valve on/off status
+                # [38-39] temp ctrl on/off status
+                # [40-47] temp ctrl setpoints (2 floats)
+                # [48-55] temp values (2 floats)
+                # [56-63] temp heater duty cycles (2 floats)
+                # [64-65] OD ctrl on/off status
+                # [66-73] OD values (2 floats)
+                # [74-75] mag stirrer on/off status
+                # [76-83] mag stirrer setpoints (2 floats)
+                # [84-91] mag stirrer speeds (2 floats)
+                # [92-99] mag stirrer fan duty cycles (2 floats)
+                # [100] photon count on/off status
+                # [101-104] photon count values (1 float)
+                # [105] photon count overlight status
+                self.evoflow_telemetry.pump_1_status = bool(payload[0])
+                self.evoflow_telemetry.pump_2_status = bool(payload[1])
+                self.evoflow_telemetry.pump_3_status = bool(payload[2])
+                self.evoflow_telemetry.pump_4_status = bool(payload[3])
+                self.evoflow_telemetry.pump_1_sp = read_f32(4)
+                self.evoflow_telemetry.pump_2_sp = read_f32(8)
+                self.evoflow_telemetry.pump_3_sp = read_f32(12)
+                self.evoflow_telemetry.pump_4_sp = read_f32(16)
+                self.evoflow_telemetry.pump_1_speed = read_f32(20)
+                self.evoflow_telemetry.pump_2_speed = read_f32(24)
+                self.evoflow_telemetry.pump_3_speed = read_f32(28)
+                self.evoflow_telemetry.pump_4_speed = read_f32(32)
+                self.evoflow_telemetry.valve_bio2lag_status = bool(payload[36])
+                self.evoflow_telemetry.valve_sug2lag_status = bool(payload[37])
+                self.evoflow_telemetry.tempCtrl_bioreactor_status = bool(payload[38])
+                self.evoflow_telemetry.tempCtrl_lagoon_status = bool(payload[39])
+                self.evoflow_telemetry.tempCtrl_bioreactor_sp = read_f32(40)
+                self.evoflow_telemetry.tempCtrl_lagoon_sp = read_f32(44)
+                self.evoflow_telemetry.tempCtrl_bioreactor_value = read_f32(48)
+                self.evoflow_telemetry.tempCtrl_lagoon_value = read_f32(52)
+                self.evoflow_telemetry.tempCtrl_bioreactor_heater_duty_cycle = read_f32(56) * 100.0
+                self.evoflow_telemetry.tempCtrl_lagoon_heater_duty_cycle = read_f32(60) * 100.0
+                self.evoflow_telemetry.od_bioreactor_status = bool(payload[64])
+                self.evoflow_telemetry.od_lagoon_status = bool(payload[65])
+                self.evoflow_telemetry.od_bioreactor_value = read_f32(66)
+                self.evoflow_telemetry.od_lagoon_value = read_f32(70)
+                self.evoflow_telemetry.magneticStirrer_bioreactor_status = bool(payload[74])
+                self.evoflow_telemetry.magneticStirrer_lagoon_status = bool(payload[75])
+                self.evoflow_telemetry.magneticStirrer_bioreactor_sp = read_f32(76)
+                self.evoflow_telemetry.magneticStirrer_lagoon_sp = read_f32(80)
+                self.evoflow_telemetry.magneticStirrer_bioreactor_speed = read_f32(84)
+                self.evoflow_telemetry.magneticStirrer_lagoon_speed = read_f32(88)
+                self.evoflow_telemetry.magneticStirrer_bioreactor_fan_duty_cycle = read_f32(92) * 100.0
+                self.evoflow_telemetry.magneticStirrer_lagoon_fan_duty_cycle = read_f32(96) * 100.0
+                self.evoflow_telemetry.phtCount_lagoon_status = bool(payload[100])
+                self.evoflow_telemetry.phtCount_lagoon_value = read_f32(101)
+                self.evoflow_telemetry.phtCount_lagoon_overlight = bool(payload[105])
+                
+                if verbose:
+                    print(f"Received live feed telemetry: {payload.hex()}")
+        except (serial.SerialException, struct.error, ValueError) as e:
+            print(f"Failed to read live feed telemetry: {e}")
+            pass # ignore for now
     
             

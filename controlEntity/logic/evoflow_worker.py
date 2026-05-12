@@ -18,16 +18,19 @@ class EvoFlowWorker(QObject):
         super().__init__()
         self.evoflow = EvoFlowDevice(port, baudrate, sender_addr, receiver_addr)
         self.sampling_rate_ms = sampling_rate_ms
+        self._running = False
+        self.reading_thread = None
 
     @Slot()
     def start(self):
         """Start the worker thread and begin reading telemetry."""
         try:
+            self._running = True
             self.evoflow.connect()
             # Optionally, you could start a timer here to read telemetry at regular intervals
             # Set up another thread reading telemetry every X ms and emitting the telemetry_updated signal
             self.reading_thread = QThread()
-            self.reading_thread.run = self.get_all_telemetry
+            self.reading_thread.run = self.get_all_telemetry_wo_asking
             self.reading_thread.start()
 
             
@@ -39,6 +42,13 @@ class EvoFlowWorker(QObject):
     def stop(self):
         """Stop the worker thread and clean up resources."""
         try:
+            self._running = False
+            if self.reading_thread and self.reading_thread.isRunning():
+                self.reading_thread.requestInterruption()
+                self.reading_thread.quit()
+                if not self.reading_thread.wait(2000):
+                    self.reading_thread.terminate()
+                    self.reading_thread.wait(1000)
             self.evoflow.disconnect()
         except Exception as e:
             print(f"Failed to disconnect from EvoFlow device: {e}")
@@ -127,7 +137,26 @@ class EvoFlowWorker(QObject):
     @Slot()
     def get_all_telemetry(self):
         """Continuously read telemetry data from the EvoFlow device and emit it."""
-        while True:
+        while self._running:
             self.evoflow.get_all_telemetry()
+            self.telemetry_updated.emit(self.evoflow.evoflow_telemetry)
+            QThread.msleep(self.sampling_rate_ms)
+
+    @Slot()
+    def get_temperature_temp_ctrls_with_asking(self):
+        """Read temperature telemetry from the EvoFlow device and emit it."""
+        while self._running and not QThread.currentThread().isInterruptionRequested():
+            try:
+                self.evoflow.get_temperature_temp_ctrls_wo_asking()
+                self.telemetry_updated.emit(self.evoflow.evoflow_telemetry)
+                QThread.msleep(self.sampling_rate_ms)
+            except Exception as e:
+                print(f"Failed to read temperature telemetry: {e}")
+
+    @Slot()
+    def get_all_telemetry_wo_asking(self):
+        """Continuously read telemetry data from the EvoFlow device and emit it."""
+        while self._running:
+            self.evoflow.get_all_telemetry_wo_asking()
             self.telemetry_updated.emit(self.evoflow.evoflow_telemetry)
             QThread.msleep(self.sampling_rate_ms)

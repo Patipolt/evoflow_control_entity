@@ -598,11 +598,11 @@ class EvoFlowWidget(QWidget):
             self.led_phtCount_lagoon.setText("🟢")
         else:
             self.led_phtCount_lagoon.setText("🔴")
-        self.phtCount_feedback.setText(f"{evoflow_telemetry.phtCount_lagoon_value:.3f}")
+        self.phtCount_feedback.setText(f"{evoflow_telemetry.phtCount_lagoon_value/1000000:.2f} MHz")
         if evoflow_telemetry.phtCount_lagoon_overlight:
             self.led_overlight.setText("🔴")
         else:
-            self.led_overlight.setText("🟢")
+            self.led_overlight.setText("⚪")
 
         # Update valve bio2lag
         if evoflow_telemetry.valve_bio2lag_status:
