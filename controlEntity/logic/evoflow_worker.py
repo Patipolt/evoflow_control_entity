@@ -143,7 +143,7 @@ class EvoFlowWorker(QObject):
             QThread.msleep(self.sampling_rate_ms)
 
     @Slot()
-    def get_temperature_temp_ctrls_with_asking(self):
+    def get_temperature_temp_ctrls_wo_asking(self):
         """Read temperature telemetry from the EvoFlow device and emit it."""
         while self._running and not QThread.currentThread().isInterruptionRequested():
             try:

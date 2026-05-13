@@ -10,8 +10,8 @@ from controlEntity.widgets.evoflowWidget import EvoFlowWidget
 from controlEntity.logic.logic import Logic
 
 
-prog_size_width = 1200
-prog_size_height = 1100
+prog_size_width = 1800
+prog_size_height = 900
 
 class MainUI(QMainWindow):
     """Main UI class for the EvoFlow control entity application."""
@@ -34,7 +34,7 @@ class MainUI(QMainWindow):
         main_layout = QVBoxLayout(central_widget)
         main_layout.setContentsMargins(0, 0, 0, 0)
 
-        self.evoflow_widget = EvoFlowWidget(1200, 720)
+        self.evoflow_widget = EvoFlowWidget(1800, 450)
         self.read_telemetry_btn = QPushButton("Read telemetry")
 
         main_layout.addWidget(self.evoflow_widget)
