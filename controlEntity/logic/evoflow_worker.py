@@ -10,7 +10,7 @@ from PySide6.QtCore import QObject, QThread, Signal, Slot
 from evoflow.device.evoflow import EvoFlowDevice, EvoFlowTelemetry
 
 class EvoFlowWorker(QObject):
-    """Worker class to handle EvoFlow device communication in a separate thread."""
+    """Worker class to handle EvoFlow device communication in a separate thread"""
     
     telemetry_updated = Signal(EvoFlowTelemetry)
     
@@ -23,7 +23,7 @@ class EvoFlowWorker(QObject):
 
     @Slot()
     def start(self):
-        """Start the worker thread and begin reading telemetry."""
+        """Start the worker thread and begin reading telemetry"""
         try:
             self._running = True
             self.evoflow.connect()
@@ -32,15 +32,13 @@ class EvoFlowWorker(QObject):
             self.reading_thread = QThread()
             self.reading_thread.run = self.get_all_telemetry_wo_asking
             self.reading_thread.start()
-
-            
         except Exception as e:
-            print(f"Failed to connect to EvoFlow device: {e}")
+            # print(f"Failed to connect to EvoFlow device: {e}")
             return
     
     @Slot()
     def stop(self):
-        """Stop the worker thread and clean up resources."""
+        """Stop the worker thread and clean up resources"""
         try:
             self._running = False
             if self.reading_thread and self.reading_thread.isRunning():
@@ -55,7 +53,7 @@ class EvoFlowWorker(QObject):
 
     @Slot(bool, bool, bool, bool)
     def set_on_off_pumps(self, pump_1_status: bool, pump_2_status: bool, pump_3_status: bool, pump_4_status: bool):
-        """Set the on/off status of the pumps."""
+        """Set the on/off status of the pumps"""
         try:
             self.evoflow.set_on_off_pumps(pump_1_status, pump_2_status, pump_3_status, pump_4_status)
         except Exception as e:
@@ -63,7 +61,7 @@ class EvoFlowWorker(QObject):
 
     @Slot(float, float, float, float)
     def set_setpoint_pumps(self, pump_1_setpoint: float, pump_2_setpoint: float, pump_3_setpoint: float, pump_4_setpoint: float):
-        """Set the speed setpoints for the pumps."""
+        """Set the speed setpoints for the pumps"""
         try:
             self.evoflow.set_setpoint_pumps(pump_1_setpoint, pump_2_setpoint, pump_3_setpoint, pump_4_setpoint)
         except Exception as e:
@@ -71,7 +69,7 @@ class EvoFlowWorker(QObject):
 
     @Slot(bool, bool)
     def set_on_off_valves(self, valve_bio2lag_status: bool, valve_sug2lag_status: bool):
-        """Set the on/off status of the valves."""
+        """Set the on/off status of the valves"""
         try:
             self.evoflow.set_on_off_valves(valve_bio2lag_status, valve_sug2lag_status)
         except Exception as e:
@@ -79,7 +77,7 @@ class EvoFlowWorker(QObject):
 
     @Slot(bool, bool)
     def set_on_off_temp_ctrls(self, tempCtrl_bioreactor_status: bool, tempCtrl_lagoon_status: bool):
-        """Set the on/off status of the temperature controllers."""
+        """Set the on/off status of the temperature controllers"""
         try:
             self.evoflow.set_on_off_temp_ctrls(tempCtrl_bioreactor_status, tempCtrl_lagoon_status)
         except Exception as e:
@@ -87,7 +85,7 @@ class EvoFlowWorker(QObject):
         
     @Slot(float, float)
     def set_setpoint_temp_ctrls(self, tempCtrl_bioreactor_sp: float, tempCtrl_lagoon_sp: float):
-        """Set the temperature setpoints for the temperature controllers."""
+        """Set the temperature setpoints for the temperature controllers"""
         try:
             self.evoflow.set_setpoint_temp_ctrls(tempCtrl_bioreactor_sp, tempCtrl_lagoon_sp)
         except Exception as e:
@@ -95,7 +93,7 @@ class EvoFlowWorker(QObject):
 
     @Slot(bool, bool)
     def set_on_off_od_ctrls(self, od_bioreactor_status: bool, od_lagoon_status: bool):
-        """Set the on/off status of the OD controllers."""
+        """Set the on/off status of the OD controllers"""
         try:
             self.evoflow.set_on_off_od_ctrls(od_bioreactor_status, od_lagoon_status)
         except Exception as e:
@@ -103,7 +101,7 @@ class EvoFlowWorker(QObject):
 
     @Slot(bool, bool)
     def set_on_off_magnetic_stirrers(self, magneticStirrer_bioreactor_status: bool, magneticStirrer_lagoon_status: bool):
-        """Set the on/off status of the magnetic stirrers."""
+        """Set the on/off status of the magnetic stirrers"""
         try:
             self.evoflow.set_on_off_magnetic_stirrers(magneticStirrer_bioreactor_status, magneticStirrer_lagoon_status)
         except Exception as e:
@@ -111,7 +109,7 @@ class EvoFlowWorker(QObject):
 
     @Slot(float, float)
     def set_setpoint_magnetic_stirrers(self, magneticStirrer_bioreactor_sp: float, magneticStirrer_lagoon_sp: float):
-        """Set the speed setpoints for the magnetic stirrers."""
+        """Set the speed setpoints for the magnetic stirrers"""
         try:
             self.evoflow.set_setpoint_magnetic_stirrers(magneticStirrer_bioreactor_sp, magneticStirrer_lagoon_sp)
         except Exception as e:
@@ -119,7 +117,7 @@ class EvoFlowWorker(QObject):
 
     @Slot(bool)
     def set_on_off_pht_count(self, phtCount_lagoon_status: bool):
-        """Set the on/off status of the photon counter."""
+        """Set the on/off status of the photon counter"""
         try:
             self.evoflow.set_on_off_pht_count(phtCount_lagoon_status)
         except Exception as e:
@@ -127,7 +125,7 @@ class EvoFlowWorker(QObject):
 
     @Slot()
     def get_telemetry(self):
-        """Read telemetry data from the EvoFlow device and emit it."""
+        """Read telemetry data from the EvoFlow device and emit it"""
         try:
             self.evoflow.get_telemetry()
             self.telemetry_updated.emit(self.evoflow.evoflow_telemetry)
@@ -136,7 +134,7 @@ class EvoFlowWorker(QObject):
 
     @Slot()
     def get_all_telemetry(self):
-        """Continuously read telemetry data from the EvoFlow device and emit it."""
+        """Continuously read telemetry data from the EvoFlow device and emit it"""
         while self._running:
             self.evoflow.get_all_telemetry()
             self.telemetry_updated.emit(self.evoflow.evoflow_telemetry)
@@ -144,7 +142,7 @@ class EvoFlowWorker(QObject):
 
     @Slot()
     def get_temperature_temp_ctrls_wo_asking(self):
-        """Read temperature telemetry from the EvoFlow device and emit it."""
+        """Read temperature telemetry from the EvoFlow device and emit it"""
         while self._running and not QThread.currentThread().isInterruptionRequested():
             try:
                 self.evoflow.get_temperature_temp_ctrls_wo_asking()
@@ -155,7 +153,7 @@ class EvoFlowWorker(QObject):
 
     @Slot()
     def get_all_telemetry_wo_asking(self):
-        """Continuously read telemetry data from the EvoFlow device and emit it."""
+        """Continuously read telemetry data from the EvoFlow device and emit it"""
         while self._running:
             self.evoflow.get_all_telemetry_wo_asking()
             self.telemetry_updated.emit(self.evoflow.evoflow_telemetry)

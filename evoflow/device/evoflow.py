@@ -1,5 +1,5 @@
 """
-Low-level API for EvoFlow devices.
+Low-level API for EvoFlow device.
 
 Project: EvoFlow Innosuisse
 Author: Patipol Thanuphol, Scientific Researcher at ZHAW — thau @zhaw.ch | patipol.thanu@gmail.com
@@ -74,7 +74,7 @@ class EvoFlowTelemetry:
 
 
 class EvoFlowDevice:
-    """Class representing the EvoFlow device, handling serial communication and telemetry."""
+    """Class representing the EvoFlow device, handling serial communication and telemetry"""
     def __init__(
         self,
         port: str,
@@ -99,7 +99,7 @@ class EvoFlowDevice:
         )
 
     def connect(self):
-        """Establish serial connection to the EvoFlow device."""
+        """Establish serial connection to the EvoFlow device"""
         try:
             self.serial = serial.Serial(self.port, self.baudrate, timeout=0.1)
             print(f"Connected to EvoFlow device on {self.port} at {self.baudrate} baud.")
@@ -108,13 +108,13 @@ class EvoFlowDevice:
             raise
 
     def disconnect(self):
-        """Close the serial connection."""
+        """Close the serial connection"""
         if self.serial and self.serial.is_open:
             self.serial.close()
             print("Disconnected from EvoFlow device.")
 
     def read_serial(self) -> bytes:
-        """Read data from serial port until delimiter (0x00) is found, return the raw packet without the delimiter."""
+        """Read data from serial port until delimiter (0x00) is found, return the raw packet without the delimiter"""
         if not self.serial or not self.serial.is_open:
             raise serial.SerialException("Serial port is not open")
 
@@ -137,7 +137,7 @@ class EvoFlowDevice:
             self._rx_buffer.extend(chunk)
 
     def set_on_off_pumps(self, pump_1_status: bool, pump_2_status: bool, pump_3_status: bool, pump_4_status: bool):
-        """Send command to start/stop pumps based on their status."""
+        """Send command to start/stop pumps based on their status"""
         try:
             self.protocol_packet.is_write = True
             self.protocol_packet.id1 = Component.PUMP
@@ -159,7 +159,7 @@ class EvoFlowDevice:
             pass # ignore for now
 
     def get_on_off_pumps(self):
-        """Read start/stop pump status from the EvoFlow device."""
+        """Read start/stop pump status from the EvoFlow device"""
         try:
             self.protocol_packet.is_write = False
             self.protocol_packet.id1 = Component.PUMP
@@ -187,7 +187,7 @@ class EvoFlowDevice:
             pass # ignore for now
     
     def set_setpoint_pumps(self, pump_1_sp: float, pump_2_sp: float, pump_3_sp: float, pump_4_sp: float):
-        """Send command to set pump speed based on their setpoints."""
+        """Send command to set pump speed based on their setpoints"""
         try:
             self.protocol_packet.is_write = True
             self.protocol_packet.id1 = Component.PUMP
@@ -204,7 +204,7 @@ class EvoFlowDevice:
             pass # ignore for now
 
     def get_setpoint_pumps(self):
-        """Read pump speed setpoints from the EvoFlow device."""
+        """Read pump speed setpoints from the EvoFlow device"""
         try:
             self.protocol_packet.is_write = False
             self.protocol_packet.id1 = Component.PUMP
@@ -230,7 +230,7 @@ class EvoFlowDevice:
             pass # ignore for now
 
     def get_speed_pumps(self):
-        """Read pump speeds from the EvoFlow device."""
+        """Read pump speeds from the EvoFlow device"""
         try:
             self.protocol_packet.is_write = False
             self.protocol_packet.id1 = Component.PUMP
@@ -256,7 +256,7 @@ class EvoFlowDevice:
             pass # ignore for now
 
     def set_on_off_valves(self, valve_bio2lag_status: bool, valve_sug2lag_status: bool):
-        """Send command to open/close valves based on their status."""
+        """Send command to open/close valves based on their status"""
         try:
             self.protocol_packet.is_write = True
             self.protocol_packet.id1 = Component.VALVE
@@ -276,7 +276,7 @@ class EvoFlowDevice:
             pass # ignore for now
 
     def get_on_off_valves(self):
-        """Read open/close valve status from the EvoFlow device."""
+        """Read open/close valve status from the EvoFlow device"""
         try:
             self.protocol_packet.is_write = False
             self.protocol_packet.id1 = Component.VALVE
@@ -300,7 +300,7 @@ class EvoFlowDevice:
             pass # ignore for now
 
     def set_on_off_temp_ctrls(self, tempCtrl_bioreactor_status: bool, tempCtrl_lagoon_status: bool):
-        """Send command to turn on/off temperature controllers based on their status."""
+        """Send command to turn on/off temperature controllers based on their status"""
         try:
             self.protocol_packet.is_write = True
             self.protocol_packet.id1 = Component.TEMP_MODULE
@@ -320,7 +320,7 @@ class EvoFlowDevice:
             pass # ignore for now
     
     def get_on_off_temp_ctrls(self):
-        """Read on/off temperature controller status from the EvoFlow device."""
+        """Read on/off temperature controller status from the EvoFlow device"""
         try:
             self.protocol_packet.is_write = False
             self.protocol_packet.id1 = Component.TEMP_MODULE
@@ -344,7 +344,7 @@ class EvoFlowDevice:
             pass # ignore for now
     
     def set_setpoint_temp_ctrls(self, tempCtrl_bioreactor_sp: float, tempCtrl_lagoon_sp: float):
-        """Send command to set temperature controller setpoints."""
+        """Send command to set temperature controller setpoints"""
         try:
             self.protocol_packet.is_write = True
             self.protocol_packet.id1 = Component.TEMP_MODULE
@@ -361,7 +361,7 @@ class EvoFlowDevice:
             pass # ignore for now
 
     def get_setpoint_temp_ctrls(self):
-        """Read temperature controller setpoints from the EvoFlow device."""
+        """Read temperature controller setpoints from the EvoFlow device"""
         try:
             self.protocol_packet.is_write = False
             self.protocol_packet.id1 = Component.TEMP_MODULE
@@ -385,7 +385,7 @@ class EvoFlowDevice:
             pass # ignore for now
 
     def get_temperature_temp_ctrls(self):
-        """Read temperature controller values from the EvoFlow device."""
+        """Read temperature controller values from the EvoFlow device"""
         try:
             self.protocol_packet.is_write = False
             self.protocol_packet.id1 = Component.TEMP_MODULE
@@ -409,7 +409,7 @@ class EvoFlowDevice:
             pass # ignore for now
 
     def get_heater_duty_cycle_temp_ctrls(self):
-        """Read temperature controller heater duty cycles from the EvoFlow device."""
+        """Read temperature controller heater duty cycles from the EvoFlow device"""
         try:
             self.protocol_packet.is_write = False
             self.protocol_packet.id1 = Component.TEMP_MODULE
@@ -433,7 +433,7 @@ class EvoFlowDevice:
             pass # ignore for now
 
     def set_on_off_od_ctrls(self, od_bioreactor_status: bool, od_lagoon_status: bool):
-        """Send command to turn on/off OD controllers based on their status."""
+        """Send command to turn on/off OD controllers based on their status"""
         try:
             self.protocol_packet.is_write = True
             self.protocol_packet.id1 = Component.OD_MODULE
@@ -453,7 +453,7 @@ class EvoFlowDevice:
             pass # ignore for now
 
     def get_on_off_od_ctrls(self):
-        """Read on/off OD controller status from the EvoFlow device."""
+        """Read on/off OD controller status from the EvoFlow device"""
         try:
             self.protocol_packet.is_write = False
             self.protocol_packet.id1 = Component.OD_MODULE
@@ -477,7 +477,7 @@ class EvoFlowDevice:
             pass # ignore for now
     
     def get_od_value_od_ctrls(self):
-        """Read OD values from the EvoFlow device."""
+        """Read OD values from the EvoFlow device"""
         try:
             self.protocol_packet.is_write = False
             self.protocol_packet.id1 = Component.OD_MODULE
@@ -501,7 +501,7 @@ class EvoFlowDevice:
             pass # ignore for now
 
     def set_on_off_magnetic_stirrers(self, magneticStirrer_bioreactor_status: bool, magneticStirrer_lagoon_status: bool):
-        """Send command to turn on/off magnetic stirrers based on their status."""
+        """Send command to turn on/off magnetic stirrers based on their status"""
         try:
             self.protocol_packet.is_write = True
             self.protocol_packet.id1 = Component.MAG_MODULE
@@ -521,7 +521,7 @@ class EvoFlowDevice:
             pass # ignore for now
 
     def get_on_off_magnetic_stirrers(self):
-        """Read on/off magnetic stirrer status from the EvoFlow device."""
+        """Read on/off magnetic stirrer status from the EvoFlow device"""
         try:
             self.protocol_packet.is_write = False
             self.protocol_packet.id1 = Component.MAG_MODULE
@@ -545,7 +545,7 @@ class EvoFlowDevice:
             pass # ignore for now
 
     def set_setpoint_magnetic_stirrers(self, magneticStirrer_bioreactor_sp: float, magneticStirrer_lagoon_sp: float):
-        """Send command to set magnetic stirrer setpoints."""
+        """Send command to set magnetic stirrer setpoints"""
         try:
             self.protocol_packet.is_write = True
             self.protocol_packet.id1 = Component.MAG_MODULE
@@ -562,7 +562,7 @@ class EvoFlowDevice:
             pass # ignore for now
         
     def get_setpoint_magnetic_stirrers(self):
-        """Read magnetic stirrer setpoints from the EvoFlow device."""
+        """Read magnetic stirrer setpoints from the EvoFlow device"""
         try:
             self.protocol_packet.is_write = False
             self.protocol_packet.id1 = Component.MAG_MODULE
@@ -586,7 +586,7 @@ class EvoFlowDevice:
             pass # ignore for now
 
     def get_speed_magnetic_stirrers(self):
-        """Read magnetic stirrer speeds from the EvoFlow device."""
+        """Read magnetic stirrer speeds from the EvoFlow device"""
         try:
             self.protocol_packet.is_write = False
             self.protocol_packet.id1 = Component.MAG_MODULE
@@ -610,7 +610,7 @@ class EvoFlowDevice:
             pass # ignore for now
     
     def get_fan_duty_cycle_magnetic_stirrers(self):
-        """Read magnetic stirrer fan duty cycles from the EvoFlow device."""
+        """Read magnetic stirrer fan duty cycles from the EvoFlow device"""
         try:
             self.protocol_packet.is_write = False
             self.protocol_packet.id1 = Component.MAG_MODULE
@@ -634,7 +634,7 @@ class EvoFlowDevice:
             pass # ignore for now
 
     def set_on_off_pht_count(self, phtCount_lagoon_status: bool):
-        """Send command to turn on/off pH count based on its status."""
+        """Send command to turn on/off pH count based on its status"""
         try:
             self.protocol_packet.is_write = True
             self.protocol_packet.id1 = Component.PHOTON_COUNTER
@@ -653,7 +653,7 @@ class EvoFlowDevice:
             pass # ignore for now
     
     def get_on_off_pht_count(self):
-        """Read on/off pH count status from the EvoFlow device."""
+        """Read on/off pH count status from the EvoFlow device"""
         try:
             self.protocol_packet.is_write = False
             self.protocol_packet.id1 = Component.PHOTON_COUNTER
@@ -676,7 +676,7 @@ class EvoFlowDevice:
             pass # ignore for now
 
     def get_photon_counts_pht_count(self):
-        """Read pH count photon counts from the EvoFlow device."""
+        """Read pH count photon counts from the EvoFlow device"""
         try:
             self.protocol_packet.is_write = False
             self.protocol_packet.id1 = Component.PHOTON_COUNTER
@@ -699,7 +699,7 @@ class EvoFlowDevice:
             pass # ignore for now
     
     def get_overlight_pht_count(self):
-        """Read pH count overlight status from the EvoFlow device."""
+        """Read pH count overlight status from the EvoFlow device"""
         try:
             self.protocol_packet.is_write = False
             self.protocol_packet.id1 = Component.PHOTON_COUNTER
@@ -722,7 +722,7 @@ class EvoFlowDevice:
             pass # ignore for now
     
     def get_telemetry(self):
-        """Convenience method to read all statuses from the EvoFlow device."""
+        """Convenience method to read all statuses from the EvoFlow device"""
         calls = [
             ("pump_on_off", self.get_on_off_pumps),
             ("pump_setpoint", self.get_setpoint_pumps),
@@ -761,7 +761,7 @@ class EvoFlowDevice:
             print(f"  {name:>16}: {dt_ms:.2f} ms")
 
     def get_all_telemetry(self):
-        """Continuously read telemetry data from the EvoFlow device and emit it."""
+        """Continuously read telemetry data from the EvoFlow device and emit it"""
         def read_f32(offset: int) -> float:
                     return struct.unpack_from('<f', payload, offset)[0]
         
@@ -851,7 +851,7 @@ class EvoFlowDevice:
             pass # ignore for now
 
     def get_temperature_temp_ctrls_wo_asking(self):
-        """Read temperature controller values from the EvoFlow device."""
+        """Read temperature controller values from the EvoFlow device"""
         try:
             raw_response = self.read_serial()
             decoded_protocol_packet = parse_packet(raw_response)
@@ -867,7 +867,7 @@ class EvoFlowDevice:
             pass # ignore for now
 
     def get_all_telemetry_wo_asking(self):
-        """Continuously read telemetry data from the EvoFlow device and emit it."""
+        """Continuously read telemetry data from the EvoFlow device and emit it"""
         def read_f32(offset: int) -> float:
                     return struct.unpack_from('<f', payload, offset)[0]
         

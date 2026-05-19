@@ -19,13 +19,13 @@ from PySide6.QtCore import QThread, Qt, QFile, QTimer, QDate, QTime, QIODeviceBa
 from PySide6.QtGui import QKeyEvent, QTextCharFormat, QStandardItemModel, QStandardItem, QWheelEvent, QCloseEvent, QAction, QPixmap
 
 from controlEntity.utils import resource_path
-from controlEntity.widgets.evoflowWidget import EvoFlowTelemetry
-from controlEntity.logic.evoflow_worker import EvoFlowWorker
+from controlEntity.logic.evoflow_worker import EvoFlowWorker, EvoFlowTelemetry
+from controlEntity.logic.sample_extraction_worker import SampleExtractionWorker, SampleExtractionTelemetry
 from evoflow.protocol import ProtocolPacket, Component, CMD, build_packet, cobs_decode, parse_packet
 
 
 class Logic(QObject):
-    """Coordinate device workers, wire Qt signals, and forward results to the UI."""
+    """Coordinate device workers, wire Qt signals, and forward results to the UI"""
     
     # ===============================
     # EvoFlow Signals
@@ -56,19 +56,24 @@ class Logic(QObject):
         self.evoflow_thread.started.connect(self.evoflow_worker.start)
         self.evoflow_thread.start()
 
-        # self.timer1 = QTimer()
-        # self.timer1.timeout.connect(self.evoflow_worker.get_telemetry)
-        # self.timer1.start(500)
-
-
 
         # ===============================
         # Sample Extraction Worker Setup
         # ===============================
+        self.sample_extraction_thread = QThread()
+        self.sample_extraction_worker = SampleExtractionWorker(port= config.get("SampleExtraction", "port"),
+                                                              baudrate= config.getint("SampleExtraction", "baudrate"),
+                                                              sender_addr= config.getint("HMI", "address"),
+                                                              receiver_addr= config.getint("SampleExtraction", "address"),
+                                                              sampling_rate_ms= sampling_rate_ms)
+        self.sample_extraction_worker.moveToThread(self.sample_extraction_thread)
+        self.sample_extraction_thread.started.connect(self.sample_extraction_worker.start)
+        self.sample_extraction_thread.start()
+
 
 
     def simulate_protocol_test(self):
-        """Simulate encoding and decoding a protocol packet for testing."""
+        """Simulate encoding and decoding a protocol packet for testing"""
         # Simulate encoding a command to set pump speed to 3.56, 0.0, 0.0, 0.0 rpm (for example)
         sender_addr = 0  # HMI
         receiver_addr = 100  # EvoFlow Nucleo
@@ -95,7 +100,7 @@ class Logic(QObject):
         print(f"Simulated decoded packet bytes: {decoded_packet}")
 
     def read_settings_file(self):
-        """Load automation step defaults from config/settings.ini."""
+        """Load automation step defaults from config/settings.ini"""
         # config_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'config', 'settings.ini')      # for development
         config_path = resource_path("config/settings.ini")       # for bundling with PyInstaller
         config = configparser.ConfigParser()
@@ -103,7 +108,7 @@ class Logic(QObject):
         return config
 
     def shutdown(self):
-        """Stop worker threads before Qt destroys objects."""
+        """Stop worker threads before Qt destroys objects"""
         try:
             # Execute stop() in the worker thread so it can stop its own child thread safely.
             QMetaObject.invokeMethod(self.evoflow_worker, "stop", Qt.BlockingQueuedConnection)
@@ -116,5 +121,10 @@ class Logic(QObject):
                 if not self.evoflow_thread.wait(2000):
                     self.evoflow_thread.terminate()
                     self.evoflow_thread.wait(1000)
+            if self.sample_extraction_thread.isRunning():
+                self.sample_extraction_thread.quit()
+                if not self.sample_extraction_thread.wait(2000):
+                    self.sample_extraction_thread.terminate()
+                    self.sample_extraction_thread.wait(1000)
         except Exception as e:
             print(f"Failed to stop EvoFlow thread cleanly: {e}")

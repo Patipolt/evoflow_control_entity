@@ -6,6 +6,7 @@ from PySide6.QtUiTools import QUiLoader
 from PySide6.QtCore import Qt, QFile, QTimer, QDate, QTime, QIODeviceBase, QEvent
 from PySide6.QtGui import QKeyEvent, QTextCharFormat, QStandardItemModel, QStandardItem, QWheelEvent, QCloseEvent, QAction, QPixmap
 from controlEntity.widgets.evoflowWidget import EvoFlowWidget
+from controlEntity.widgets.sampleExtractionWidget import SampleExtractionWidget
 
 from controlEntity.logic.logic import Logic
 
@@ -14,7 +15,7 @@ prog_size_width = 1800
 prog_size_height = 900
 
 class MainUI(QMainWindow):
-    """Main UI class for the EvoFlow control entity application."""
+    """Main UI class for the EvoFlow control entity application"""
     
     def __init__(self):
         super().__init__()
@@ -29,12 +30,13 @@ class MainUI(QMainWindow):
 
 
     def setup_ui(self):
-        """Set up the UI components."""
+        """Set up the UI components"""
         central_widget = QWidget(self)
         main_layout = QVBoxLayout(central_widget)
         main_layout.setContentsMargins(0, 0, 0, 0)
 
         self.evoflow_widget = EvoFlowWidget(1800, 450)
+        self.sample_extraction_widget = SampleExtractionWidget(560, 195)
         self.read_telemetry_btn = QPushButton("Read telemetry")
 
         main_layout.addWidget(self.evoflow_widget)
@@ -42,10 +44,21 @@ class MainUI(QMainWindow):
         main_layout.addStretch()
         self.setCentralWidget(central_widget)
 
+        # Overlay the sample extraction widget on top of the EvoFlow widget.
+        self.sample_extraction_widget.setParent(self.evoflow_widget)
+        self.sample_extraction_widget.move(1218, 75)
+        self.sample_extraction_widget.raise_()
+        self.sample_extraction_widget.show()
+
     def connect_signals(self):
-        """Connect signals to their respective slots."""
+        """Connect signals to their respective slots"""
         # Evoflow signals
+        # =====================================
+        
+        # Telemetry
         self.logic.evoflow_worker.telemetry_updated.connect(self.evoflow_widget.update_telemetry)
+
+        # Switches
         self.evoflow_widget.pump_on_off_requested.connect(self.logic.evoflow_worker.set_on_off_pumps)
         self.evoflow_widget.magneticStirrer_on_off_requested.connect(self.logic.evoflow_worker.set_on_off_magnetic_stirrers)
         self.evoflow_widget.od_on_off_requested.connect(self.logic.evoflow_worker.set_on_off_od_ctrls)
@@ -53,9 +66,13 @@ class MainUI(QMainWindow):
         self.evoflow_widget.valve_on_off_requested.connect(self.logic.evoflow_worker.set_on_off_valves)
         self.evoflow_widget.phtCount_on_off_requested.connect(self.logic.evoflow_worker.set_on_off_pht_count)
 
+        # Buttons
+
+
+        # Testing
         self.read_telemetry_btn.clicked.connect(self.logic.evoflow_worker.get_all_telemetry)
 
     def closeEvent(self, event: QCloseEvent):
-        """Stop background threads before the main window closes."""
+        """Stop background threads before the main window closes"""
         self.logic.shutdown()
         super().closeEvent(event)

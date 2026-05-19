@@ -80,6 +80,7 @@ class CMD(IntEnum):
 	OVERLIGHT_DETECTION = 2
 	POSITION = 0
 	START = 1
+	DONE_FLAG = 2
 	READ_ALL = 0
 
 

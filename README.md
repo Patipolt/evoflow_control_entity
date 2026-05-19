@@ -212,7 +212,7 @@ class EvoFlowTab(QWidget):
     
     @Slot(object)
     def on_telemetry(self, telem):
-        """Update display with real-time telemetry."""
+        """Update display with real-time telemetry"""
         self.temp_display.setText(f"Actual: {telem.temp_filt_m1:.2f} °C")
     
     @Slot(str, object)
