@@ -107,8 +107,8 @@ class SampleExtractionWidget(QWidget):
     # Signals required for widget
     # ================================
 
-    # 
-
+    # Outgoing signals to request actions in the worker
+    start_sample_extraction_requested = Signal(tuple)
 
     def __init__(self, width: int=560, height: int=195):
         """"Initialize the SampleExtractionWidget"""
@@ -125,7 +125,7 @@ class SampleExtractionWidget(QWidget):
         self.setFixedSize(self._width, self._height)
 
         self.selected_label = QLabel("Selected Position:", self)
-        self.selected_label.setGeometry(12, 3, 200, 20)
+        self.selected_label.setGeometry(12, 3, 300, 20)
         self.selected_label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         self.selected_label.setStyleSheet("color: lightblue; font-weight: bold;")
 
@@ -172,10 +172,8 @@ class SampleExtractionWidget(QWidget):
         self.selected_label.setText(f"Selected Position: Row {position[0]+1}, Col {position[1]+1}")
     
     def _on_start_clicked(self):
-        print(f"Position: {self.widget_selected_position} selected for sample extraction.")
+        self.start_sample_extraction_requested.emit(self.widget_selected_position)
 
-
-    
     def _on_change_bottle_clicked(self):
         """Handle Change Bottle button click"""
         self.sample_extraction_rack.clear_selection()

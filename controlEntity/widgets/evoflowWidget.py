@@ -59,7 +59,7 @@ class EvoFlowWidget(QWidget):
         font_component = """font-weight: bold; color: Orange;"""
         font_description = """font-weight: bold; color: LightGreen;"""
         font_value = """font-weight: bold; font-size: 18px; color: #575757;"""
-        font_value_2 = """font-weight: bold; font-size: 16px; color: #0070a3;"""
+        font_value_2 = """font-weight: bold; font-size: 18px; color: #0070a3;"""
         font_small_value = """color: White;"""
 
         info_pump_1 = QLabel("Pump 1", self)
@@ -303,9 +303,38 @@ class EvoFlowWidget(QWidget):
 
 
         # Combined button design
+        # groupbox_style = """
+        #     QGroupBox {
+        #         font-weight: bold;
+        #         font-size: 14px;
+        #         border: 2px solid #87CEEB;
+        #         border-radius: 5px;
+        #         margin-top: 10px;
+        #         background-color: rgba(135, 206, 235, 50);
+        #     }
+        #     QGroupBox::title {
+        #         subcontrol-origin: margin;
+        #         subcontrol-position: top center;
+        #         padding: 0 3px;
+        #     }
+        # """
+        groupbox_style = """
+            QGroupBox {
+                font-weight: bold;
+                font-size: 14px;
+                color: #ffffff;
+                border: 2px solid #ffffff;
+                border-radius: 10px;
+                margin-top: 10px;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                subcontrol-position: top center;
+                padding: 0px 3px;
+            }
+        """
         evoflow_control_groupbox = QGroupBox("EvoFlow Control", self)
-        evoflow_control_groupbox.setStyleSheet("""QGroupBox {
-                                                font-weight: bold; }""")
+        evoflow_control_groupbox.setStyleSheet(groupbox_style)
         evoflow_control_groupbox.setGeometry(1250, 290, 500, 150)
         evoflow_control_V_layout = QVBoxLayout(evoflow_control_groupbox)
         evoflow_control_H1_layout = QHBoxLayout()
@@ -459,11 +488,11 @@ class EvoFlowWidget(QWidget):
         self.tempCtrl_lagoon_feedback_sp_htr.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         self.tempCtrl_lagoon_feedback_sp_htr.setStyleSheet(font_small_value)
 
-        self.od_bioreactor_feedback = QLabel("0.00 PFU/ml", self)
+        self.od_bioreactor_feedback = QLabel("0.00", self)
         self.od_bioreactor_feedback.setGeometry(237, 228, 100, 25)
         self.od_bioreactor_feedback.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
         self.od_bioreactor_feedback.setStyleSheet(font_value_2)
-        self.od_lagoon_feedback = QLabel("0.00 PFU/ml", self)
+        self.od_lagoon_feedback = QLabel("0.00", self)
         self.od_lagoon_feedback.setGeometry(764, 228, 100, 25)
         self.od_lagoon_feedback.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
         self.od_lagoon_feedback.setStyleSheet(font_value_2)
@@ -640,13 +669,13 @@ class EvoFlowWidget(QWidget):
             self.led_od_bioreactor.setText("🟢")
         else:
             self.led_od_bioreactor.setText("🔴")
-        self.od_bioreactor_feedback.setText(f"{evoflow_telemetry.od_bioreactor_value:.2f} PFU/ml")
+        self.od_bioreactor_feedback.setText(f"{evoflow_telemetry.od_bioreactor_value:.2f}")
         # Update OD lagoon
         if evoflow_telemetry.od_lagoon_status:
             self.led_od_lagoon.setText("🟢")
         else:
             self.led_od_lagoon.setText("🔴")
-        self.od_lagoon_feedback.setText(f"{evoflow_telemetry.od_lagoon_value:.2f} PFU/ml")
+        self.od_lagoon_feedback.setText(f"{evoflow_telemetry.od_lagoon_value:.2f}")
 
         # Update photon counter lagoon
         if evoflow_telemetry.phtCount_lagoon_status:

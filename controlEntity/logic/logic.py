@@ -49,6 +49,7 @@ class Logic(QObject):
         self.evoflow_thread = QThread()
         self.evoflow_worker = EvoFlowWorker(port= config.get("Evoflow", "port"),
                                             baudrate= config.getint("Evoflow", "baudrate"),
+                                            timeout= config.getfloat("Evoflow", "serial_timeout"),
                                             sender_addr= config.getint("HMI", "address"),
                                             receiver_addr= config.getint("Evoflow", "address"),
                                             sampling_rate_ms= sampling_rate_ms)

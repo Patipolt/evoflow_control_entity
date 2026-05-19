@@ -14,9 +14,9 @@ class SampleExtractionWorker(QObject):
     
     telemetry_updated = Signal(SampleExtractionTelemetry)
     
-    def __init__(self, port: str, baudrate: int = 115200, sender_addr: int = 0x01, receiver_addr: int = 0xC9, sampling_rate_ms: int = 200):
+    def __init__(self, port: str, baudrate: int = 115200, timeout: float = 0.01, sender_addr: int = 0x01, receiver_addr: int = 0xC9, sampling_rate_ms: int = 200):
         super().__init__()
-        self.sample_extraction = SampleExtractionDevice(port, baudrate, sender_addr, receiver_addr)
+        self.sample_extraction = SampleExtractionDevice(port, baudrate, timeout, sender_addr, receiver_addr)
         self.sampling_rate_ms = sampling_rate_ms
         self._running = False
         self.reading_thread = None
@@ -46,7 +46,6 @@ class SampleExtractionWorker(QObject):
         except Exception as e:
             print(f"Failed to disconnect from Sample Extraction device: {e}")
 
-    @Slot(int, int)
     def set_position(self, row: int, col: int):
         """Set the position of the sample extraction device"""
         try:
@@ -54,12 +53,12 @@ class SampleExtractionWorker(QObject):
         except Exception as e:
             print(f"Failed to set position on Sample Extraction device: {e}")
 
-    @Slot(bool)
-    def start_sample_extraction(self, start: bool):
+    @Slot(tuple)
+    def start_sample_extraction(self, position: tuple):
         """Start the sample extraction process"""
         try:
-            if start:
-                self.sample_extraction.start_sample_extraction()
+            self.set_position(position[0], position[1])
+            self.sample_extraction.start_sample_extraction()
         except Exception as e:
             print(f"Failed to start sample extraction on Sample Extraction device: {e}")
 

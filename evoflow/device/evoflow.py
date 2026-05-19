@@ -79,11 +79,13 @@ class EvoFlowDevice:
         self,
         port: str,
         baudrate: int = 2000000,
+        timeout: float = 0.01,
         sender_addr: int = ADDR_GUI,
         receiver_addr: int = ADDR_EVOFLOW_NUCLEO,
     ):
         self.port = port
         self.baudrate = baudrate
+        self.timeout = timeout
         self.serial = None
         self._rx_buffer = bytearray()
         self.evoflow_telemetry = EvoFlowTelemetry()
@@ -101,7 +103,7 @@ class EvoFlowDevice:
     def connect(self):
         """Establish serial connection to the EvoFlow device"""
         try:
-            self.serial = serial.Serial(self.port, self.baudrate, timeout=0.1)
+            self.serial = serial.Serial(self.port, self.baudrate, timeout=self.timeout)
             print(f"Connected to EvoFlow device on {self.port} at {self.baudrate} baud.")
         except serial.SerialException as e:
             print(f"Failed to connect to EvoFlow device: {e}")
@@ -848,22 +850,6 @@ class EvoFlowDevice:
                     print(f"Received live feed telemetry: {payload.hex()}")
         except (serial.SerialException, struct.error, ValueError) as e:
             print(f"Failed to read live feed telemetry: {e}")
-            pass # ignore for now
-
-    def get_temperature_temp_ctrls_wo_asking(self):
-        """Read temperature controller values from the EvoFlow device"""
-        try:
-            raw_response = self.read_serial()
-            decoded_protocol_packet = parse_packet(raw_response)
-            if decoded_protocol_packet and decoded_protocol_packet.payload:
-                temp_ctrl_values = struct.unpack('<2f', decoded_protocol_packet.payload)
-                self.evoflow_telemetry.tempCtrl_bioreactor_value = temp_ctrl_values[0]
-                self.evoflow_telemetry.tempCtrl_lagoon_value = temp_ctrl_values[1]
-                if verbose:
-                    print(f"Received temperature controller values: {temp_ctrl_values}")
-        except serial.SerialException as e:
-            if verbose:
-                print(f"Failed to read temperature controller values: {e}")
             pass # ignore for now
 
     def get_all_telemetry_wo_asking(self):

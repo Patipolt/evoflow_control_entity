@@ -37,11 +37,13 @@ class SampleExtractionDevice:
         self,
         port: str,
         baudrate: int = 2000000,
+        timeout: float = 0.01,
         sender_addr: int = ADDR_GUI,
         receiver_addr: int = ADDR_SAMPLE_EXTRACTION_NUCLEO,
     ):
         self.port = port
         self.baudrate = baudrate
+        self.timeout = timeout
         self.serial = None
         self._rx_buffer = bytearray()
         self.sample_extraction_telemetry = SampleExtractionTelemetry()
@@ -58,7 +60,7 @@ class SampleExtractionDevice:
     def connect(self):
         """Establish serial connection to the Sample Extraction device"""
         try:
-            self.serial = serial.Serial(self.port, self.baudrate, timeout=0.1)
+            self.serial = serial.Serial(self.port, self.baudrate, timeout=self.timeout)
             print(f"Connected to Sample Extraction device on {self.port} at {self.baudrate} baud.")
         except serial.SerialException as e:
             print(f"Failed to connect to Sample Extraction device: {e}")
