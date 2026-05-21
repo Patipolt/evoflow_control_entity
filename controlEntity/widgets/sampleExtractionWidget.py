@@ -8,6 +8,7 @@ from PySide6.QtCore import Qt, QFile, QTimer, QDate, QTime, QIODeviceBase, QEven
 from PySide6.QtGui import QColor, QKeyEvent, QPainter, QTextCharFormat, QStandardItemModel, QStandardItem, QWheelEvent, QCloseEvent, QAction, QPixmap
 
 from controlEntity.utils import resource_path
+from evoflow.device.sample_extraction import SampleExtractionTelemetry
 
 
 class RackSelectionWidget(QWidget):
@@ -109,6 +110,7 @@ class SampleExtractionWidget(QWidget):
 
     # Outgoing signals to request actions in the worker
     start_sample_extraction_requested = Signal(tuple)
+    test_read_position_requested = Signal()
 
     def __init__(self, width: int=560, height: int=195):
         """"Initialize the SampleExtractionWidget"""
@@ -155,6 +157,10 @@ class SampleExtractionWidget(QWidget):
         self.sample_extraction_waste_pos_button.setGeometry(197, 143, 85, 20)
         self.sample_extraction_waste_pos_button.setStyleSheet(button_style)
 
+        self.test_read_position_button = QPushButton("Test Get Position", self)
+        self.test_read_position_button.setGeometry(105, 100, 85, 20)
+        self.test_read_position_button.setStyleSheet(button_style)
+
         self.sample_extraction_rack = RackSelectionWidget(self, rows=8, cols=12, cell_size=20)
         self.sample_extraction_rack.move(295, 12)
         self.sample_extraction_rack.rack_position_selected.connect(self._on_rack_position_selected)
@@ -166,10 +172,12 @@ class SampleExtractionWidget(QWidget):
         self.sample_extraction_change_tray_button.clicked.connect(self._on_change_tray_clicked)
         self.sample_extraction_waste_pos_button.clicked.connect(self._on_waste_pos_clicked)
 
+        self.test_read_position_button.clicked.connect(self._on_test_read_position_clicked)
+
     def _on_rack_position_selected(self, position):
         """Track the latest selected rack position in (row, col)"""
         self.widget_selected_position = position
-        self.selected_label.setText(f"Selected Position: Row {position[0]+1}, Col {position[1]+1}")
+        self.selected_label.setText(f"Selected Position: Row {position[0]}, Col {position[1]}")
     
     def _on_start_clicked(self):
         self.start_sample_extraction_requested.emit(self.widget_selected_position)
@@ -192,3 +200,12 @@ class SampleExtractionWidget(QWidget):
         self.widget_selected_position = [255, 255]
         self.selected_label.setText(f"Selected Position: Row {self.widget_selected_position[0]}, Col {self.widget_selected_position[1]}")
 
+    def _on_test_read_position_clicked(self):
+        """Handle Test Get Position button click"""
+        self.test_read_position_requested.emit()
+
+    @Slot(SampleExtractionTelemetry)
+    def update_telemetry(self, telemetry):
+        print(f"Updating Sample Extraction Widget telemetry: Row {telemetry.position[0]}, Col {telemetry.position[1]}")
+        print(f"done_flag: {telemetry.done_flag}")
+        self.selected_label.setText(f"Selected Position: Row {telemetry.position[0]}, Col {telemetry.position[1]}")

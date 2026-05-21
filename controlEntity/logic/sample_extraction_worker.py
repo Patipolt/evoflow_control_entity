@@ -6,7 +6,7 @@ Author: Patipol Thanuphol, Scientific Researcher at ZHAW — thau @zhaw.ch | pat
 Created: April 2026
 """
 
-from PySide6.QtCore import QObject, QThread, Signal, Slot
+from PySide6.QtCore import QObject, QThread, Signal, Slot, QTimer
 from evoflow.device.sample_extraction import SampleExtractionDevice, SampleExtractionTelemetry
 
 class SampleExtractionWorker(QObject):
@@ -20,6 +20,10 @@ class SampleExtractionWorker(QObject):
         self.sampling_rate_ms = sampling_rate_ms
         self._running = False
         self.reading_thread = None
+
+        # Timer1 = QTimer(self)
+        # Timer1.timeout.connect(self.get_all_telemetry)
+        # Timer1.start(2000)
 
     @Slot()
     def start(self):
@@ -46,18 +50,11 @@ class SampleExtractionWorker(QObject):
         except Exception as e:
             print(f"Failed to disconnect from Sample Extraction device: {e}")
 
-    def set_position(self, row: int, col: int):
-        """Set the position of the sample extraction device"""
-        try:
-            self.sample_extraction.set_position(row, col)
-        except Exception as e:
-            print(f"Failed to set position on Sample Extraction device: {e}")
-
     @Slot(tuple)
     def start_sample_extraction(self, position: tuple):
         """Start the sample extraction process"""
         try:
-            self.set_position(position[0], position[1])
+            self.sample_extraction.set_position(position[0], position[1])
             self.sample_extraction.start_sample_extraction()
         except Exception as e:
             print(f"Failed to start sample extraction on Sample Extraction device: {e}")

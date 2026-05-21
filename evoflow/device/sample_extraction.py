@@ -23,12 +23,12 @@ from evoflow.protocol import (
     parse_packet,
 )
 
-verbose = False  # Set to True to enable debug prints
+verbose = True  # Set to True to enable debug prints
 
 class SampleExtractionTelemetry:
     """Data class to hold telemetry information from the Sample Extraction device"""
     def __init__(self):
-        self.position = [0, 0]  # Row, Col
+        self.position = [200, 200]  # Row, Col
         self.done_flag = False
 
 class SampleExtractionDevice:
@@ -127,6 +127,8 @@ class SampleExtractionDevice:
                     print(f"Sent get position command -> {packet_bytes.hex()}")
 
             raw_response = self.read_serial()
+            cobs_decoded = cobs_decode(raw_response)
+            print(f"Raw response: {raw_response.hex()} | COBS decoded: {cobs_decoded.hex()}")
             decoded_protocol_packet = parse_packet(raw_response)
             if decoded_protocol_packet and decoded_protocol_packet.payload:
                 position = decoded_protocol_packet.payload
@@ -170,6 +172,8 @@ class SampleExtractionDevice:
                     print(f"Sent get done flag command -> {packet_bytes.hex()}")
 
             raw_response = self.read_serial()
+            cobs_decoded = cobs_decode(raw_response)
+            print(f"Raw response: {raw_response.hex()} | COBS decoded: {cobs_decoded.hex()}")
             decoded_protocol_packet = parse_packet(raw_response)
             if decoded_protocol_packet and decoded_protocol_packet.payload:
                 done_flag_status = decoded_protocol_packet.payload[0]

@@ -76,7 +76,8 @@ class MainUI(QMainWindow):
         # =====================================
 
         self.sample_extraction_widget.start_sample_extraction_requested.connect(self.logic.sample_extraction_worker.start_sample_extraction)
-
+        self.sample_extraction_widget.test_read_position_requested.connect(self.logic.sample_extraction_worker.get_all_telemetry)
+        self.logic.sample_extraction_worker.telemetry_updated.connect(self.sample_extraction_widget.update_telemetry)
 
     def closeEvent(self, event: QCloseEvent):
         """Stop background threads before the main window closes"""

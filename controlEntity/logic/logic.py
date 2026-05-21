@@ -64,41 +64,13 @@ class Logic(QObject):
         self.sample_extraction_thread = QThread()
         self.sample_extraction_worker = SampleExtractionWorker(port= config.get("SampleExtraction", "port"),
                                                               baudrate= config.getint("SampleExtraction", "baudrate"),
+                                                              timeout= config.getfloat("SampleExtraction", "serial_timeout"),
                                                               sender_addr= config.getint("HMI", "address"),
                                                               receiver_addr= config.getint("SampleExtraction", "address"),
                                                               sampling_rate_ms= sampling_rate_ms)
         self.sample_extraction_worker.moveToThread(self.sample_extraction_thread)
         self.sample_extraction_thread.started.connect(self.sample_extraction_worker.start)
         self.sample_extraction_thread.start()
-
-
-
-    def simulate_protocol_test(self):
-        """Simulate encoding and decoding a protocol packet for testing"""
-        # Simulate encoding a command to set pump speed to 3.56, 0.0, 0.0, 0.0 rpm (for example)
-        sender_addr = 0  # HMI
-        receiver_addr = 100  # EvoFlow Nucleo
-
-        packet = ProtocolPacket(
-            sender=sender_addr,
-            receiver_addr=receiver_addr,
-            is_write=True,
-            id1=Component.PUMP,
-            id2=CMD.SET_POINT,
-            # because it sends 4 floats for the 4 pumps, we need to pack them into bytes.
-            payload=bytes(struct.pack('<4f', 3.56, 0.0, 0.0, 0.0))
-        )
-
-        # Encoding the packet
-        encoded_packet = build_packet(packet)
-        print(f"Simulated encoded packet (hex): {encoded_packet.hex()}")
-
-        # Simulate decoding the same packet
-        delimiter_cut_out = encoded_packet[:-1]  # Remove trailing delimiters for testing
-        print(f"Simulated raw packet for decoding (hex): {delimiter_cut_out.hex()}")
-
-        decoded_packet = parse_packet(delimiter_cut_out)
-        print(f"Simulated decoded packet bytes: {decoded_packet}")
 
     def read_settings_file(self):
         """Load automation step defaults from config/settings.ini"""
