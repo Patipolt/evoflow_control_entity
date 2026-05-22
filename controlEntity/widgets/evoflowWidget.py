@@ -340,6 +340,7 @@ class EvoFlowWidget(QWidget):
         evoflow_control_H1_layout = QHBoxLayout()
         evoflow_control_H2_layout = QHBoxLayout()
         evoflow_control_H3_layout = QHBoxLayout()
+        evoflow_control_H4_layout = QHBoxLayout()
 
         self.pumps_sp_update_btn = QPushButton("Update Pump Set Points", evoflow_control_groupbox)
         self.pumps_sp_update_btn.setStyleSheet(button_style)
@@ -348,9 +349,15 @@ class EvoFlowWidget(QWidget):
         self.magneticStirrers_sp_update_btn = QPushButton("Update Magnetic Stirrer Set Points", evoflow_control_groupbox)
         self.magneticStirrers_sp_update_btn.setStyleSheet(button_style)
 
+        # For development purpose
+        self.reset_all_slideswitches_btn = QPushButton("Reset All Slide Switches", evoflow_control_groupbox)
+        self.reset_all_slideswitches_btn.setStyleSheet(button_style)
+
+
         evoflow_control_V_layout.addLayout(evoflow_control_H1_layout)
         evoflow_control_V_layout.addLayout(evoflow_control_H2_layout)
         evoflow_control_V_layout.addLayout(evoflow_control_H3_layout)
+        evoflow_control_V_layout.addLayout(evoflow_control_H4_layout)
 
         evoflow_control_H1_layout.addWidget(self.pumps_sp_update_btn)
         # evoflow_control_H1_layout.addStretch()
@@ -358,6 +365,8 @@ class EvoFlowWidget(QWidget):
         # evoflow_control_H2_layout.addStretch()
         evoflow_control_H3_layout.addWidget(self.magneticStirrers_sp_update_btn)
         # evoflow_control_H3_layout.addStretch()
+        evoflow_control_H4_layout.addWidget(self.reset_all_slideswitches_btn)
+
         evoflow_control_V_layout.addStretch()
 
 
@@ -534,6 +543,8 @@ class EvoFlowWidget(QWidget):
         self.magneticStirrers_sp_update_btn.clicked.connect(self.handle_magneticStirrer_sp_update)
         self.tempCtrls_sp_update_btn.clicked.connect(self.handle_tempCtrl_sp_update)
 
+        self.reset_all_slideswitches_btn.clicked.connect(self.handle_reset_all_slideswitches)
+
     def load_default_config(self):
         """Load flow rate conversion factors from config/settings.ini"""
         config = self.read_settings_file()
@@ -608,28 +619,146 @@ class EvoFlowWidget(QWidget):
         except ValueError:
             pass  # Invalid input, ignore
 
+    def handle_reset_all_slideswitches(self):
+        """Reset all slide switches to off position (for development/testing purposes)"""
+        self.slide_switch_pump_1.setChecked(False)
+        self.slide_switch_pump_2.setChecked(False)
+        self.slide_switch_pump_3.setChecked(False)
+        self.slide_switch_pump_4.setChecked(False)
+        self.slide_switch_magneticStirrer_bioreactor.setChecked(False)
+        self.slide_switch_magneticStirrer_lagoon.setChecked(False)
+        self.slide_switch_od_bioreactor.setChecked(False)
+        self.slide_switch_od_lagoon.setChecked(False)
+        self.slide_switch_tempCtrl_bioreactor.setChecked(False)
+        self.slide_switch_tempCtrl_lagoon.setChecked(False)
+        self.slide_switch_valve_bio2lag.setChecked(False)
+        self.slide_switch_valve_sug2lag.setChecked(False)
+        self.slide_switch_phtCount_Lagoon.setChecked(False)
+
     @Slot(EvoFlowTelemetry)
     def update_telemetry(self, evoflow_telemetry):
         """Update the widget based on incoming telemetry"""
+        # Old design
+        # # Update pump 1
+        # if evoflow_telemetry.pump_1_status:
+        #     self.led_pump_1.setText("🟢")
+        # else:
+        #     self.led_pump_1.setText("🔴")
+        # self.pump_1_feedback.setText(f"FB: {evoflow_telemetry.pump_1_sp:.0f} rpm\n{evoflow_telemetry.pump_1_speed:.0f} rpm, {(self.pump_1_flow_conv * evoflow_telemetry.pump_1_speed):.3f} ml/min")
+        # # Update pump 2
+        # if evoflow_telemetry.pump_2_status:
+        #     self.led_pump_2.setText("🟢")
+        # else:
+        #     self.led_pump_2.setText("🔴")
+        # self.pump_2_feedback.setText(f"FB: {evoflow_telemetry.pump_2_sp:.0f} rpm\n{evoflow_telemetry.pump_2_speed:.0f} rpm, {(self.pump_2_flow_conv * evoflow_telemetry.pump_2_speed):.3f} ml/min")
+        # # Update pump 3
+        # if evoflow_telemetry.pump_3_status:
+        #     self.led_pump_3.setText("🟢")
+        # else:
+        #     self.led_pump_3.setText("🔴")
+        # self.pump_3_feedback.setText(f"FB: {evoflow_telemetry.pump_3_sp:.0f} rpm\n{evoflow_telemetry.pump_3_speed:.0f} rpm, {(self.pump_3_flow_conv * evoflow_telemetry.pump_3_speed):.3f} ml/min")
+        # # Update pump 4
+        # if evoflow_telemetry.pump_4_status:
+        #     self.led_pump_4.setText("🟢")
+        # else:
+        #     self.led_pump_4.setText("🔴")
+        # self.pump_4_feedback.setText(f"FB: {evoflow_telemetry.pump_4_sp:.0f} rpm\n{evoflow_telemetry.pump_4_speed:.0f} rpm, {(self.pump_4_flow_conv * evoflow_telemetry.pump_4_speed):.3f} ml/min")
+
+        # # Update magnetic stirrer bioreactor
+        # if evoflow_telemetry.magneticStirrer_bioreactor_status:
+        #     self.led_magneticStirrer_bioreactor.setText("🟢")
+        # else:
+        #     self.led_magneticStirrer_bioreactor.setText("🔴")
+        # self.magneticStirrer_bioreactor_feedback.setText(f"FB: {evoflow_telemetry.magneticStirrer_bioreactor_sp:.0f} rpm\n{evoflow_telemetry.magneticStirrer_bioreactor_speed:.0f} rpm, {evoflow_telemetry.magneticStirrer_bioreactor_fan_duty_cycle*100:.2f} %")
+        # # Update magnetic stirrer lagoon
+        # if evoflow_telemetry.magneticStirrer_lagoon_status:
+        #     self.led_magneticStirrer_lagoon.setText("🟢")
+        # else:
+        #     self.led_magneticStirrer_lagoon.setText("🔴")
+        # self.magneticStirrer_lagoon_feedback.setText(f"FB: {evoflow_telemetry.magneticStirrer_lagoon_sp:.0f} rpm\n{evoflow_telemetry.magneticStirrer_lagoon_speed:.0f} rpm, {evoflow_telemetry.magneticStirrer_lagoon_fan_duty_cycle*100:.2f} %")
+
+        # # Update temperature controller bioreactor
+        # if evoflow_telemetry.tempCtrl_bioreactor_status:
+        #     self.led_tempCtrl_bioreactor.setText("🟢")
+        # else:
+        #     self.led_tempCtrl_bioreactor.setText("🔴")
+        # self.tempCtrl_bioreactor_feedback.setText(f"{evoflow_telemetry.tempCtrl_bioreactor_value:.1f} °C")
+        # self.tempCtrl_bioreactor_feedback_sp_htr.setText(f"FB: {evoflow_telemetry.tempCtrl_bioreactor_sp:.1f} °C, HTR Duty: {evoflow_telemetry.tempCtrl_bioreactor_heater_duty_cycle*100:.2f} %")
+        # # Update temperature controller lagoon
+        # if evoflow_telemetry.tempCtrl_lagoon_status:
+        #     self.led_tempCtrl_lagoon.setText("🟢")
+        # else:
+        #     self.led_tempCtrl_lagoon.setText("🔴")
+        # self.tempCtrl_lagoon_feedback.setText(f"{evoflow_telemetry.tempCtrl_lagoon_value:.1f} °C")
+        # self.tempCtrl_lagoon_feedback_sp_htr.setText(f"FB: {evoflow_telemetry.tempCtrl_lagoon_sp:.1f} °C, HTR Duty: {evoflow_telemetry.tempCtrl_lagoon_heater_duty_cycle*100:.2f} %")
+
+        # # Update OD bioreactor
+        # if evoflow_telemetry.od_bioreactor_status:
+        #     self.led_od_bioreactor.setText("🟢")
+        # else:
+        #     self.led_od_bioreactor.setText("🔴")
+        # self.od_bioreactor_feedback.setText(f"{evoflow_telemetry.od_bioreactor_value:.2f}")
+        # # Update OD lagoon
+        # if evoflow_telemetry.od_lagoon_status:
+        #     self.led_od_lagoon.setText("🟢")
+        # else:
+        #     self.led_od_lagoon.setText("🔴")
+        # self.od_lagoon_feedback.setText(f"{evoflow_telemetry.od_lagoon_value:.2f}")
+
+        # # Update photon counter lagoon
+        # if evoflow_telemetry.phtCount_lagoon_status:
+        #     self.led_phtCount_lagoon.setText("🟢")
+        # else:
+        #     self.led_phtCount_lagoon.setText("🔴")
+        # self.phtCount_feedback.setText(f"{evoflow_telemetry.phtCount_lagoon_value/1000000:.2f} MHz")
+        # if evoflow_telemetry.phtCount_lagoon_overlight:
+        #     self.led_overlight.setText("🔴")
+        # else:
+        #     self.led_overlight.setText("⚪")
+
+        # # Update valve bio2lag
+        # if evoflow_telemetry.valve_bio2lag_status:
+        #     self.led_valve_bio2lag.setText("🟢")
+        # else:
+        #     self.led_valve_bio2lag.setText("🔴")
+        # # Update valve sug2lag
+        # if evoflow_telemetry.valve_sug2lag_status:
+        #     self.led_valve_sug2lag.setText("🟢")
+        # else:
+        #     self.led_valve_sug2lag.setText("🔴")
+
+
+        # New design with checks if telemetry is not the same as the current displayed values,
+        # we then send commands to update Necleo to have to same values as the slide switches.
+        # GUI is the master and Necleo is the slave, so if there is a mismatch, we update Necleo to match the GUI (slide switch states).
+
         # Update pump 1
+        if evoflow_telemetry.pump1_status != self.slide_switch_pump_1.isChecked():
+            self.slide_switch_pump_1.setChecked(self.slide_switch_pump_1.isChecked())
         if evoflow_telemetry.pump_1_status:
             self.led_pump_1.setText("🟢")
         else:
             self.led_pump_1.setText("🔴")
         self.pump_1_feedback.setText(f"FB: {evoflow_telemetry.pump_1_sp:.0f} rpm\n{evoflow_telemetry.pump_1_speed:.0f} rpm, {(self.pump_1_flow_conv * evoflow_telemetry.pump_1_speed):.3f} ml/min")
         # Update pump 2
+        if evoflow_telemetry.pump_2_status != self.slide_switch_pump_2.isChecked():
+            self.slide_switch_pump_2.setChecked(self.slide_switch_pump_2.isChecked())
         if evoflow_telemetry.pump_2_status:
             self.led_pump_2.setText("🟢")
         else:
             self.led_pump_2.setText("🔴")
         self.pump_2_feedback.setText(f"FB: {evoflow_telemetry.pump_2_sp:.0f} rpm\n{evoflow_telemetry.pump_2_speed:.0f} rpm, {(self.pump_2_flow_conv * evoflow_telemetry.pump_2_speed):.3f} ml/min")
         # Update pump 3
+        if evoflow_telemetry.pump_3_status != self.slide_switch_pump_3.isChecked():
+            self.slide_switch_pump_3.setChecked(self.slide_switch_pump_3.isChecked())
         if evoflow_telemetry.pump_3_status:
             self.led_pump_3.setText("🟢")
         else:
             self.led_pump_3.setText("🔴")
         self.pump_3_feedback.setText(f"FB: {evoflow_telemetry.pump_3_sp:.0f} rpm\n{evoflow_telemetry.pump_3_speed:.0f} rpm, {(self.pump_3_flow_conv * evoflow_telemetry.pump_3_speed):.3f} ml/min")
         # Update pump 4
+        if evoflow_telemetry.pump_4_status != self.slide_switch_pump_4.isChecked():
+            self.slide_switch_pump_4.setChecked(self.slide_switch_pump_4.isChecked())
         if evoflow_telemetry.pump_4_status:
             self.led_pump_4.setText("🟢")
         else:
@@ -637,12 +766,16 @@ class EvoFlowWidget(QWidget):
         self.pump_4_feedback.setText(f"FB: {evoflow_telemetry.pump_4_sp:.0f} rpm\n{evoflow_telemetry.pump_4_speed:.0f} rpm, {(self.pump_4_flow_conv * evoflow_telemetry.pump_4_speed):.3f} ml/min")
 
         # Update magnetic stirrer bioreactor
+        if evoflow_telemetry.magneticStirrer_bioreactor_status != self.slide_switch_magneticStirrer_bioreactor.isChecked():
+            self.slide_switch_magneticStirrer_bioreactor.setChecked(self.slide_switch_magneticStirrer_bioreactor.isChecked())
         if evoflow_telemetry.magneticStirrer_bioreactor_status:
             self.led_magneticStirrer_bioreactor.setText("🟢")
         else:
             self.led_magneticStirrer_bioreactor.setText("🔴")
         self.magneticStirrer_bioreactor_feedback.setText(f"FB: {evoflow_telemetry.magneticStirrer_bioreactor_sp:.0f} rpm\n{evoflow_telemetry.magneticStirrer_bioreactor_speed:.0f} rpm, {evoflow_telemetry.magneticStirrer_bioreactor_fan_duty_cycle*100:.2f} %")
         # Update magnetic stirrer lagoon
+        if evoflow_telemetry.magneticStirrer_lagoon_status != self.slide_switch_magneticStirrer_lagoon.isChecked():
+            self.slide_switch_magneticStirrer_lagoon.setChecked(self.slide_switch_magneticStirrer_lagoon.isChecked())
         if evoflow_telemetry.magneticStirrer_lagoon_status:
             self.led_magneticStirrer_lagoon.setText("🟢")
         else:
@@ -650,6 +783,8 @@ class EvoFlowWidget(QWidget):
         self.magneticStirrer_lagoon_feedback.setText(f"FB: {evoflow_telemetry.magneticStirrer_lagoon_sp:.0f} rpm\n{evoflow_telemetry.magneticStirrer_lagoon_speed:.0f} rpm, {evoflow_telemetry.magneticStirrer_lagoon_fan_duty_cycle*100:.2f} %")
 
         # Update temperature controller bioreactor
+        if evoflow_telemetry.tempCtrl_bioreactor_status != self.slide_switch_tempCtrl_bioreactor.isChecked():
+            self.slide_switch_tempCtrl_bioreactor.setChecked(self.slide_switch_tempCtrl_bioreactor.isChecked())
         if evoflow_telemetry.tempCtrl_bioreactor_status:
             self.led_tempCtrl_bioreactor.setText("🟢")
         else:
@@ -657,6 +792,8 @@ class EvoFlowWidget(QWidget):
         self.tempCtrl_bioreactor_feedback.setText(f"{evoflow_telemetry.tempCtrl_bioreactor_value:.1f} °C")
         self.tempCtrl_bioreactor_feedback_sp_htr.setText(f"FB: {evoflow_telemetry.tempCtrl_bioreactor_sp:.1f} °C, HTR Duty: {evoflow_telemetry.tempCtrl_bioreactor_heater_duty_cycle*100:.2f} %")
         # Update temperature controller lagoon
+        if evoflow_telemetry.tempCtrl_lagoon_status != self.slide_switch_tempCtrl_lagoon.isChecked():
+            self.slide_switch_tempCtrl_lagoon.setChecked(self.slide_switch_tempCtrl_lagoon.isChecked())
         if evoflow_telemetry.tempCtrl_lagoon_status:
             self.led_tempCtrl_lagoon.setText("🟢")
         else:
@@ -665,12 +802,16 @@ class EvoFlowWidget(QWidget):
         self.tempCtrl_lagoon_feedback_sp_htr.setText(f"FB: {evoflow_telemetry.tempCtrl_lagoon_sp:.1f} °C, HTR Duty: {evoflow_telemetry.tempCtrl_lagoon_heater_duty_cycle*100:.2f} %")
 
         # Update OD bioreactor
+        if evoflow_telemetry.od_bioreactor_status != self.slide_switch_od_bioreactor.isChecked():
+            self.slide_switch_od_bioreactor.setChecked(self.slide_switch_od_bioreactor.isChecked())
         if evoflow_telemetry.od_bioreactor_status:
             self.led_od_bioreactor.setText("🟢")
         else:
             self.led_od_bioreactor.setText("🔴")
         self.od_bioreactor_feedback.setText(f"{evoflow_telemetry.od_bioreactor_value:.2f}")
         # Update OD lagoon
+        if evoflow_telemetry.od_lagoon_status != self.slide_switch_od_lagoon.isChecked():
+            self.slide_switch_od_lagoon.setChecked(self.slide_switch_od_lagoon.isChecked())
         if evoflow_telemetry.od_lagoon_status:
             self.led_od_lagoon.setText("🟢")
         else:
@@ -678,6 +819,8 @@ class EvoFlowWidget(QWidget):
         self.od_lagoon_feedback.setText(f"{evoflow_telemetry.od_lagoon_value:.2f}")
 
         # Update photon counter lagoon
+        if evoflow_telemetry.phtCount_lagoon_status != self.slide_switch_phtCount_Lagoon.isChecked():
+            self.slide_switch_phtCount_Lagoon.setChecked(self.slide_switch_phtCount_Lagoon.isChecked())
         if evoflow_telemetry.phtCount_lagoon_status:
             self.led_phtCount_lagoon.setText("🟢")
         else:
@@ -689,15 +832,21 @@ class EvoFlowWidget(QWidget):
             self.led_overlight.setText("⚪")
 
         # Update valve bio2lag
+        if evoflow_telemetry.valve_bio2lag_status != self.slide_switch_valve_bio2lag.isChecked():
+            self.slide_switch_valve_bio2lag.setChecked(self.slide_switch_valve_bio2lag.isChecked())
         if evoflow_telemetry.valve_bio2lag_status:
             self.led_valve_bio2lag.setText("🟢")
         else:
             self.led_valve_bio2lag.setText("🔴")
         # Update valve sug2lag
+        if evoflow_telemetry.valve_sug2lag_status != self.slide_switch_valve_sug2lag.isChecked():
+            self.slide_switch_valve_sug2lag.setChecked(self.slide_switch_valve_sug2lag.isChecked())
         if evoflow_telemetry.valve_sug2lag_status:
             self.led_valve_sug2lag.setText("🟢")
         else:
             self.led_valve_sug2lag.setText("🔴")
+
+
 
     def read_settings_file(self):
         """Load default configuration values from settings.ini"""

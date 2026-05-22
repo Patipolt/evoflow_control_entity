@@ -161,6 +161,10 @@ class SampleExtractionWidget(QWidget):
         self.test_read_position_button.setGeometry(105, 100, 85, 20)
         self.test_read_position_button.setStyleSheet(button_style)
 
+        self.homing_button = QPushButton("Homing", self)
+        self.homing_button.setGeometry(105, 70, 85, 20)
+        self.homing_button.setStyleSheet(button_style)
+
         self.sample_extraction_rack = RackSelectionWidget(self, rows=8, cols=12, cell_size=20)
         self.sample_extraction_rack.move(295, 12)
         self.sample_extraction_rack.rack_position_selected.connect(self._on_rack_position_selected)
@@ -173,7 +177,7 @@ class SampleExtractionWidget(QWidget):
         self.sample_extraction_waste_pos_button.clicked.connect(self._on_waste_pos_clicked)
 
         self.test_read_position_button.clicked.connect(self._on_test_read_position_clicked)
-
+        self.homing_button.clicked.connect(self._on_homing_clicked)
     def _on_rack_position_selected(self, position):
         """Track the latest selected rack position in (row, col)"""
         self.widget_selected_position = position
@@ -203,6 +207,12 @@ class SampleExtractionWidget(QWidget):
     def _on_test_read_position_clicked(self):
         """Handle Test Get Position button click"""
         self.test_read_position_requested.emit()
+
+    def _on_homing_clicked(self):
+        """Handle Homing button click"""
+        self.sample_extraction_rack.clear_selection()
+        self.widget_selected_position = [252, 252]
+        self.selected_label.setText(f"Selected Position: Row {self.widget_selected_position[0]}, Col {self.widget_selected_position[1]}")
 
     @Slot(SampleExtractionTelemetry)
     def update_telemetry(self, telemetry):
