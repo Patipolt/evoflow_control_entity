@@ -7,9 +7,10 @@ Created: April 2026
 """
 
 import struct
-
 import serial
 import time
+
+from utils import colored_text as tc
 
 from evoflow.protocol import (
     ProtocolPacket,
@@ -22,7 +23,7 @@ from evoflow.protocol import (
     parse_packet,
 )
 
-verbose = False  # Set to True to enable debug prints
+verbose = True  # Set to True to enable debug prints
 
 class EvoFlowTelemetry:
     """Structured data class for EvoFlow telemetry"""
@@ -155,9 +156,9 @@ class EvoFlowDevice:
                 packet_bytes = build_packet(self.protocol_packet)
                 self.serial.write(packet_bytes)
                 if verbose:
-                    print(f"Sent pump status command: {packet_bytes.hex()}")
+                    print(tc(f"Sent pump status command: {packet_bytes.hex()}", "Yellow"))
         except serial.SerialException as e:
-            print(f"Failed to send pump status command: {e}")
+            print(tc(f"Failed to send pump status command: {e}", "Red"))
             pass # ignore for now
 
     def get_on_off_pumps(self):
@@ -172,7 +173,7 @@ class EvoFlowDevice:
                 packet_bytes = build_packet(self.protocol_packet)
                 self.serial.write(packet_bytes) 
                 if verbose:
-                    print(f"Sent pump status read command: {packet_bytes.hex()}")
+                    print(tc(f"Sent pump status read command: {packet_bytes.hex()}", "Yellow"))
 
             raw_response = self.read_serial()
             decoded_protocol_packet = parse_packet(raw_response)
@@ -183,9 +184,9 @@ class EvoFlowDevice:
                 self.evoflow_telemetry.pump_3_status = bool(pump_statuses[2])
                 self.evoflow_telemetry.pump_4_status = bool(pump_statuses[3])
                 if verbose:
-                    print(f"Received pump status: {pump_statuses.hex()}")
+                    print(tc(f"Received pump status: {pump_statuses.hex()}", "Green"))
         except serial.SerialException as e:
-            print(f"Failed to read pump status: {e}")
+            print(tc(f"Failed to read pump status: {e}", "Red"))
             pass # ignore for now
     
     def set_setpoint_pumps(self, pump_1_sp: float, pump_2_sp: float, pump_3_sp: float, pump_4_sp: float):
@@ -200,9 +201,9 @@ class EvoFlowDevice:
                 packet_bytes = build_packet(self.protocol_packet)
                 self.serial.write(packet_bytes)
                 if verbose:
-                    print(f"Sent pump setpoint command: {packet_bytes.hex()}")
+                    print(tc(f"Sent pump setpoint command: {packet_bytes.hex()}", "Yellow"))
         except serial.SerialException as e:
-            print(f"Failed to send pump setpoint command: {e}")
+            print(tc(f"Failed to send pump setpoint command: {e}", "Red"))
             pass # ignore for now
 
     def get_setpoint_pumps(self):
@@ -215,7 +216,7 @@ class EvoFlowDevice:
             packet_bytes = build_packet(self.protocol_packet)
             self.serial.write(packet_bytes) 
             if verbose:
-                print(f"Sent pump setpoint read command: {packet_bytes.hex()}")
+                print(tc(f"Sent pump setpoint read command: {packet_bytes.hex()}", "Yellow"))
 
             raw_response = self.read_serial()
             decoded_protocol_packet = parse_packet(raw_response)
@@ -226,9 +227,9 @@ class EvoFlowDevice:
                 self.evoflow_telemetry.pump_3_sp = pump_sps[2]
                 self.evoflow_telemetry.pump_4_sp = pump_sps[3]
                 if verbose:
-                    print(f"Received pump setpoints: {pump_sps}")
+                    print(tc(f"Received pump setpoints: {pump_sps}", "Green"))
         except serial.SerialException as e:
-            print(f"Failed to read pump setpoints: {e}")
+            print(tc(f"Failed to read pump setpoints: {e}", "Red"))
             pass # ignore for now
 
     def get_speed_pumps(self):
@@ -241,7 +242,7 @@ class EvoFlowDevice:
             packet_bytes = build_packet(self.protocol_packet)
             self.serial.write(packet_bytes)
             if verbose:
-                print(f"Sent pump speed read command: {packet_bytes.hex()}")
+                print(tc(f"Sent pump speed read command: {packet_bytes.hex()}", "Yellow"))
 
             raw_response = self.read_serial()
             decoded_protocol_packet = parse_packet(raw_response)
@@ -252,9 +253,9 @@ class EvoFlowDevice:
                 self.evoflow_telemetry.pump_3_speed = pump_speeds[2]
                 self.evoflow_telemetry.pump_4_speed = pump_speeds[3]
                 if verbose:
-                    print(f"Received pump speeds: {pump_speeds}")
+                    print(tc(f"Received pump speeds: {pump_speeds}", "Green"))
         except serial.SerialException as e:
-            print(f"Failed to read pump speeds: {e}")
+            print(tc(f"Failed to read pump speeds: {e}", "Red"))
             pass # ignore for now
 
     def set_on_off_valves(self, valve_bio2lag_status: bool, valve_sug2lag_status: bool):
@@ -272,9 +273,9 @@ class EvoFlowDevice:
                 packet_bytes = build_packet(self.protocol_packet)
                 self.serial.write(packet_bytes)
                 if verbose:
-                    print(f"Sent valve status command: {packet_bytes.hex()}")
+                    print(tc(f"Sent valve status command: {packet_bytes.hex()}", "Yellow"))
         except serial.SerialException as e:
-            print(f"Failed to send valve status command: {e}")
+            print(tc(f"Failed to send valve status command: {e}", "Red"))
             pass # ignore for now
 
     def get_on_off_valves(self):
@@ -287,7 +288,7 @@ class EvoFlowDevice:
             packet_bytes = build_packet(self.protocol_packet)
             self.serial.write(packet_bytes) 
             if verbose:
-                print(f"Sent valve status read command: {packet_bytes.hex()}")
+                print(tc(f"Sent valve status read command: {packet_bytes.hex()}", "Yellow"))
 
             raw_response = self.read_serial()
             decoded_protocol_packet = parse_packet(raw_response)
@@ -296,9 +297,9 @@ class EvoFlowDevice:
                 self.evoflow_telemetry.valve_bio2lag_status = bool(valve_statuses[0])
                 self.evoflow_telemetry.valve_sug2lag_status = bool(valve_statuses[1])
                 if verbose:
-                    print(f"Received valve status: {valve_statuses.hex()}")
+                    print(tc(f"Received valve status: {valve_statuses.hex()}", "Green"))
         except serial.SerialException as e:
-            print(f"Failed to read valve status: {e}")
+            print(tc(f"Failed to read valve status: {e}", "Red"))
             pass # ignore for now
 
     def set_on_off_temp_ctrls(self, tempCtrl_bioreactor_status: bool, tempCtrl_lagoon_status: bool):
@@ -316,9 +317,9 @@ class EvoFlowDevice:
                 packet_bytes = build_packet(self.protocol_packet)
                 self.serial.write(packet_bytes)
                 if verbose:
-                    print(f"Sent temperature controller status command: {packet_bytes.hex()}")
+                    print(tc(f"Sent temperature controller status command: {packet_bytes.hex()}", "Yellow"))
         except serial.SerialException as e:
-            print(f"Failed to send temperature controller status command: {e}")
+            print(tc(f"Failed to send temperature controller status command: {e}", "Red"))
             pass # ignore for now
     
     def get_on_off_temp_ctrls(self):
@@ -331,7 +332,7 @@ class EvoFlowDevice:
             packet_bytes = build_packet(self.protocol_packet)
             self.serial.write(packet_bytes) 
             if verbose:
-                print(f"Sent temperature controller status read command: {packet_bytes.hex()}")
+                print(tc(f"Sent temperature controller status read command: {packet_bytes.hex()}", "Yellow"))
 
             raw_response = self.read_serial()
             decoded_protocol_packet = parse_packet(raw_response)
@@ -340,9 +341,9 @@ class EvoFlowDevice:
                 self.evoflow_telemetry.tempCtrl_bioreactor_status = bool(temp_ctrl_statuses[0])
                 self.evoflow_telemetry.tempCtrl_lagoon_status = bool(temp_ctrl_statuses[1])
                 if verbose:
-                    print(f"Received temperature controller status: {temp_ctrl_statuses.hex()}")
+                    print(tc(f"Received temperature controller status: {temp_ctrl_statuses.hex()}", "Green"))
         except serial.SerialException as e:
-            print(f"Failed to read temperature controller status: {e}")
+            print(tc(f"Failed to read temperature controller status: {e}", "Red"))
             pass # ignore for now
     
     def set_setpoint_temp_ctrls(self, tempCtrl_bioreactor_sp: float, tempCtrl_lagoon_sp: float):
@@ -357,9 +358,9 @@ class EvoFlowDevice:
                 packet_bytes = build_packet(self.protocol_packet)
                 self.serial.write(packet_bytes)
                 if verbose:
-                    print(f"Sent temperature controller setpoint command: {packet_bytes.hex()}")
+                    print(tc(f"Sent temperature controller setpoint command: {packet_bytes.hex()}", "Yellow"))
         except serial.SerialException as e:
-            print(f"Failed to send temperature controller setpoint command: {e}")
+            print(tc(f"Failed to send temperature controller setpoint command: {e}", "Red"))
             pass # ignore for now
 
     def get_setpoint_temp_ctrls(self):
@@ -372,7 +373,7 @@ class EvoFlowDevice:
             packet_bytes = build_packet(self.protocol_packet)
             self.serial.write(packet_bytes) 
             if verbose:
-                print(f"Sent temperature controller setpoint read command: {packet_bytes.hex()}")
+                print(tc(f"Sent temperature controller setpoint read command: {packet_bytes.hex()}", "Yellow"))
 
             raw_response = self.read_serial()
             decoded_protocol_packet = parse_packet(raw_response)
@@ -381,9 +382,9 @@ class EvoFlowDevice:
                 self.evoflow_telemetry.tempCtrl_bioreactor_sp = temp_ctrl_sps[0]
                 self.evoflow_telemetry.tempCtrl_lagoon_sp = temp_ctrl_sps[1]
                 if verbose:
-                    print(f"Received temperature controller setpoints: {temp_ctrl_sps}")
+                    print(tc(f"Received temperature controller setpoints: {temp_ctrl_sps}", "Green"))
         except serial.SerialException as e:
-            print(f"Failed to read temperature controller setpoints: {e}")
+            print(tc(f"Failed to read temperature controller setpoints: {e}", "Red"))
             pass # ignore for now
 
     def get_temperature_temp_ctrls(self):
@@ -396,7 +397,7 @@ class EvoFlowDevice:
             packet_bytes = build_packet(self.protocol_packet)
             self.serial.write(packet_bytes) 
             if verbose:
-                print(f"Sent temperature controller value read command: {packet_bytes.hex()}")
+                print(tc(f"Sent temperature controller value read command: {packet_bytes.hex()}", "Yellow"))
 
             raw_response = self.read_serial()
             decoded_protocol_packet = parse_packet(raw_response)
@@ -405,9 +406,9 @@ class EvoFlowDevice:
                 self.evoflow_telemetry.tempCtrl_bioreactor_value = temp_ctrl_values[0]
                 self.evoflow_telemetry.tempCtrl_lagoon_value = temp_ctrl_values[1]
                 if verbose:
-                    print(f"Received temperature controller values: {temp_ctrl_values}")
+                    print(tc(f"Received temperature controller values: {temp_ctrl_values}", "Green"))
         except serial.SerialException as e:
-            print(f"Failed to read temperature controller values: {e}")
+            print(tc(f"Failed to read temperature controller values: {e}", "Red"))
             pass # ignore for now
 
     def get_heater_duty_cycle_temp_ctrls(self):
@@ -420,7 +421,7 @@ class EvoFlowDevice:
             packet_bytes = build_packet(self.protocol_packet)
             self.serial.write(packet_bytes) 
             if verbose:
-                print(f"Sent temperature controller heater duty cycle read command: {packet_bytes.hex()}")
+                print(tc(f"Sent temperature controller heater duty cycle read command: {packet_bytes.hex()}", "Yellow"))
 
             raw_response = self.read_serial()
             decoded_protocol_packet = parse_packet(raw_response)
@@ -429,9 +430,9 @@ class EvoFlowDevice:
                 self.evoflow_telemetry.tempCtrl_bioreactor_heater_duty_cycle = temp_ctrl_heater_duty_cycles[0]
                 self.evoflow_telemetry.tempCtrl_lagoon_heater_duty_cycle = temp_ctrl_heater_duty_cycles[1]
                 if verbose:
-                    print(f"Received temperature controller heater duty cycles: {temp_ctrl_heater_duty_cycles}")
+                    print(tc(f"Received temperature controller heater duty cycles: {temp_ctrl_heater_duty_cycles}", "Green"))
         except serial.SerialException as e:
-            print(f"Failed to read temperature controller heater duty cycles: {e}")
+            print(tc(f"Failed to read temperature controller heater duty cycles: {e}", "Red"))
             pass # ignore for now
 
     def set_on_off_od_ctrls(self, od_bioreactor_status: bool, od_lagoon_status: bool):
@@ -449,9 +450,9 @@ class EvoFlowDevice:
                 packet_bytes = build_packet(self.protocol_packet)
                 self.serial.write(packet_bytes)
                 if verbose:
-                    print(f"Sent OD controller status command: {packet_bytes.hex()}")
+                    print(tc(f"Sent OD controller status command: {packet_bytes.hex()}", "Yellow"))
         except serial.SerialException as e:
-            print(f"Failed to send OD controller status command: {e}")
+            print(tc(f"Failed to send OD controller status command: {e}", "Red"))
             pass # ignore for now
 
     def get_on_off_od_ctrls(self):
@@ -464,7 +465,7 @@ class EvoFlowDevice:
             packet_bytes = build_packet(self.protocol_packet)
             self.serial.write(packet_bytes) 
             if verbose:
-                print(f"Sent OD controller status read command: {packet_bytes.hex()}")
+                print(tc(f"Sent OD controller status read command: {packet_bytes.hex()}", "Yellow"))
 
             raw_response = self.read_serial()
             decoded_protocol_packet = parse_packet(raw_response)
@@ -473,9 +474,9 @@ class EvoFlowDevice:
                 self.evoflow_telemetry.od_bioreactor_status = bool(od_ctrl_statuses[0])
                 self.evoflow_telemetry.od_lagoon_status = bool(od_ctrl_statuses[1])
                 if verbose:
-                    print(f"Received OD controller status: {od_ctrl_statuses.hex()}")
+                    print(tc(f"Received OD controller status: {od_ctrl_statuses.hex()}", "Green"))
         except serial.SerialException as e:
-            print(f"Failed to read OD controller status: {e}")
+            print(tc(f"Failed to read OD controller status: {e}", "Red"))
             pass # ignore for now
     
     def get_od_value_od_ctrls(self):
@@ -488,7 +489,7 @@ class EvoFlowDevice:
             packet_bytes = build_packet(self.protocol_packet)
             self.serial.write(packet_bytes)
             if verbose:
-                print(f"Sent OD controller value read command: {packet_bytes.hex()}")
+                print(tc(f"Sent OD controller value read command: {packet_bytes.hex()}", "Yellow"))
 
             raw_response = self.read_serial()
             decoded_protocol_packet = parse_packet(raw_response)
@@ -497,9 +498,9 @@ class EvoFlowDevice:
                 self.evoflow_telemetry.od_bioreactor_value = od_values[0]
                 self.evoflow_telemetry.od_lagoon_value = od_values[1]
                 if verbose:
-                    print(f"Received OD controller values: {od_values}")
+                    print(tc(f"Received OD controller values: {od_values}", "Green"))
         except serial.SerialException as e:
-            print(f"Failed to read OD controller values: {e}")
+            print(tc(f"Failed to read OD controller values: {e}", "Red"))
             pass # ignore for now
 
     def set_on_off_magnetic_stirrers(self, magneticStirrer_bioreactor_status: bool, magneticStirrer_lagoon_status: bool):
@@ -517,9 +518,9 @@ class EvoFlowDevice:
                 packet_bytes = build_packet(self.protocol_packet)
                 self.serial.write(packet_bytes)
                 if verbose:
-                    print(f"Sent magnetic stirrer status command: {packet_bytes.hex()}")
+                    print(tc(f"Sent magnetic stirrer status command: {packet_bytes.hex()}", "Yellow"))
         except serial.SerialException as e:
-            print(f"Failed to send magnetic stirrer status command: {e}")
+            print(tc(f"Failed to send magnetic stirrer status command: {e}", "Red"))
             pass # ignore for now
 
     def get_on_off_magnetic_stirrers(self):
@@ -532,7 +533,7 @@ class EvoFlowDevice:
             packet_bytes = build_packet(self.protocol_packet)
             self.serial.write(packet_bytes) 
             if verbose:
-                print(f"Sent magnetic stirrer status read command: {packet_bytes.hex()}")
+                print(tc(f"Sent magnetic stirrer status read command: {packet_bytes.hex()}", "Yellow"))
 
             raw_response = self.read_serial()
             decoded_protocol_packet = parse_packet(raw_response)
@@ -541,9 +542,9 @@ class EvoFlowDevice:
                 self.evoflow_telemetry.magneticStirrer_bioreactor_status = bool(magnetic_stirrer_statuses[0])
                 self.evoflow_telemetry.magneticStirrer_lagoon_status = bool(magnetic_stirrer_statuses[1])
                 if verbose:
-                    print(f"Received magnetic stirrer status: {magnetic_stirrer_statuses.hex()}")
+                    print(tc(f"Received magnetic stirrer status: {magnetic_stirrer_statuses.hex()}", "Green"))
         except serial.SerialException as e:
-            print(f"Failed to read magnetic stirrer status: {e}")
+            print(tc(f"Failed to read magnetic stirrer status: {e}", "Red"))
             pass # ignore for now
 
     def set_setpoint_magnetic_stirrers(self, magneticStirrer_bioreactor_sp: float, magneticStirrer_lagoon_sp: float):
@@ -558,9 +559,9 @@ class EvoFlowDevice:
                 packet_bytes = build_packet(self.protocol_packet)
                 self.serial.write(packet_bytes)
                 if verbose:
-                    print(f"Sent magnetic stirrer setpoint command: {packet_bytes.hex()}")
+                    print(tc(f"Sent magnetic stirrer setpoint command: {packet_bytes.hex()}", "Yellow"))
         except serial.SerialException as e:
-            print(f"Failed to send magnetic stirrer setpoint command: {e}")
+            print(tc(f"Failed to send magnetic stirrer setpoint command: {e}", "Red"))
             pass # ignore for now
         
     def get_setpoint_magnetic_stirrers(self):
@@ -573,7 +574,7 @@ class EvoFlowDevice:
             packet_bytes = build_packet(self.protocol_packet)
             self.serial.write(packet_bytes) 
             if verbose:
-                print(f"Sent magnetic stirrer setpoint read command: {packet_bytes.hex()}")
+                print(tc(f"Sent magnetic stirrer setpoint read command: {packet_bytes.hex()}", "Yellow"))
 
             raw_response = self.read_serial()
             decoded_protocol_packet = parse_packet(raw_response)
@@ -582,9 +583,9 @@ class EvoFlowDevice:
                 self.evoflow_telemetry.magneticStirrer_bioreactor_sp = magnetic_stirrer_sps[0]
                 self.evoflow_telemetry.magneticStirrer_lagoon_sp = magnetic_stirrer_sps[1]
                 if verbose:
-                    print(f"Received magnetic stirrer setpoints: {magnetic_stirrer_sps}")
+                    print(tc(f"Received magnetic stirrer setpoints: {magnetic_stirrer_sps}", "Green"))
         except serial.SerialException as e:
-            print(f"Failed to read magnetic stirrer setpoints: {e}")
+            print(tc(f"Failed to read magnetic stirrer setpoints: {e}", "Red"))
             pass # ignore for now
 
     def get_speed_magnetic_stirrers(self):
@@ -597,7 +598,7 @@ class EvoFlowDevice:
             packet_bytes = build_packet(self.protocol_packet)
             self.serial.write(packet_bytes) 
             if verbose:
-                print(f"Sent magnetic stirrer speed read command: {packet_bytes.hex()}")
+                print(tc(f"Sent magnetic stirrer speed read command: {packet_bytes.hex()}", "Yellow"))
 
             raw_response = self.read_serial()
             decoded_protocol_packet = parse_packet(raw_response)
@@ -606,9 +607,9 @@ class EvoFlowDevice:
                 self.evoflow_telemetry.magneticStirrer_bioreactor_speed = magnetic_stirrer_speeds[0]
                 self.evoflow_telemetry.magneticStirrer_lagoon_speed = magnetic_stirrer_speeds[1]
                 if verbose:
-                    print(f"Received magnetic stirrer speeds: {magnetic_stirrer_speeds}")
+                    print(tc(f"Received magnetic stirrer speeds: {magnetic_stirrer_speeds}", "Green"))
         except serial.SerialException as e:
-            print(f"Failed to read magnetic stirrer speeds: {e}")
+            print(tc(f"Failed to read magnetic stirrer speeds: {e}", "Red"))
             pass # ignore for now
     
     def get_fan_duty_cycle_magnetic_stirrers(self):
@@ -621,7 +622,7 @@ class EvoFlowDevice:
             packet_bytes = build_packet(self.protocol_packet)
             self.serial.write(packet_bytes) 
             if verbose:
-                print(f"Sent magnetic stirrer fan duty cycle read command: {packet_bytes.hex()}")
+                print(tc(f"Sent magnetic stirrer fan duty cycle read command: {packet_bytes.hex()}", "Yellow"))
 
             raw_response = self.read_serial()
             decoded_protocol_packet = parse_packet(raw_response)
@@ -630,9 +631,9 @@ class EvoFlowDevice:
                 self.evoflow_telemetry.magneticStirrer_bioreactor_fan_duty_cycle = magnetic_stirrer_fan_duty_cycles[0]
                 self.evoflow_telemetry.magneticStirrer_lagoon_fan_duty_cycle = magnetic_stirrer_fan_duty_cycles[1]
                 if verbose:
-                    print(f"Received magnetic stirrer fan duty cycles: {magnetic_stirrer_fan_duty_cycles}")
+                    print(tc(f"Received magnetic stirrer fan duty cycles: {magnetic_stirrer_fan_duty_cycles}", "Green"))
         except serial.SerialException as e:
-            print(f"Failed to read magnetic stirrer fan duty cycles: {e}")
+            print(tc(f"Failed to read magnetic stirrer fan duty cycles: {e}", "Red"))
             pass # ignore for now
 
     def set_on_off_pht_count(self, phtCount_lagoon_status: bool):
@@ -649,9 +650,9 @@ class EvoFlowDevice:
                 packet_bytes = build_packet(self.protocol_packet)
                 self.serial.write(packet_bytes)
                 if verbose:
-                    print(f"Sent pH count status command: {packet_bytes.hex()}")
+                    print(tc(f"Sent pH count status command: {packet_bytes.hex()}", "Yellow"))
         except serial.SerialException as e:
-            print(f"Failed to send pH count status command: {e}")
+            print(tc(f"Failed to send pH count status command: {e}", "Red"))
             pass # ignore for now
     
     def get_on_off_pht_count(self):
@@ -664,7 +665,7 @@ class EvoFlowDevice:
             packet_bytes = build_packet(self.protocol_packet)
             self.serial.write(packet_bytes) 
             if verbose:
-                print(f"Sent pH count status read command: {packet_bytes.hex()}")
+                print(tc(f"Sent pH count status read command: {packet_bytes.hex()}", "Yellow"))
 
             raw_response = self.read_serial()
             decoded_protocol_packet = parse_packet(raw_response)
@@ -672,9 +673,9 @@ class EvoFlowDevice:
                 pht_count_statuses = decoded_protocol_packet.payload
                 self.evoflow_telemetry.phtCount_lagoon_status = bool(pht_count_statuses[0])
                 if verbose:
-                    print(f"Received pH count status: {pht_count_statuses.hex()}")
+                    print(tc(f"Received pH count status: {pht_count_statuses.hex()}", "Green"))
         except serial.SerialException as e:
-            print(f"Failed to read pH count status: {e}")
+            print(tc(f"Failed to read pH count status: {e}", "Red"))
             pass # ignore for now
 
     def get_photon_counts_pht_count(self):
@@ -687,7 +688,7 @@ class EvoFlowDevice:
             packet_bytes = build_packet(self.protocol_packet)
             self.serial.write(packet_bytes) 
             if verbose:
-                print(f"Sent pH count photon counts read command: {packet_bytes.hex()}")
+                print(tc(f"Sent pH count photon counts read command: {packet_bytes.hex()}", "Yellow"))
 
             raw_response = self.read_serial()
             decoded_protocol_packet = parse_packet(raw_response)
@@ -695,9 +696,9 @@ class EvoFlowDevice:
                 pht_count_photon_counts = struct.unpack('<f', decoded_protocol_packet.payload)[0]
                 self.evoflow_telemetry.phtCount_lagoon_value = pht_count_photon_counts
                 if verbose:
-                    print(f"Received pH count photon counts: {pht_count_photon_counts}")
+                    print(tc(f"Received pH count photon counts: {pht_count_photon_counts}", "Green"))
         except serial.SerialException as e:
-            print(f"Failed to read pH count photon counts: {e}")
+            print(tc(f"Failed to read pH count photon counts: {e}", "Red"))
             pass # ignore for now
     
     def get_overlight_pht_count(self):
@@ -710,7 +711,7 @@ class EvoFlowDevice:
             packet_bytes = build_packet(self.protocol_packet)
             self.serial.write(packet_bytes) 
             if verbose:
-                print(f"Sent pH count overlight status read command: {packet_bytes.hex()}")
+                print(tc(f"Sent pH count overlight status read command: {packet_bytes.hex()}", "Yellow"))
 
             raw_response = self.read_serial()
             decoded_protocol_packet = parse_packet(raw_response)
@@ -718,9 +719,9 @@ class EvoFlowDevice:
                 pht_count_overlight_statuses = decoded_protocol_packet.payload
                 self.evoflow_telemetry.phtCount_lagoon_overlight = bool(pht_count_overlight_statuses[0])
                 if verbose:
-                    print(f"Received pH count overlight status: {pht_count_overlight_statuses.hex()}")
+                    print(tc(f"Received pH count overlight status: {pht_count_overlight_statuses.hex()}", "Green"))
         except serial.SerialException as e:
-            print(f"Failed to read pH count overlight status: {e}")
+            print(tc(f"Failed to read pH count overlight status: {e}", "Red"))
             pass # ignore for now
     
     def get_telemetry(self):
@@ -779,7 +780,7 @@ class EvoFlowDevice:
                 packet_bytes = build_packet(self.protocol_packet)
                 self.serial.write(packet_bytes) 
                 if verbose:
-                    print(f"Sent telemetry read command: {packet_bytes.hex()}")
+                    print(tc(f"Sent telemetry read command: {packet_bytes.hex()}", "Yellow"))
 
             raw_response = self.read_serial()
             decoded_protocol_packet = parse_packet(raw_response)
@@ -847,9 +848,9 @@ class EvoFlowDevice:
                 self.evoflow_telemetry.phtCount_lagoon_overlight = bool(payload[105])
                 
                 if verbose:
-                    print(f"Received live feed telemetry: {payload.hex()}")
+                    print(tc(f"Received live feed telemetry: {payload.hex()}", "Green"))
         except (serial.SerialException, struct.error, ValueError) as e:
-            print(f"Failed to read live feed telemetry: {e}")
+            print(tc(f"Failed to read live feed telemetry: {e}", "Red"))
             pass # ignore for now
 
     def get_all_telemetry_wo_asking(self):
@@ -937,9 +938,9 @@ class EvoFlowDevice:
                 self.evoflow_telemetry.phtCount_lagoon_overlight = bool(payload[105])
                 
                 if verbose:
-                    print(f"Received live feed telemetry: {payload.hex()}")
+                    print(tc(f"Received live feed telemetry: {payload.hex()}", "Green"))
         except (serial.SerialException, struct.error, ValueError) as e:
-            print(f"Failed to read live feed telemetry: {e}")
+            print(tc(f"Failed to read live feed telemetry: {e}", "Red"))
             pass # ignore for now
     
             

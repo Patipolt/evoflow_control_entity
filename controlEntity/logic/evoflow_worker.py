@@ -30,7 +30,7 @@ class EvoFlowWorker(QObject):
             # Optionally, you could start a timer here to read telemetry at regular intervals
             # Set up another thread reading telemetry every X ms and emitting the telemetry_updated signal
             self.reading_thread = QThread()
-            self.reading_thread.run = self.get_all_telemetry_wo_asking
+            self.reading_thread.run = self.get_all_telemetry
             self.reading_thread.start()
         except Exception as e:
             # print(f"Failed to connect to EvoFlow device: {e}")
@@ -126,11 +126,10 @@ class EvoFlowWorker(QObject):
     @Slot()
     def get_telemetry(self):
         """Read telemetry data from the EvoFlow device and emit it"""
-        try:
+        while self._running:
             self.evoflow.get_telemetry()
             self.telemetry_updated.emit(self.evoflow.evoflow_telemetry)
-        except Exception as e:
-            print(f"Failed to read telemetry: {e}")
+            QThread.msleep(self.sampling_rate_ms)
 
     @Slot()
     def get_all_telemetry(self):

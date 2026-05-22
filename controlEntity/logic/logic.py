@@ -23,6 +23,7 @@ from controlEntity.logic.evoflow_worker import EvoFlowWorker, EvoFlowTelemetry
 from controlEntity.logic.sample_extraction_worker import SampleExtractionWorker, SampleExtractionTelemetry
 from evoflow.protocol import ProtocolPacket, Component, CMD, build_packet, cobs_decode, parse_packet
 
+linux = True
 
 class Logic(QObject):
     """Coordinate device workers, wire Qt signals, and forward results to the UI"""
@@ -47,7 +48,7 @@ class Logic(QObject):
         # EvoFlow Worker Setup
         # ===============================
         self.evoflow_thread = QThread()
-        self.evoflow_worker = EvoFlowWorker(port= config.get("Evoflow", "port"),
+        self.evoflow_worker = EvoFlowWorker(port= config.get("Evoflow", "port_linux" if linux else "port_windows"),
                                             baudrate= config.getint("Evoflow", "baudrate"),
                                             timeout= config.getfloat("Evoflow", "serial_timeout"),
                                             sender_addr= config.getint("HMI", "address"),
@@ -62,7 +63,7 @@ class Logic(QObject):
         # Sample Extraction Worker Setup
         # ===============================
         self.sample_extraction_thread = QThread()
-        self.sample_extraction_worker = SampleExtractionWorker(port= config.get("SampleExtraction", "port"),
+        self.sample_extraction_worker = SampleExtractionWorker(port= config.get("SampleExtraction", "port_linux" if linux else "port_windows"),
                                                               baudrate= config.getint("SampleExtraction", "baudrate"),
                                                               timeout= config.getfloat("SampleExtraction", "serial_timeout"),
                                                               sender_addr= config.getint("HMI", "address"),
