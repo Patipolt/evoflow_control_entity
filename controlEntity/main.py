@@ -20,28 +20,8 @@ if parent_dir not in sys.path:
 
 from controlEntity.pages.main_ui import MainUI
 
-# ===============================================
-# For Raspberry Pi OS title bar
-# ===============================================
-def _configure_qt_platform_for_linux():
-    """Use X11 backend on Wayland desktops unless user explicitly sets a Qt platform."""
-    if not sys.platform.startswith("linux"):
-        return
-
-    # Respect explicit user configuration first.
-    if os.environ.get("QT_QPA_PLATFORM"):
-        return
-
-    # Many Raspberry Pi OS Wayland sessions do not provide window decorations
-    # for Qt apps consistently. X11 backend restores native title bar/dragging.
-    if os.environ.get("WAYLAND_DISPLAY"):
-        os.environ["QT_QPA_PLATFORM"] = "xcb"
-# ===============================================
-
 def main():
     """Main entry point for the application."""
-    _configure_qt_platform_for_linux()  # For Raspberry Pi OS title bar
-
     app = QApplication(sys.argv)
     app.setApplicationName("Evoflow Control Entity")
     
