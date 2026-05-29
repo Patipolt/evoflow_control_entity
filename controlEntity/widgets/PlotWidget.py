@@ -56,21 +56,21 @@ class PlotWidget(QWidget):
                                 color: #888888; } 
                             """
 
-        groupbox_style = """
-            QGroupBox {
-                font-weight: bold;
-                font-size: 14px;
-                color: #ffffff;
-                border: 2px solid #ffffff;
-                border-radius: 10px;
-                margin-top: 10px;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                subcontrol-position: top center;
-                padding: 0px 3px;
-            }
-        """
+        groupbox_style = """QGroupBox {
+                            font-weight: bold;
+                            font-size: 14px;
+                            color: #000000;
+                            border: 2px solid '#000000';
+                            border-radius: 10px;
+                            margin-top: 10px;
+                            background-color: 'darkgray';
+                        }
+                        QGroupBox::title {
+                            subcontrol-origin: margin;
+                            subcontrol-position: top center;
+                            padding: 0px 3px;
+                        }
+                        """
 
         edit_style = """QLineEdit {
                         background-color: #5c5c5c;
@@ -86,6 +86,10 @@ class PlotWidget(QWidget):
                             background-color: #d9d9d9;
                             color: #888888; } 
                         """
+        
+        text_style = """QLabel {
+                        color: black;
+                        }"""
 
         # ===============================
         # Plot section
@@ -184,33 +188,43 @@ class PlotWidget(QWidget):
         configuration_fifth_row_layout = QHBoxLayout()
 
         timespan = QLabel(f"Timespan (minutes):")
+        timespan.setStyleSheet(text_style)
         self.timespan_edit= QLineEdit(str(self.timespan_minutes))
         self.timespan_edit.setStyleSheet(edit_style)
         sampling_time = QLabel(f"Sampling Time (seconds):")
+        sampling_time.setStyleSheet(text_style)
         self.sampling_time_edit = QLineEdit(str(self.sampling_time_seconds))
         self.sampling_time_edit.setStyleSheet(edit_style)
         y_axis_od_min = QLabel(f"Y-axis OD Min:")
+        y_axis_od_min.setStyleSheet(text_style)
         self.y_axis_od_min_edit = QLineEdit(str(self.y_axis_od_min))
         self.y_axis_od_min_edit.setStyleSheet(edit_style)
         y_axis_od_max = QLabel(f"Y-axis OD Max:")
+        y_axis_od_max.setStyleSheet(text_style)
         self.y_axis_od_max_edit = QLineEdit(str(self.y_axis_od_max))
         self.y_axis_od_max_edit.setStyleSheet(edit_style)
         y_axis_phtCount_min = QLabel(f"Y-axis phtCount Min:")
+        y_axis_phtCount_min.setStyleSheet(text_style)
         self.y_axis_phtCount_min_edit = QLineEdit(str(self.y_axis_phtCount_min))
         self.y_axis_phtCount_min_edit.setStyleSheet(edit_style)
         y_axis_phtCount_max = QLabel(f"Y-axis phtCount Max:")
+        y_axis_phtCount_max.setStyleSheet(text_style)
         self.y_axis_phtCount_max_edit = QLineEdit(str(self.y_axis_phtCount_max))
         self.y_axis_phtCount_max_edit.setStyleSheet(edit_style)
         y_axis_temp_min = QLabel(f"Y-axis Temp Min:")
+        y_axis_temp_min.setStyleSheet(text_style)
         self.y_axis_temp_min_edit = QLineEdit(str(self.y_axis_temp_min))
         self.y_axis_temp_min_edit.setStyleSheet(edit_style)
         y_axis_temp_max = QLabel(f"Y-axis Temp Max:")
+        y_axis_temp_max.setStyleSheet(text_style)
         self.y_axis_temp_max_edit = QLineEdit(str(self.y_axis_temp_max))
         self.y_axis_temp_max_edit.setStyleSheet(edit_style)
         y_axis_flowRate_min = QLabel(f"Y-axis Flow Rate Min:")
+        y_axis_flowRate_min.setStyleSheet(text_style)
         self.y_axis_flowRate_min_edit = QLineEdit(str(self.y_axis_flowRate_min))
         self.y_axis_flowRate_min_edit.setStyleSheet(edit_style)
         y_axis_flowRate_max = QLabel(f"Y-axis Flow Rate Max:")
+        y_axis_flowRate_max.setStyleSheet(text_style)
         self.y_axis_flowRate_max_edit = QLineEdit(str(self.y_axis_flowRate_max))
         self.y_axis_flowRate_max_edit.setStyleSheet(edit_style)
 

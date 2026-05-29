@@ -43,6 +43,9 @@ class MainUI(QMainWindow):
     def setup_ui(self):
         """Set up the UI components"""
         central_widget = QWidget(self)
+        central_widget.setObjectName("central_widget")
+        central_widget.setStyleSheet("#central_widget { background-color: 'darkgray'; }")
+
         main_layout = QVBoxLayout(central_widget)
         main_layout.setContentsMargins(0, 0, 0, 0)
 
@@ -53,6 +56,7 @@ class MainUI(QMainWindow):
         main_layout.addWidget(self.evoflow_widget)
         main_layout.addWidget(self.plot_widget)
         main_layout.addStretch()
+
         self.setCentralWidget(central_widget)
 
         # Overlay the sample extraction widget on top of the EvoFlow widget.
