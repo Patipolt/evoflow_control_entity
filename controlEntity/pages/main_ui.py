@@ -1,3 +1,11 @@
+"""
+Main UI for the EvoFlow control entity application
+
+Project: EvoFlow Innosuisse
+Author: Patipol Thanuphol, Scientific Researcher at ZHAW — thau@zhaw.ch | patipol.thanuphol@zhaw.ch
+Created: April 2026
+"""
+
 import time
 import os
 import sys
@@ -9,6 +17,7 @@ from PySide6.QtCore import Qt, QFile, QTimer, QDate, QTime, QIODeviceBase, QEven
 from PySide6.QtGui import QKeyEvent, QTextCharFormat, QStandardItemModel, QStandardItem, QWheelEvent, QCloseEvent, QAction, QPixmap
 from controlEntity.widgets.evoflowWidget import EvoFlowWidget
 from controlEntity.widgets.sampleExtractionWidget import SampleExtractionWidget
+from controlEntity.widgets.PlotWidget import PlotWidget
 
 from controlEntity.logic.logic import Logic
 
@@ -39,8 +48,10 @@ class MainUI(QMainWindow):
 
         self.evoflow_widget = EvoFlowWidget(1800, 450)
         self.sample_extraction_widget = SampleExtractionWidget(560, 195)
+        self.plot_widget = PlotWidget(self)
 
         main_layout.addWidget(self.evoflow_widget)
+        main_layout.addWidget(self.plot_widget)
         main_layout.addStretch()
         self.setCentralWidget(central_widget)
 

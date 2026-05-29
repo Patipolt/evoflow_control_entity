@@ -1,3 +1,11 @@
+"""
+Sample Extraction Widget for graphical representation of the sample extraction process
+
+Project: EvoFlow Innosuisse
+Author: Patipol Thanuphol, Scientific Researcher at ZHAW — thau@zhaw.ch | patipol.thanuphol@zhaw.ch
+Created: April 2026
+"""
+
 import time
 import os
 import configparser
