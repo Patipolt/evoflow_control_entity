@@ -368,14 +368,9 @@ class EvoFlowWidget(QWidget):
         evoflow_control_V_layout.addLayout(evoflow_control_H4_layout)
 
         evoflow_control_H1_layout.addWidget(self.pumps_sp_update_btn)
-        # evoflow_control_H1_layout.addStretch()
         evoflow_control_H2_layout.addWidget(self.tempCtrls_sp_update_btn)
-        # evoflow_control_H2_layout.addStretch()
         evoflow_control_H3_layout.addWidget(self.magneticStirrers_sp_update_btn)
-        # evoflow_control_H3_layout.addStretch()
         evoflow_control_H4_layout.addWidget(self.reset_all_slideswitches_btn)
-
-        evoflow_control_V_layout.addStretch()
 
 
         # LED

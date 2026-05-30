@@ -27,6 +27,7 @@ class PlotWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setup_ui()
+        self.test_data_plot()
 
     def setup_ui(self):
         """Build the plotting canvas (3 stacked subplots with additional horizontal scrollbar at the bottom) and control panel, using settings.ini defaults"""
@@ -59,11 +60,11 @@ class PlotWidget(QWidget):
         groupbox_style = """QGroupBox {
                             font-weight: bold;
                             font-size: 14px;
-                            color: #000000;
-                            border: 2px solid '#000000';
+                            color: #ffffff;
+                            border: 2px solid '#ffffff';
                             border-radius: 10px;
                             margin-top: 10px;
-                            background-color: 'darkgray';
+                            background-color: '#252525';
                         }
                         QGroupBox::title {
                             subcontrol-origin: margin;
@@ -88,33 +89,83 @@ class PlotWidget(QWidget):
                         """
         
         text_style = """QLabel {
-                        color: black;
+                        color: '#ffffff';
                         }"""
+        
+        scrollbar_style = """QScrollBar:horizontal {
+                            background-color: #5c5c5c;
+                            height: 20px;
+                            margin: 0px 0px 0px 0px;
+                            border-radius: 4px; }
+                            QScrollBar::handle:horizontal {
+                                background-color: LightBlue;
+                                min-width: 20px;
+                                border-radius: 4px; }
+                            QScrollBar::handle:horizontal:hover {
+                                background-color: #9fdfff; }
+                            QScrollBar::handle:horizontal:pressed {
+                                background-color: LightSkyBlue; }
+                            QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
+                                background: none; }
+                            QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
+                                background: none; }"""
 
         # ===============================
         # Plot section
         # ===============================
         self.plot_section_widget = QWidget(self)
 
+        def style_axis(axis):
+            """Apply a consistent dark-theme style to axis border, labels, and ticks."""
+            axis.set_facecolor("none")
+            if axis is not self.ax2:
+                axis.tick_params(axis="x", colors="#e9e9e9", bottom=False, top=False)
+            else:
+                axis.tick_params(axis="x", colors="#e9e9e9", bottom=True, top=False)
+            axis.tick_params(axis="y", colors="#e9e9e9")
+            axis.xaxis.label.set_color("#ffffff")
+            axis.yaxis.label.set_color("#ffffff")
+            for spine in axis.spines.values():
+                spine.set_edgecolor("#636363")
+
+        def style_line(axis, label, color, style = "-", opacity = 1.0):
+            """Create a rounded line style so corners appear smoother."""
+            line, = axis.plot(
+                [],
+                [],
+                label=label,
+                color=color,
+                alpha=opacity,
+                linewidth=2.0,
+                linestyle=style,
+                solid_joinstyle="round",
+                solid_capstyle="round",
+                antialiased=True,
+            )
+            return line
+
         self.fig, (self.ax0, self.ax1, self.ax2) = plt.subplots(3, 1)
-        self.fig.suptitle("EvoFlow Data Visualization", color="black", fontweight="bold")
+        self.fig.suptitle("EvoFlow Data Visualization", color="white", fontweight="bold")
 
         x_axis_ticks = [i for i in range(0, self.timespan_minutes * 60 + 1, self.sampling_time_seconds)]
 
         # First subplot: OD, phtCount
         self.ax0.set_xticklabels([])    # remove the x-axis ticks and labels
         # OD on left y-axis
-        self.ax0.set_ylabel("Optical Density\n(OD)")
+        self.ax0.set_ylabel("Optical Density\n(OD)", color="white")
         self.ax0.yaxis.set_label_coords(-0.045, 0.5)  # Move y-axis label to the left
         self.ax0.set_ylim(self.y_axis_od_min, self.y_axis_od_max)
-        self.od_bioReactor, = self.ax0.plot([], [], label="OD", color="blue")
-        self.od_lagoon, = self.ax0.plot([], [], label="OD Lagoon", color="cyan")
+        # self.ax0.yaxis.set_major_formatter(FormatStrFormatter('%.1f'))  # Format y-axis ticks to 1 decimal place
+        style_axis(self.ax0)
+        self.od_bioReactor = style_line(self.ax0, "OD", "lightGreen", style=":", opacity=0.5)
+        self.od_lagoon = style_line(self.ax0, "OD Lagoon", "cyan", style=":", opacity=0.5)
         # phtCount on right y-axis
         self.ax0_r = self.ax0.twinx()
-        self.ax0_r.set_ylabel("Photon Count\n(MHz)")
+        self.ax0_r.set_ylabel("Photon Count\n(MHz)", color="white")
         self.ax0_r.yaxis.set_label_coords(1.045, 0.5)  # Move y-axis label to the right
         self.ax0_r.set_ylim(self.y_axis_phtCount_min, self.y_axis_phtCount_max)
-        self.phtCount_lagoon, = self.ax0_r.plot([], [], label="phtCount", color="red")
+        style_axis(self.ax0_r)
+        self.phtCount_lagoon = style_line(self.ax0_r, "phtCount", "red", style="-", opacity=0.9)
 
         # Second subplot: Temperature, Flow Rate
         self.ax1.set_xticklabels([])    # remove the x-axis ticks and labels
@@ -122,26 +173,37 @@ class PlotWidget(QWidget):
         self.ax1.set_ylabel("Temperature\n(°C)")
         self.ax1.yaxis.set_label_coords(-0.045, 0.5)  # Move y-axis label to the left
         self.ax1.set_ylim(self.y_axis_temp_min, self.y_axis_temp_max)
-        self.temp_bioReactor, = self.ax1.plot([], [], label="Temp", color="orange")
-        self.temp_lagoon, = self.ax1.plot([], [], label="Temp Lagoon", color="yellow")
+        style_axis(self.ax1)
+        self.temp_bioReactor = style_line(self.ax1, "Temp", "orange", style=":", opacity=0.5)
+        self.temp_lagoon = style_line(self.ax1, "Temp Lagoon", "yellow", style=":", opacity=0.5)
         # Flow Rate on right y-axis
         self.ax1_r = self.ax1.twinx()
         self.ax1_r.set_ylabel("Flow Rate\n(mL/min)")
         self.ax1_r.yaxis.set_label_coords(1.045, 0.5)  # Move y-axis label to the right
         self.ax1_r.set_ylim(self.y_axis_flowRate_min, self.y_axis_flowRate_max)
-        self.flowRate_pump1, = self.ax1_r.plot([], [], label="Flow Rate", color="green")
-        self.flowRate_pump2, = self.ax1_r.plot([], [], label="Flow Rate Lagoon", color="lime")
+        style_axis(self.ax1_r)
+        self.flowRate_pump1 = style_line(self.ax1_r, "Flow Rate", "green", "-", opacity=0.9)
+        self.flowRate_pump2 = style_line(self.ax1_r, "Flow Rate Lagoon", "lime", "-", opacity=0.9)
 
         # Third subplot: scatter plot for the event when sample extraction takes a sample
         self.ax2.set_ylabel("SE\nEvent")
         self.ax2.yaxis.set_label_coords(-0.045, 0.5)  # Move y-axis label to the left
-        self.ax2.set_yticks([0, 1])
+        self.ax2.set_yticks([])
+        self.ax2.set_ylim(1,1)
         self.ax2.set_xticks(x_axis_ticks)
+        style_axis(self.ax2)
         self.sample_extraction_events, = self.ax2.plot([], [], label="Sample Extraction", marker="o", linestyle="", color="magenta")
 
+        # Remove Matplotlib's default horizontal data padding.
+        self.ax0.margins(x=0)
+        self.ax0_r.margins(x=0)
+        self.ax1.margins(x=0)
+        self.ax1_r.margins(x=0)
+        self.ax2.margins(x=0)
+
         # Adjust layout and create canvas
-        self.fig.tight_layout(rect=[0, 0.03, 1, 0.95])  # leave space for the suptitle
-        self.fig.set_facecolor('#fff6d4')
+        self.fig.tight_layout()  # leave space for the suptitle
+        self.fig.set_facecolor('#252525')
         self.canvas = FigureCanvas(self.fig)
         self.ax0.set_position([0.07, 0.58, 0.860, 0.33])
         self.ax1.set_position([0.07, 0.20, 0.860, 0.33])
@@ -152,6 +214,7 @@ class PlotWidget(QWidget):
         self.scrollbar_ax = QScrollBar(Qt.Horizontal, self)
         self.scrollbar_ax.setMinimumHeight(20)
         self.scrollbar_ax.setMinimum(0)
+        self.scrollbar_ax.setStyleSheet(scrollbar_style)
         self.scrollbar_ax.setMaximum(self.timespan_minutes * 60)
         self.scrollbar_ax.setPageStep(self.sampling_time_seconds)
         self.scrollbar_ax.setSingleStep(self.sampling_time_seconds)
@@ -282,9 +345,6 @@ class PlotWidget(QWidget):
         layout.addWidget(self.plot_section_widget, stretch=3)
         layout.addWidget(control_panel_section_widget, stretch=1)
 
-
-
-
     def read_settings_file(self):
         """Load plotting defaults from config/settings.ini."""
         config_path = resource_path("config/settings.ini")
@@ -313,6 +373,39 @@ class PlotWidget(QWidget):
     def resizeEvent(self, event):
         super().resizeEvent(event)
         QTimer.singleShot(0, self._sync_scrollbar_to_ax2)
+
+    def test_data_plot(self):
+        """Plot some test data to verify the plotting functionality."""
+        import numpy as np
+        x_data = np.arange(0, self.timespan_minutes * 60 + 1, self.sampling_time_seconds)
+        od_bioReactor_data = np.random.uniform(0.5, 0.8, size=len(x_data))
+        od_lagoon_data = np.random.uniform(0.8, 1.0, size=len(x_data))
+        phtCount_lagoon_data = np.random.uniform(100, 120, size=len(x_data))
+        temp_bioReactor_data = np.random.uniform(36.7, 36.9, size=len(x_data))
+        temp_lagoon_data = np.random.uniform(37.0, 37.3, size=len(x_data))
+        flowRate_pump1_data = np.random.uniform(0.5, 2.5, size=len(x_data))
+        flowRate_pump2_data = np.random.uniform(1.8, 2.2, size=len(x_data))
+        sample_extraction_events_data = np.random.choice([0, 1], size=len(x_data), p=[0.9, 0.1])
+
+        self.od_bioReactor.set_data(x_data, od_bioReactor_data)
+        self.od_lagoon.set_data(x_data, od_lagoon_data)
+        self.phtCount_lagoon.set_data(x_data, phtCount_lagoon_data)
+        self.temp_bioReactor.set_data(x_data, temp_bioReactor_data)
+        self.temp_lagoon.set_data(x_data, temp_lagoon_data)
+        self.flowRate_pump1.set_data(x_data, flowRate_pump1_data)
+        self.flowRate_pump2.set_data(x_data, flowRate_pump2_data)
+        self.sample_extraction_events.set_data(x_data, sample_extraction_events_data)
+
+        # Keep all shared x-axes synchronized with incoming data range.
+        x_min = float(x_data[0])
+        x_max = float(x_data[-1])
+        self.ax0.set_xlim(x_min, x_max)
+        self.ax0_r.set_xlim(x_min, x_max)
+        self.ax1.set_xlim(x_min, x_max)
+        self.ax1_r.set_xlim(x_min, x_max)
+        self.ax2.set_xlim(x_min, x_max)
+
+        self.canvas.draw()
     
 
 

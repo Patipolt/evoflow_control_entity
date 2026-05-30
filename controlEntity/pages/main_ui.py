@@ -11,7 +11,7 @@ import os
 import sys
 import configparser
 from PySide6.QtWidgets import QApplication, QMainWindow, QMessageBox, QWidget, QVBoxLayout, QLCDNumber, QLineEdit, QComboBox, QCalendarWidget, QTextEdit, QTimeEdit
-from PySide6.QtWidgets import QPushButton, QGroupBox, QTabWidget, QTableView, QMenuBar, QStatusBar, QLabel, QCheckBox, QColorDialog, QHBoxLayout
+from PySide6.QtWidgets import QPushButton, QGroupBox, QTabWidget, QTableView, QMenuBar, QStatusBar, QLabel, QCheckBox, QColorDialog, QHBoxLayout, QSizePolicy
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtCore import Qt, QFile, QTimer, QDate, QTime, QIODeviceBase, QEvent
 from PySide6.QtGui import QKeyEvent, QTextCharFormat, QStandardItemModel, QStandardItem, QWheelEvent, QCloseEvent, QAction, QPixmap
@@ -33,7 +33,7 @@ class MainUI(QMainWindow):
 
         self.setWindowTitle("EvoFlow Control Entity")
         self.setGeometry(0, 0, prog_size_width, prog_size_height)
-        self.setFixedSize(prog_size_width, prog_size_height)
+        self.setMinimumSize(prog_size_width, prog_size_height)
 
         self.logic = Logic()
 
@@ -44,7 +44,7 @@ class MainUI(QMainWindow):
         """Set up the UI components"""
         central_widget = QWidget(self)
         central_widget.setObjectName("central_widget")
-        central_widget.setStyleSheet("#central_widget { background-color: 'darkgray'; }")
+        central_widget.setStyleSheet("#central_widget { background-color: '#252525'; }")
 
         main_layout = QVBoxLayout(central_widget)
         main_layout.setContentsMargins(0, 0, 0, 0)
@@ -52,10 +52,10 @@ class MainUI(QMainWindow):
         self.evoflow_widget = EvoFlowWidget(1800, 450)
         self.sample_extraction_widget = SampleExtractionWidget(560, 195)
         self.plot_widget = PlotWidget(self)
+        self.plot_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
-        main_layout.addWidget(self.evoflow_widget)
-        main_layout.addWidget(self.plot_widget)
-        main_layout.addStretch()
+        main_layout.addWidget(self.evoflow_widget, alignment=Qt.AlignmentFlag.AlignHCenter)
+        main_layout.addWidget(self.plot_widget, stretch=1)
 
         self.setCentralWidget(central_widget)
 
