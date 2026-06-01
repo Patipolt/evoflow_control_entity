@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import ScalarFormatter
 from matplotlib.ticker import FormatStrFormatter
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
-from PySide6.QtWidgets import QApplication, QHBoxLayout, QMainWindow, QMessageBox, QScrollBar, QWidget, QVBoxLayout, QLCDNumber, QLineEdit, QComboBox, QCalendarWidget, QTextEdit, QTimeEdit
+from PySide6.QtWidgets import QApplication, QHBoxLayout, QMainWindow, QMessageBox, QScrollBar, QWidget, QVBoxLayout, QLCDNumber, QLineEdit, QComboBox, QCalendarWidget, QTextEdit, QTimeEdit, QSizePolicy
 from PySide6.QtWidgets import QPushButton, QGroupBox, QTabWidget, QTableView, QMenuBar, QStatusBar, QLabel, QCheckBox, QColorDialog
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtCore import Qt, QFile, QTimer, QDate, QTime, QIODeviceBase, QEvent, Signal, Slot, QObject
@@ -31,27 +31,16 @@ class PlotWidget(QWidget):
 
     def setup_ui(self):
         """Build the plotting canvas (3 stacked subplots with additional horizontal scrollbar at the bottom) and control panel, using settings.ini defaults"""
-        config = self.read_settings_file()
-        self.timespan_minutes = config.getint("plotConfiguration", "timespan_minutes", fallback=10)
-        self.sampling_time_seconds = config.getint("plotConfiguration", "sampling_time_seconds", fallback=5)
-        self.y_axis_od_min = config.getfloat("plotConfiguration", "y_axis_od_min", fallback=0)
-        self.y_axis_od_max = config.getfloat("plotConfiguration", "y_axis_od_max", fallback=2.0)
-        self.y_axis_phtCount_min = config.getfloat("plotConfiguration", "y_axis_phtCount_min", fallback=0)
-        self.y_axis_phtCount_max = config.getfloat("plotConfiguration", "y_axis_phtCount_max", fallback=1000)
-        self.y_axis_temp_min = config.getfloat("plotConfiguration", "y_axis_temp_min", fallback=30)
-        self.y_axis_temp_max = config.getfloat("plotConfiguration", "y_axis_temp_max", fallback=40)
-        self.y_axis_flowRate_min = config.getfloat("plotConfiguration", "y_axis_flowRate_min", fallback=0)
-        self.y_axis_flowRate_max = config.getfloat("plotConfiguration", "y_axis_flowRate_max", fallback=10)
-
+        
         button_style = """QPushButton {
-                            background-color: LightBlue;
+                            background-color: #ffb765;
                             color: black;
-                            border: 1px solid #5aa9c9;
+                            border: 1px solid #ff8800;
                             border-radius: 4px; }
                             QPushButton:hover {
-                                background-color: #9fdfff; }
+                                background-color: #fd9621; }
                             QPushButton:pressed {
-                                background-color: LightSkyBlue; }
+                                background-color: #ce6e00; }
                             QPushButton:disabled {
                                 background-color: #d9d9d9;
                                 color: #888888; } 
@@ -98,17 +87,29 @@ class PlotWidget(QWidget):
                             margin: 0px 0px 0px 0px;
                             border-radius: 4px; }
                             QScrollBar::handle:horizontal {
-                                background-color: LightBlue;
+                                background-color: #ffb765;
                                 min-width: 20px;
                                 border-radius: 4px; }
                             QScrollBar::handle:horizontal:hover {
-                                background-color: #9fdfff; }
+                                background-color: #fd9621; }
                             QScrollBar::handle:horizontal:pressed {
-                                background-color: LightSkyBlue; }
+                                background-color: #ce6e00; }
                             QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
                                 background: none; }
                             QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
                                 background: none; }"""
+        
+        config = self.read_settings_file()
+        self.timespan_minutes = config.getint("plotConfiguration", "timespan_minutes", fallback=10)
+        self.sampling_time_seconds = config.getint("plotConfiguration", "sampling_time_seconds", fallback=5)
+        self.y_axis_od_min = config.getfloat("plotConfiguration", "y_axis_od_min", fallback=0)
+        self.y_axis_od_max = config.getfloat("plotConfiguration", "y_axis_od_max", fallback=2.0)
+        self.y_axis_phtCount_min = config.getfloat("plotConfiguration", "y_axis_phtCount_min", fallback=0)
+        self.y_axis_phtCount_max = config.getfloat("plotConfiguration", "y_axis_phtCount_max", fallback=1000)
+        self.y_axis_temp_min = config.getfloat("plotConfiguration", "y_axis_temp_min", fallback=30)
+        self.y_axis_temp_max = config.getfloat("plotConfiguration", "y_axis_temp_max", fallback=40)
+        self.y_axis_flowRate_min = config.getfloat("plotConfiguration", "y_axis_flowRate_min", fallback=0)
+        self.y_axis_flowRate_max = config.getfloat("plotConfiguration", "y_axis_flowRate_max", fallback=10)
 
         # ===============================
         # Plot section
@@ -201,16 +202,29 @@ class PlotWidget(QWidget):
         self.ax1_r.margins(x=0)
         self.ax2.margins(x=0)
 
-        # Adjust layout and create canvas
-        self.fig.tight_layout()  # leave space for the suptitle
+        # -------------------------------
+        # Canvas geometry (Matplotlib)
+        # -------------------------------
+        # tight_layout computes spacing for titles/labels so text is not clipped.
+        # We call it first, then pin subplot rectangles with set_position(...) to keep
+        # your custom visual ratio stable across window sizes.
+        self.fig.tight_layout()
         self.fig.set_facecolor('#252525')
         self.canvas = FigureCanvas(self.fig)
+        # Expanding policy: when Qt gives extra space, the canvas grows with it.
+        self.canvas.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+        # Subplot rectangles in normalized figure coordinates [left, bottom, width, height].
+        # These values preserve the same relative layout while scaling with canvas size.
         self.ax0.set_position([0.07, 0.58, 0.860, 0.33])
         self.ax1.set_position([0.07, 0.20, 0.860, 0.33])
         self.ax2.set_position([0.07, 0.07, 0.860, 0.08])
 
 
-        # Scrollbar for x-axis (time)
+        # -------------------------------
+        # Scrollbar row (Qt)
+        # -------------------------------
+        # This row is fixed-height so only the canvas consumes extra vertical space.
         self.scrollbar_ax = QScrollBar(Qt.Horizontal, self)
         self.scrollbar_ax.setMinimumHeight(20)
         self.scrollbar_ax.setMinimum(0)
@@ -221,15 +235,24 @@ class PlotWidget(QWidget):
         self.scrollbar_ax.setValue(self.timespan_minutes * 60)  # Start at the end of the timespan
 
         self.scrollbar_row_widget = QWidget(self.plot_section_widget)
+        self.scrollbar_row_widget.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        self.scrollbar_row_widget.setFixedHeight(22)
         self.scrollbar_row_layout = QHBoxLayout(self.scrollbar_row_widget)
         self.scrollbar_row_layout.setContentsMargins(0, 0, 0, 0)
         self.scrollbar_row_layout.setSpacing(0)
         self.scrollbar_row_layout.addWidget(self.scrollbar_ax)
 
 
+        # -------------------------------
+        # Plot area container layout
+        # -------------------------------
         self.plot_section_widget_layout = QVBoxLayout(self.plot_section_widget)
-        self.plot_section_widget_layout.addWidget(self.canvas)
-        self.plot_section_widget_layout.addWidget(self.scrollbar_row_widget)
+        self.plot_section_widget_layout.setContentsMargins(0, 0, 0, 0)
+        self.plot_section_widget_layout.setSpacing(4)
+        # Stretch factor 1 means this widget takes all remaining height.
+        self.plot_section_widget_layout.addWidget(self.canvas, 1)
+        # Stretch factor 0 keeps this row at its size hint / fixed height.
+        self.plot_section_widget_layout.addWidget(self.scrollbar_row_widget, 0)
 
         # Keep scrollbar width/position aligned with the drawable area of ax2.
         self.canvas.mpl_connect("draw_event", lambda _event: self._sync_scrollbar_to_ax2())
@@ -320,27 +343,69 @@ class PlotWidget(QWidget):
 
         self.update_config_button = QPushButton("Update Configuration")
         self.update_config_button.setStyleSheet(button_style)
+        self.update_config_button.setMaximumHeight(50)
+        self.update_config_button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         configuration_layout.addWidget(self.update_config_button)
+        configuration_layout.addStretch()  # Push the button to the top
         
-        
+        # -------------------------------
+        # Data logging group
+        # -------------------------------
         data_logging_group = QGroupBox("Data Logging")
         data_logging_group.setStyleSheet(groupbox_style)
         data_logging_layout = QVBoxLayout(data_logging_group)
 
-        
+        data_logging_first_row_layout = QHBoxLayout()
+        data_logging_second_row_layout = QHBoxLayout()
+        data_logging_third_row_layout = QHBoxLayout()
+        data_logging_forth_row_layout = QHBoxLayout()
+
+        log_name = QLabel("Log Name:")
+        log_name.setStyleSheet(text_style)
+        self.log_name_edit = QLineEdit("")
+        self.log_name_edit.setStyleSheet(edit_style)
+        self.browse_location_button = QPushButton("Browse")
+        self.browse_location_button.setStyleSheet(button_style)
+        self.browse_location_button.setMaximumWidth(60)
+        log_location = QLabel("Log Location:")
+        log_location.setStyleSheet(text_style)
+        self.log_location_label = QLabel("")
+        self.log_location_label.setStyleSheet(text_style)
+        self.start_logging_button = QPushButton("Start Logging")
+        self.start_logging_button.setStyleSheet(button_style)
+        self.start_logging_button.setMaximumHeight(40)
+        self.start_logging_button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.stop_logging_button = QPushButton("Stop Logging")
+        self.stop_logging_button.setStyleSheet(button_style)
+        self.stop_logging_button.setMaximumHeight(40)
+        self.stop_logging_button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.open_log_button = QPushButton("Open Logged Data")
+        self.open_log_button.setStyleSheet(button_style)
+        self.open_log_button.setMaximumHeight(40)
+        self.open_log_button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
 
+        data_logging_first_row_layout.addWidget(log_name)
+        data_logging_first_row_layout.addWidget(self.log_name_edit)
+        data_logging_second_row_layout.addWidget(log_location)
+        data_logging_second_row_layout.addWidget(self.log_location_label)
+        data_logging_second_row_layout.addWidget(self.browse_location_button)
+        data_logging_third_row_layout.addWidget(self.start_logging_button)
+        data_logging_third_row_layout.addWidget(self.stop_logging_button)
+        data_logging_forth_row_layout.addWidget(self.open_log_button)
 
+        data_logging_layout.addLayout(data_logging_first_row_layout)
+        data_logging_layout.addLayout(data_logging_second_row_layout)
+        data_logging_layout.addLayout(data_logging_third_row_layout)
+        data_logging_layout.addLayout(data_logging_forth_row_layout)
+        data_logging_layout.addStretch()  # Push the buttons to the top
+
+        # Add groups to control panel layout
         control_panel_layout.addWidget(configuration_group)
         control_panel_layout.addWidget(data_logging_group)
         control_panel_section_widget.setLayout(control_panel_layout)
 
-
-
-
-
-
-        # Layout
+        # Main widget split: plot area takes ~3/4 width, control panel ~1/4.
         layout = QHBoxLayout(self)
         layout.addWidget(self.plot_section_widget, stretch=3)
         layout.addWidget(control_panel_section_widget, stretch=1)
@@ -363,6 +428,7 @@ class PlotWidget(QWidget):
         if canvas_width <= 0:
             return
 
+        # Convert normalized axis geometry (0..1) into current canvas pixels.
         left_px = max(0, int(ax2_pos.x0 * canvas_width))
         width_px = max(1, int(ax2_pos.width * canvas_width))
         right_px = max(0, canvas_width - (left_px + width_px))
