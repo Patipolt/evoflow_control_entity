@@ -23,7 +23,7 @@ from evoflow.protocol import (
     parse_packet,
 )
 
-verbose = True  # Set to True to enable debug prints
+verbose = False  # Set to True to enable debug prints
 
 class EvoFlowTelemetry:
     """Structured data class for EvoFlow telemetry"""
@@ -79,7 +79,7 @@ class EvoFlowDevice:
     def __init__(
         self,
         port: str,
-        baudrate: int = 2000000,
+        baudrate: int = 921600,
         timeout: float = 0.01,
         sender_addr: int = ADDR_GUI,
         receiver_addr: int = ADDR_EVOFLOW_NUCLEO,

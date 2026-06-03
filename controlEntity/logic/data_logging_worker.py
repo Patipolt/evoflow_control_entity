@@ -28,7 +28,7 @@ class DataLoggingWorker(QObject):
     from the evoflow worker and sample extraction worker, but only serves a subset of that data to the PlotWidget for visualization"""
     status_message = Signal(str)
     logging_state_changed = Signal(bool)
-    plot_data_updated = Signal(list)  # Emits list of dict rows for plotting
+    plot_data_updated = Signal(dict)  # Emits plot payload dict for PlotWidget
 
     def __init__(self):
         super().__init__()
@@ -58,6 +58,13 @@ class DataLoggingWorker(QObject):
 
         self._log_timer = QTimer(self)
         self._log_timer.timeout.connect(self._on_log_timer)
+
+        # For testing without actual telemetry from sample extraction device, initialize with dummy data.
+        self._latest_sample_extraction = {
+            "sample_row": int(0),
+            "sample_col": int(0),
+            "sample_done_flag": 1,
+        }
 
     @Slot(EvoFlowTelemetry)
     def update_evoflow_telemetry(self, telemetry: EvoFlowTelemetry):
