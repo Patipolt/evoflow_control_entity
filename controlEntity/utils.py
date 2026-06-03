@@ -41,9 +41,7 @@ def resource_path(*relative_parts: str) -> Path:
     return base_path / relative_path
 
 def colored_text(text: str, color: str) -> str:
-    """
-    Colorize the given text in the given color.
-    """
+    """Colorize the given text in the given color"""
     colors = {
         'Red': [255, 0, 0],
         'Green': [0, 255, 0],

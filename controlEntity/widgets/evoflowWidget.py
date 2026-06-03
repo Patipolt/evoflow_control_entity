@@ -274,9 +274,9 @@ class EvoFlowWidget(QWidget):
                             border: 1px solid #5aa9c9;
                             border-radius: 4px; }
                             QPushButton:hover {
-                                background-color: #9fdfff; }
+                                background-color: #5dc9ff; }
                             QPushButton:pressed {
-                                background-color: LightSkyBlue; }
+                                background-color: #007cba; }
                             QPushButton:disabled {
                                 background-color: #d9d9d9;
                                 color: #888888; } 
@@ -352,14 +352,19 @@ class EvoFlowWidget(QWidget):
 
         self.pumps_sp_update_btn = QPushButton("Update Pump Set Points", evoflow_control_groupbox)
         self.pumps_sp_update_btn.setStyleSheet(button_style)
+        self.pumps_sp_update_btn.setMinimumHeight(24)
         self.tempCtrls_sp_update_btn = QPushButton("Update Temp. Ctrl Set Points", evoflow_control_groupbox)
         self.tempCtrls_sp_update_btn.setStyleSheet(button_style)
+        self.tempCtrls_sp_update_btn.setMinimumHeight(24)
         self.magneticStirrers_sp_update_btn = QPushButton("Update Magnetic Stirrer Set Points", evoflow_control_groupbox)
         self.magneticStirrers_sp_update_btn.setStyleSheet(button_style)
+        self.magneticStirrers_sp_update_btn.setMinimumHeight(24)
+
 
         # For development purpose
         self.reset_all_slideswitches_btn = QPushButton("Reset All Slide Switches", evoflow_control_groupbox)
         self.reset_all_slideswitches_btn.setStyleSheet(button_style)
+        self.reset_all_slideswitches_btn.setMinimumHeight(24)
 
 
         evoflow_control_V_layout.addLayout(evoflow_control_H1_layout)

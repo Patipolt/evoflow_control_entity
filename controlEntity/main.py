@@ -21,7 +21,7 @@ if parent_dir not in sys.path:
 from controlEntity.pages.main_ui import MainUI
 
 def main():
-    """Main entry point for the application."""
+    """Main entry point for the application"""
     app = QApplication(sys.argv)
     app.setApplicationName("Evoflow Control Entity")
     

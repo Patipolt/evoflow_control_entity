@@ -145,9 +145,9 @@ class SampleExtractionWidget(QWidget):
                             border: 1px solid #5aa9c9;
                             border-radius: 4px; }
                             QPushButton:hover {
-                                background-color: #9fdfff; }
+                                background-color: #5dc9ff; }
                             QPushButton:pressed {
-                                background-color: LightSkyBlue; }
+                                background-color: #007cba; }
                             QPushButton:disabled {
                                 background-color: #d9d9d9;
                                 color: #888888; } 

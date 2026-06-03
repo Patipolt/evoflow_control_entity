@@ -21,6 +21,7 @@ from PySide6.QtGui import QKeyEvent, QTextCharFormat, QStandardItemModel, QStand
 from controlEntity.utils import resource_path
 from controlEntity.logic.evoflow_worker import EvoFlowWorker, EvoFlowTelemetry
 from controlEntity.logic.sample_extraction_worker import SampleExtractionWorker, SampleExtractionTelemetry
+from controlEntity.logic.data_logging_worker import DataLoggingWorker
 from evoflow.protocol import ProtocolPacket, Component, CMD, build_packet, cobs_decode, parse_packet
 
 
@@ -73,6 +74,14 @@ class Logic(QObject):
         self.sample_extraction_thread.started.connect(self.sample_extraction_worker.start)
         self.sample_extraction_thread.start()
 
+        # ===============================
+        # Data Logging Worker Setup
+        # ===============================
+        self.data_logging_thread = QThread()
+        self.data_logging_worker = DataLoggingWorker()
+        self.data_logging_worker.moveToThread(self.data_logging_thread)
+        self.data_logging_thread.start()
+
     def read_settings_file(self):
         """Load automation step defaults from config/settings.ini"""
         # config_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'config', 'settings.ini')      # for development
@@ -90,6 +99,16 @@ class Logic(QObject):
             print(f"Failed to stop EvoFlow worker cleanly: {e}")
 
         try:
+            QMetaObject.invokeMethod(self.sample_extraction_worker, "stop", Qt.BlockingQueuedConnection)
+        except Exception as e:
+            print(f"Failed to stop Sample Extraction worker cleanly: {e}")
+
+        try:
+            QMetaObject.invokeMethod(self.data_logging_worker, "shutdown", Qt.BlockingQueuedConnection)
+        except Exception as e:
+            print(f"Failed to stop Data Logging worker cleanly: {e}")
+
+        try:
             if self.evoflow_thread.isRunning():
                 self.evoflow_thread.quit()
                 if not self.evoflow_thread.wait(2000):
@@ -100,5 +119,10 @@ class Logic(QObject):
                 if not self.sample_extraction_thread.wait(2000):
                     self.sample_extraction_thread.terminate()
                     self.sample_extraction_thread.wait(1000)
+            if self.data_logging_thread.isRunning():
+                self.data_logging_thread.quit()
+                if not self.data_logging_thread.wait(2000):
+                    self.data_logging_thread.terminate()
+                    self.data_logging_thread.wait(1000)
         except Exception as e:
             print(f"Failed to stop EvoFlow thread cleanly: {e}")

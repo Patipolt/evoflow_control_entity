@@ -73,6 +73,7 @@ class MainUI(QMainWindow):
         
         # Telemetry
         self.logic.evoflow_worker.telemetry_updated.connect(self.evoflow_widget.update_telemetry)
+        self.logic.evoflow_worker.telemetry_updated.connect(self.logic.data_logging_worker.update_evoflow_telemetry)
 
         # Switches
         self.evoflow_widget.pump_on_off_requested.connect(self.logic.evoflow_worker.set_on_off_pumps)
@@ -95,6 +96,18 @@ class MainUI(QMainWindow):
         self.sample_extraction_widget.start_sample_extraction_requested.connect(self.logic.sample_extraction_worker.start_sample_extraction)
         self.sample_extraction_widget.test_read_position_requested.connect(self.logic.sample_extraction_worker.get_all_telemetry)
         self.logic.sample_extraction_worker.telemetry_updated.connect(self.sample_extraction_widget.update_telemetry)
+        self.logic.sample_extraction_worker.telemetry_updated.connect(self.logic.data_logging_worker.update_sample_extraction_telemetry)
+
+        # =====================================
+        # Plot / Data logging signals
+        # =====================================
+        self.plot_widget.start_logging_requested.connect(self.logic.data_logging_worker.start_logging)
+        self.plot_widget.stop_logging_requested.connect(self.logic.data_logging_worker.stop_logging)
+        self.plot_widget.timespan_minutes_changed.connect(self.logic.data_logging_worker.set_timespan_minutes)
+
+        self.logic.data_logging_worker.plot_data_updated.connect(self.plot_widget.update_plot_from_logged_data)
+        self.logic.data_logging_worker.logging_state_changed.connect(self.plot_widget.set_logging_state)
+        self.logic.data_logging_worker.status_message.connect(self.plot_widget.show_status_message)
 
     def closeEvent(self, event: QCloseEvent):
         """Stop background threads before the main window closes"""
