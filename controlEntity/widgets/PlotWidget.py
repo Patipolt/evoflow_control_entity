@@ -9,7 +9,9 @@ Created: April 2026
 import time
 import os
 import configparser
+import datetime as dt
 import matplotlib.pyplot as plt
+from matplotlib.ticker import FuncFormatter
 from matplotlib.ticker import ScalarFormatter
 from matplotlib.ticker import FormatStrFormatter
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
@@ -156,8 +158,6 @@ class PlotWidget(QWidget):
         self.fig, (self.ax0, self.ax1, self.ax2) = plt.subplots(3, 1)
         self.fig.suptitle("EvoFlow Data Visualization", color="white", fontweight="bold")
 
-        x_axis_ticks = [i for i in range(0, self.timespan_minutes * 60 + 1, self.sampling_time_seconds)]
-
         # First subplot: flow rate, phtCount
         self.ax0.set_xticklabels([])    # remove the x-axis ticks and labels
         # Flow Rate on left y-axis
@@ -200,7 +200,8 @@ class PlotWidget(QWidget):
         self.ax2.set_yticks([])
         self.ax2.set_yticklabels([])
         self.ax2.set_ylim(0.9, 1.1)
-        self.ax2.set_xticks(x_axis_ticks)
+        self.ax2.xaxis.set_major_formatter(FuncFormatter(self._format_unix_seconds_as_datetime))
+        self.ax2.set_xlabel("Date / Time")
         style_axis(self.ax2)
         self.sample_extraction_events, = self.ax2.plot([], [], label="Sample Extraction", marker="o", linestyle="", color="magenta", markersize=10)
 
@@ -225,9 +226,9 @@ class PlotWidget(QWidget):
 
         # Subplot rectangles in normalized figure coordinates [left, bottom, width, height].
         # These values preserve the same relative layout while scaling with canvas size.
-        self.ax0.set_position([0.07, 0.58, 0.860, 0.33])
-        self.ax1.set_position([0.07, 0.20, 0.860, 0.33])
-        self.ax2.set_position([0.07, 0.07, 0.860, 0.08])
+        self.ax0.set_position([0.07, 0.59, 0.860, 0.33])
+        self.ax1.set_position([0.07, 0.22, 0.860, 0.33])
+        self.ax2.set_position([0.07, 0.1, 0.860, 0.08])
 
 
         # -------------------------------
@@ -455,9 +456,18 @@ class PlotWidget(QWidget):
         self.scrollbar_ax.setSingleStep(self.sampling_time_seconds)
         self.scrollbar_ax.setValue(self.timespan_minutes * 60)
 
-        x_ticks = [i for i in range(0, self.timespan_minutes * 60 + 1, self.sampling_time_seconds)]
-        self.ax2.set_xticks(x_ticks)
-        self.ax2.set_xlim(0, self.timespan_minutes * 60)
+        # X here is the time in the form of Unix timestamp seconds
+        # Because we defined the function to turn time in Unix timestamp seconds to date/time string for x-axis tick labels,
+        # we can directly use the current Unix timestamp seconds to set the x-axis limits, and the tick labels will automatically show the corresponding date/time.
+        now_s = time.time()
+        window_s = float(self.timespan_minutes * 60)
+        x_min = now_s - window_s
+        x_max = now_s
+        self.ax0.set_xlim(x_min, x_max)
+        self.ax0_r.set_xlim(x_min, x_max)
+        self.ax1.set_xlim(x_min, x_max)
+        self.ax1_r.set_xlim(x_min, x_max)
+        self.ax2.set_xlim(x_min, x_max)
 
         self.canvas.draw_idle()
 
@@ -549,6 +559,15 @@ class PlotWidget(QWidget):
             line_edit.setText(str(fallback))
             return float(fallback)
 
+    @staticmethod
+    def _format_unix_seconds_as_datetime(x_value: float, _position: int) -> str:
+        """Format Unix timestamp seconds as date/time for x-axis tick labels"""
+        try:
+            timestamp = float(x_value)
+            return dt.datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d\n%H:%M:%S")
+        except Exception:
+            return ""
+
     def read_settings_file(self):
         """Load plotting defaults from config/settings.ini"""
         config_path = resource_path("config/settings.ini")
@@ -582,7 +601,12 @@ class PlotWidget(QWidget):
     def test_data_plot(self):
         """Plot some test data to verify the plotting functionality"""
         import numpy as np
-        x_data = np.arange(0, self.timespan_minutes * 60 + 1, self.sampling_time_seconds)
+        now_s = time.time()
+        x_data = np.arange(
+            now_s - (self.timespan_minutes * 60),
+            now_s + self.sampling_time_seconds,
+            self.sampling_time_seconds,
+        )
         od_bioReactor_data = np.random.uniform(0.5, 0.8, size=len(x_data))
         od_lagoon_data = np.random.uniform(0.8, 1.0, size=len(x_data))
         phtCount_lagoon_data = np.random.uniform(100, 120, size=len(x_data))

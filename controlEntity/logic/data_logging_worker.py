@@ -528,11 +528,10 @@ class DataLoggingWorker(QObject):
             return payload
 
         rows.sort(key=lambda item: item[0])
-        x0 = rows[-1][0]
 
         for item in rows:
             ts_ms = int(item[0])
-            payload["x_seconds"].append((ts_ms - x0) / 1000.0)
+            payload["x_seconds"].append(ts_ms / 1000.0)
             payload["od_bioreactor"].append(float(item[1]))
             payload["od_lagoon"].append(float(item[2]))
             payload["pht_count_lagoon"].append(float(item[3]))
