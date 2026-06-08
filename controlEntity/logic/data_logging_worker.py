@@ -214,6 +214,8 @@ class DataLoggingWorker(QObject):
     def set_timespan_minutes(self, timespan_minutes: int):
         """Update current plot timespan window"""
         self._timespan_minutes = max(1, int(timespan_minutes))
+        # Update plot data immediately to reflect new timespan setting
+        self.plot_data_updated.emit(self._load_plot_data(self._timespan_minutes))
 
     @Slot()
     def shutdown(self):
@@ -483,6 +485,8 @@ class DataLoggingWorker(QObject):
             "pht_count_lagoon": [],
             "temp_bioreactor": [],
             "temp_lagoon": [],
+            "temp_bioreactor_sp": [],
+            "temp_lagoon_sp": [],
             "od_bioreactor": [],
             "od_lagoon": [],
             "sample_event": [],
@@ -511,6 +515,8 @@ class DataLoggingWorker(QObject):
                         phtCount_lagoon_value,
                         tempCtrl_bioreactor_value,
                         tempCtrl_lagoon_value,
+                        tempCtrl_bioreactor_sp,
+                        tempCtrl_lagoon_sp,
                         flow_rate_pump1,
                         flow_rate_pump2,
                         sample_done_flag
@@ -537,9 +543,11 @@ class DataLoggingWorker(QObject):
             payload["pht_count_lagoon"].append(float(item[3]))
             payload["temp_bioreactor"].append(float(item[4]))
             payload["temp_lagoon"].append(float(item[5]))
-            payload["flow_rate_pump1"].append(float(item[6]))
-            payload["flow_rate_pump2"].append(float(item[7]))
-            payload["sample_event"].append(float(item[8]))
+            payload["temp_bioreactor_sp"].append(float(item[6]))
+            payload["temp_lagoon_sp"].append(float(item[7]))
+            payload["flow_rate_pump1"].append(float(item[8]))
+            payload["flow_rate_pump2"].append(float(item[9]))
+            payload["sample_event"].append(float(item[10]))
 
         return payload
 

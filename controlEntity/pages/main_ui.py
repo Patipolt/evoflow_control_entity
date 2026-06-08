@@ -32,7 +32,7 @@ class MainUI(QMainWindow):
         super().__init__()
 
         self.setWindowTitle("EvoFlow Control Entity")
-        self.setGeometry(0, 0, prog_size_width, prog_size_height)
+        self.setGeometry(0, 60, prog_size_width, prog_size_height)
         self.setMinimumSize(prog_size_width, prog_size_height)
 
         self.logic = Logic()

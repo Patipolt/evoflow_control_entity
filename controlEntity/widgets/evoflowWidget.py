@@ -25,7 +25,7 @@ class EvoFlowWidget(QWidget):
     # ================================
     # Signals required for widget
     # ================================
-    
+
     # Outgoing signals (to request actions, handle for all components of the same type as the protocol is designed that way)
     pump_on_off_requested = Signal(bool, bool, bool, bool)
     magneticStirrer_on_off_requested = Signal(bool, bool)
@@ -64,11 +64,11 @@ class EvoFlowWidget(QWidget):
 
 
         # Info Labels (Static fonts, this won't change)
-        font_component = """font-weight: bold; color: Orange;"""
-        font_description = """font-weight: bold; color: LightGreen;"""
-        font_value = """font-weight: bold; font-size: 18px; color: #575757;"""
-        font_value_2 = """font-weight: bold; font-size: 18px; color: #0070a3;"""
-        font_small_value = """color: White;"""
+        font_component = """font-weight: bold; color: Orange; font-size: 11px;"""
+        font_description = """font-weight: bold; color: LightGreen; font-size: 11px;"""
+        font_value = """font-weight: bold; font-size: 16px; color: #575757;"""
+        font_value_2 = """font-weight: bold; font-size: 16px; color: #0070a3;"""
+        font_small_value = """color: White; font-size: 11px;"""
 
         info_pump_1 = QLabel("Pump 1", self)
         info_pump_1.setGeometry(90, 283, 50, 20)
@@ -173,13 +173,13 @@ class EvoFlowWidget(QWidget):
         info_from_medium.setStyleSheet(font_description)
 
         info_to_waste = QLabel("To Waste", self)
-        info_to_waste.setGeometry(1120, 220, 100, 20)
-        info_to_waste.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        info_to_waste.setGeometry(1085, 220, 120, 20)
+        info_to_waste.setAlignment(Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter)
         info_to_waste.setStyleSheet(font_description)
 
         info_to_waste_sample = QLabel("To Waste / Sample", self)
-        info_to_waste_sample.setGeometry(1095, 53, 120, 20)
-        info_to_waste_sample.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        info_to_waste_sample.setGeometry(1085, 53, 120, 20)
+        info_to_waste_sample.setAlignment(Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter)
         info_to_waste_sample.setStyleSheet(font_description)
 
         info_overlight = QLabel("Overlight\nDetected", self)
@@ -279,7 +279,7 @@ class EvoFlowWidget(QWidget):
                                 background-color: #007cba; }
                             QPushButton:disabled {
                                 background-color: #d9d9d9;
-                                color: #888888; } 
+                                color: #888888; }
                             """
         # # Separate button design
         # self.pump_1_sp_update_btn = QPushButton("Update SP", self)
@@ -431,7 +431,7 @@ class EvoFlowWidget(QWidget):
                             color: Black; }
                         QLineEdit:disabled {
                             background-color: #d9d9d9;
-                            color: #888888; } 
+                            color: #888888; }
                         """
 
         self.pump_1_sp_edit = QLineEdit("0",self)
@@ -479,7 +479,7 @@ class EvoFlowWidget(QWidget):
         self.magneticStirrer_lagoon_sp_edit.setStyleSheet(edit_style)
         self.magneticStirrer_lagoon_feedback = QLabel("FB: 0 rpm\n0 rpm, 0.00 %", self)
         self.magneticStirrer_lagoon_feedback.setGeometry(730, 347, 170, 30)
-        self.magneticStirrer_lagoon_feedback.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
+        self.magneticStirrer_lagoon_feedback.setAlignment(Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter)
         self.magneticStirrer_lagoon_feedback.setStyleSheet(font_small_value)
 
         self.tempCtrl_bioreactor_feedback = QLabel("0.0 °C", self)
@@ -490,7 +490,7 @@ class EvoFlowWidget(QWidget):
         self.tempCtrl_bioreactor_sp_edit.setGeometry(401, 196, 50, 20)
         self.tempCtrl_bioreactor_sp_edit.setStyleSheet(edit_style)
         self.tempCtrl_bioreactor_feedback_sp_htr = QLabel("FB: 0.0 °C, HTR Duty: 0.0 %", self)
-        self.tempCtrl_bioreactor_feedback_sp_htr.setGeometry(360, 215, 170, 20)
+        self.tempCtrl_bioreactor_feedback_sp_htr.setGeometry(354, 215, 170, 20)
         self.tempCtrl_bioreactor_feedback_sp_htr.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         self.tempCtrl_bioreactor_feedback_sp_htr.setStyleSheet(font_small_value)
 
@@ -502,7 +502,7 @@ class EvoFlowWidget(QWidget):
         self.tempCtrl_lagoon_sp_edit.setGeometry(928, 196, 50, 20)
         self.tempCtrl_lagoon_sp_edit.setStyleSheet(edit_style)
         self.tempCtrl_lagoon_feedback_sp_htr = QLabel("FB: 0.0 °C, HTR Duty: 0.0 %", self)
-        self.tempCtrl_lagoon_feedback_sp_htr.setGeometry(887, 215, 170, 20)
+        self.tempCtrl_lagoon_feedback_sp_htr.setGeometry(881, 215, 170, 20)
         self.tempCtrl_lagoon_feedback_sp_htr.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         self.tempCtrl_lagoon_feedback_sp_htr.setStyleSheet(font_small_value)
 
@@ -609,7 +609,7 @@ class EvoFlowWidget(QWidget):
             self.pump_sp_update_requested.emit(new_sp_1, new_sp_2, new_sp_3, new_sp_4)
         except ValueError:
             pass  # Invalid input, ignore
-    
+
     def handle_magneticStirrer_sp_update(self):
         """Handle all magnetic stirrer setpoint updates"""
         try:
@@ -618,7 +618,7 @@ class EvoFlowWidget(QWidget):
             self.magneticStirrer_sp_update_requested.emit(new_sp_bioreactor, new_sp_lagoon)
         except ValueError:
             pass  # Invalid input, ignore
-    
+
     def handle_tempCtrl_sp_update(self):
         """Handle all temperature controller setpoint updates"""
         try:

@@ -121,6 +121,8 @@ class PlotWidget(QWidget):
         self.y_axis_flowRate_min = config.getfloat("plotConfiguration", "y_axis_flowRate_min", fallback=0)
         self.y_axis_flowRate_max = config.getfloat("plotConfiguration", "y_axis_flowRate_max", fallback=10)
 
+        self._data_logging_active = False
+
         # ===============================
         # Plot section
         # ===============================
@@ -134,12 +136,13 @@ class PlotWidget(QWidget):
             else:
                 axis.tick_params(axis="x", colors="#e9e9e9", bottom=True, top=False)
             axis.tick_params(axis="y", colors="#e9e9e9")
+            axis.grid(color="#636363", linestyle="--", linewidth=0.5, alpha=0.7)
             axis.xaxis.label.set_color("#ffffff")
             axis.yaxis.label.set_color("#ffffff")
             for spine in axis.spines.values():
                 spine.set_edgecolor("#636363")
 
-        def style_line(axis, label, color, style = "-", opacity = 1.0):
+        def style_line(axis, label, color, style = "-", linewidth = 2.0, opacity = 1.0):
             """Create a rounded line style so corners appear smoother"""
             line, = axis.plot(
                 [],
@@ -147,7 +150,7 @@ class PlotWidget(QWidget):
                 label=label,
                 color=color,
                 alpha=opacity,
-                linewidth=2.0,
+                linewidth=linewidth,
                 linestyle=style,
                 solid_joinstyle="round",
                 solid_capstyle="round",
@@ -168,6 +171,8 @@ class PlotWidget(QWidget):
         style_axis(self.ax0)
         self.flowRate_pump1 = style_line(self.ax0, "Flow Rate", "lime", style="-.", opacity=1.0)
         self.flowRate_pump2 = style_line(self.ax0, "Flow Rate Lagoon", "cyan", style="-.", opacity=1.0)
+        self.flowRate_pump1_sp = style_line(self.ax0, "Flow Rate Pump 1 Setpoint", "lime", style="-", linewidth=0.5, opacity=0.7)
+        self.flowRate_pump2_sp = style_line(self.ax0, "Flow Rate Pump 2 Setpoint", "cyan", style="-", linewidth=0.5, opacity=0.7)
         # phtCount on right y-axis
         self.ax0_r = self.ax0.twinx()
         self.ax0_r.set_ylabel("Photon Count\n(MHz)", color="white")
@@ -185,6 +190,8 @@ class PlotWidget(QWidget):
         style_axis(self.ax1)
         self.temp_bioReactor = style_line(self.ax1, "Temp", "orange", style="-.", opacity=1.0)
         self.temp_lagoon = style_line(self.ax1, "Temp Lagoon", "yellow", style="-.", opacity=1.0)
+        self.temp_bioReactor_sp = style_line(self.ax1, "Temp Bioreactor Setpoint", "orange", style="-", linewidth=0.5, opacity=0.7)
+        self.temp_lagoon_sp = style_line(self.ax1, "Temp Lagoon Setpoint", "yellow", style="-", linewidth=0.5, opacity=0.7)
         # OD on right y-axis
         self.ax1_r = self.ax1.twinx()
         self.ax1_r.set_ylabel("Optical Density\n(OD)")
@@ -201,7 +208,7 @@ class PlotWidget(QWidget):
         self.ax2.set_yticklabels([])
         self.ax2.set_ylim(0.9, 1.1)
         self.ax2.xaxis.set_major_formatter(FuncFormatter(self._format_unix_seconds_as_datetime))
-        self.ax2.set_xlabel("Date / Time")
+        # self.ax2.set_xlabel("Date / Time")
         style_axis(self.ax2)
         self.sample_extraction_events, = self.ax2.plot([], [], label="Sample Extraction", marker="o", linestyle="", color="magenta", markersize=10)
 
@@ -211,6 +218,17 @@ class PlotWidget(QWidget):
         self.ax1.margins(x=0)
         self.ax1_r.margins(x=0)
         self.ax2.margins(x=0)
+
+        # Set initial x-axis limits
+        now_s = time.time()
+        window_s = float(self.timespan_minutes * 60)
+        x_min = now_s - window_s
+        x_max = now_s
+        self.ax0.set_xlim(x_min, x_max)
+        self.ax0_r.set_xlim(x_min, x_max)
+        self.ax1.set_xlim(x_min, x_max)
+        self.ax1_r.set_xlim(x_min, x_max)
+        self.ax2.set_xlim(x_min, x_max)
 
         # -------------------------------
         # Canvas geometry (Matplotlib)
@@ -455,20 +473,7 @@ class PlotWidget(QWidget):
         self.scrollbar_ax.setPageStep(self.sampling_time_seconds * 3)
         self.scrollbar_ax.setSingleStep(self.sampling_time_seconds)
         self.scrollbar_ax.setValue(self.timespan_minutes * 60)
-
-        # X here is the time in the form of Unix timestamp seconds
-        # Because we defined the function to turn time in Unix timestamp seconds to date/time string for x-axis tick labels,
-        # we can directly use the current Unix timestamp seconds to set the x-axis limits, and the tick labels will automatically show the corresponding date/time.
-        now_s = time.time()
-        window_s = float(self.timespan_minutes * 60)
-        x_min = now_s - window_s
-        x_max = now_s
-        self.ax0.set_xlim(x_min, x_max)
-        self.ax0_r.set_xlim(x_min, x_max)
-        self.ax1.set_xlim(x_min, x_max)
-        self.ax1_r.set_xlim(x_min, x_max)
-        self.ax2.set_xlim(x_min, x_max)
-
+        
         self.canvas.draw_idle()
 
     def clear_plots(self):
@@ -503,32 +508,42 @@ class PlotWidget(QWidget):
         if not x_values:
             return
 
-        self.od_bioReactor.set_data(x_values, payload.get("od_bioreactor", []))
-        self.od_lagoon.set_data(x_values, payload.get("od_lagoon", []))
+        self.flowRate_pump1.set_data(x_values, payload.get("flow_rate_pump1", []))
+        self.flowRate_pump2.set_data(x_values, payload.get("flow_rate_pump2", []))
         self.phtCount_lagoon.set_data(x_values, payload.get("pht_count_lagoon", []))
         self.temp_bioReactor.set_data(x_values, payload.get("temp_bioreactor", []))
         self.temp_lagoon.set_data(x_values, payload.get("temp_lagoon", []))
-        self.flowRate_pump1.set_data(x_values, payload.get("flow_rate_pump1", []))
-        self.flowRate_pump2.set_data(x_values, payload.get("flow_rate_pump2", []))
+        self.temp_bioReactor_sp.set_data(x_values, payload.get("temp_bioreactor_sp", []))
+        self.temp_lagoon_sp.set_data(x_values, payload.get("temp_lagoon_sp", []))
+        self.od_bioReactor.set_data(x_values, payload.get("od_bioreactor", []))
+        self.od_lagoon.set_data(x_values, payload.get("od_lagoon", []))
         self.sample_extraction_events.set_data(x_values, payload.get("sample_event", []))
+        self.update_x_axis()
+        self.canvas.draw_idle()
 
-        x_min = float(min(x_values))
-        x_max = float(max(x_values))
-        if x_min == x_max:
-            x_min -= 1.0
-            x_max += 1.0
+    def update_x_axis(self):
+        """Update x-axis limits based on current time and timespan, keeping the same range of x-values visible"""
+        # X here is the time in the form of Unix timestamp seconds
+        # Because we defined the function to turn time in Unix timestamp seconds to date/time string for x-axis tick labels,
+        # we can directly use the current Unix timestamp seconds to set the x-axis limits, and the tick labels will automatically show the corresponding date/time.        
+        x_min, x_max = self.ax0.get_xlim()
+        if self._data_logging_active:
+            now_s = time.time()
+            window_s = float(self.timespan_minutes * 60)
+            x_min = now_s - window_s
+            x_max = now_s
 
         self.ax0.set_xlim(x_min, x_max)
         self.ax0_r.set_xlim(x_min, x_max)
         self.ax1.set_xlim(x_min, x_max)
         self.ax1_r.set_xlim(x_min, x_max)
         self.ax2.set_xlim(x_min, x_max)
-        self.canvas.draw_idle()
-
+        
     @Slot(bool)
     def set_logging_state(self, is_logging: bool):
         """Reflect active logging state in UI controls"""
-        # Disabling Samlping Time edit log name edit, and browse button during active logging
+        self._data_logging_active = is_logging
+        # Disabling Sampling Time edit, log name edit, and browse button during active logging
         self.sampling_time_edit.setEnabled(not is_logging)
         self.log_name_edit.setEnabled(not is_logging)
         self.browse_location_button.setEnabled(not is_logging)
