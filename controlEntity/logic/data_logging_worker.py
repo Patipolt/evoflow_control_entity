@@ -46,6 +46,7 @@ class DataLoggingWorker(QObject):
         self._is_logging = False
         self._sampling_time_seconds = 0
         self._timespan_minutes = 0
+        self._history_offset_points = 0
 
         self._session_dir: Path | None = None
         self._conn: sqlite3.Connection | None = None
@@ -179,6 +180,7 @@ class DataLoggingWorker(QObject):
             self._session_dir.mkdir(parents=True, exist_ok=True)
 
             self._sampling_time_seconds = max(1, int(sampling_time_seconds))
+            self._history_offset_points = 0
 
             self._db_index = 0
             self._row_count_current_db = 0
@@ -215,7 +217,47 @@ class DataLoggingWorker(QObject):
         """Update current plot timespan window"""
         self._timespan_minutes = max(1, int(timespan_minutes))
         # Update plot data immediately to reflect new timespan setting
-        self.plot_data_updated.emit(self._load_plot_data(self._timespan_minutes), self._count_total_logged_rows())
+        self.plot_data_updated.emit(
+            self._load_plot_data(self._timespan_minutes, self._history_offset_points),
+            self._count_total_logged_rows(),
+        )
+
+    @Slot(int, int)
+    def request_plot_view(self, timespan_minutes: int, history_offset_points: int):
+        """Load a plot view from a timespan window anchored at an offset from newest"""
+        self._timespan_minutes = max(1, int(timespan_minutes))
+        self._history_offset_points = max(0, int(history_offset_points))
+        self.plot_data_updated.emit(
+            self._load_plot_data(self._timespan_minutes, self._history_offset_points),
+            self._count_total_logged_rows(),
+        )
+
+    @Slot(str)
+    def load_logged_data_from_directory(self, directory_path: str):
+        """Load telemetry DB files from a selected folder and display newest window"""
+        if self._is_logging:
+            self.status_message.emit("Stop active logging before opening logged data from another folder.")
+            return
+
+        selected_dir = Path(directory_path).expanduser()
+        if not selected_dir.exists() or not selected_dir.is_dir():
+            self.status_message.emit(f"Invalid logged-data folder: {selected_dir}")
+            return
+
+        discovered = self._discover_db_files(selected_dir)
+        if not discovered:
+            self.status_message.emit("No telemetry SQL files found in selected folder.")
+            return
+
+        self._session_dir = selected_dir
+        self._db_paths = discovered
+        self._history_offset_points = 0
+
+        total_points = self._count_total_logged_rows()
+        self.plot_data_updated.emit(self._load_plot_data(self._timespan_minutes, 0), total_points)
+        self.status_message.emit(
+            f"Loaded logged data from {selected_dir} ({len(discovered)} files, {total_points} points)."
+        )
 
     @Slot()
     def shutdown(self):
@@ -371,7 +413,10 @@ class DataLoggingWorker(QObject):
         all_data_points_logged = self._count_total_logged_rows()
 
         # Request updated plot data after each new log entry
-        self.plot_data_updated.emit(self._load_plot_data(self._timespan_minutes), all_data_points_logged)
+        self.plot_data_updated.emit(
+            self._load_plot_data(self._timespan_minutes, self._history_offset_points),
+            all_data_points_logged,
+        )
     
     def _count_total_logged_rows(self) -> int:
         """Count total rows across all segment DB files for status reporting"""
@@ -492,7 +537,7 @@ class DataLoggingWorker(QObject):
             self._conn = None
             self._cursor = None
 
-    def _load_plot_data(self, timespan_minutes: int) -> dict[str, list[float]]:
+    def _load_plot_data(self, timespan_minutes: int, history_offset_points: int = 0) -> dict[str, list[float]]:
         """Read telemetry from rotated DB files and return plot-series arrays"""
         payload = {
             "x_seconds": [],
@@ -511,11 +556,15 @@ class DataLoggingWorker(QObject):
         if self._session_dir is None:
             return payload
 
-        db_files = sorted(self._session_dir.glob("telemetry_*.sqlite"))
+        db_files = list(self._db_paths) if self._db_paths else sorted(self._session_dir.glob("telemetry_*.sqlite"))
         if not db_files:
             return payload
 
-        cutoff_ms = int(time.time() * 1000) - (max(1, timespan_minutes) * 60 * 1000)
+        anchor_ts_ms = self._resolve_anchor_timestamp_ms(db_files, history_offset_points)
+        if anchor_ts_ms is None:
+            return payload
+
+        cutoff_ms = anchor_ts_ms - (max(1, timespan_minutes) * 60 * 1000)
         rows: list[tuple[Any, ...]] = []
 
         for db_path in db_files:
@@ -537,10 +586,10 @@ class DataLoggingWorker(QObject):
                         flow_rate_pump2,
                         sample_done_flag
                     FROM telemetry
-                    WHERE ts_unix_ms >= ?
+                    WHERE ts_unix_ms >= ? AND ts_unix_ms <= ?
                     ORDER BY ts_unix_ms ASC
                     """,
-                    (cutoff_ms,),
+                    (cutoff_ms, anchor_ts_ms),
                 )
                 rows.extend(cursor.fetchall())
             finally:
@@ -566,6 +615,71 @@ class DataLoggingWorker(QObject):
             payload["sample_event"].append(float(item[10]))
 
         return payload
+
+    def _resolve_anchor_timestamp_ms(self, db_files: list[Path], history_offset_points: int) -> int | None:
+        """Return right-edge timestamp for view window based on offset from newest row"""
+        total_rows = self._count_total_logged_rows()
+        if total_rows <= 0:
+            return None
+
+        remaining = min(max(0, int(history_offset_points)), total_rows - 1)
+
+        for db_path in reversed(db_files):
+            conn = sqlite3.connect(db_path)
+            try:
+                cursor = conn.cursor()
+                cursor.execute("SELECT COUNT(*) FROM telemetry")
+                db_count = int(cursor.fetchone()[0])
+                if db_count <= 0:
+                    continue
+
+                if remaining < db_count:
+                    cursor.execute(
+                        """
+                        SELECT ts_unix_ms
+                        FROM telemetry
+                        ORDER BY ts_unix_ms DESC
+                        LIMIT 1 OFFSET ?
+                        """,
+                        (remaining,),
+                    )
+                    row = cursor.fetchone()
+                    return int(row[0]) if row else None
+
+                remaining -= db_count
+            finally:
+                conn.close()
+
+        return None
+
+    def _discover_db_files(self, session_dir: Path) -> list[Path]:
+        """Discover telemetry DB files from a session folder"""
+        candidates = sorted(session_dir.glob("telemetry_*.sqlite"))
+        if not candidates:
+            candidates = sorted(session_dir.glob("*.sqlite")) + sorted(session_dir.glob("*.db"))
+
+        valid_paths: list[Path] = []
+        for db_path in candidates:
+            if self._is_valid_telemetry_db(db_path):
+                valid_paths.append(db_path)
+
+        return valid_paths
+
+    @staticmethod
+    def _is_valid_telemetry_db(db_path: Path) -> bool:
+        """Check if DB contains the expected telemetry table"""
+        try:
+            conn = sqlite3.connect(db_path)
+            try:
+                cursor = conn.cursor()
+                cursor.execute(
+                    "SELECT name FROM sqlite_master WHERE type='table' AND name='telemetry'"
+                )
+                return cursor.fetchone() is not None
+            finally:
+                conn.close()
+        except Exception:
+            return False
 
     @staticmethod
     def _sanitize_log_name(log_name: str) -> str:

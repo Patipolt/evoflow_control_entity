@@ -104,6 +104,8 @@ class MainUI(QMainWindow):
         self.plot_widget.start_logging_requested.connect(self.logic.data_logging_worker.start_logging)
         self.plot_widget.stop_logging_requested.connect(self.logic.data_logging_worker.stop_logging)
         self.plot_widget.timespan_minutes_changed.connect(self.logic.data_logging_worker.set_timespan_minutes)
+        self.plot_widget.plot_view_requested.connect(self.logic.data_logging_worker.request_plot_view)
+        self.plot_widget.open_logged_data_requested.connect(self.logic.data_logging_worker.load_logged_data_from_directory)
 
         self.logic.data_logging_worker.plot_data_updated.connect(self.plot_widget.update_plot_from_logged_data)
         self.logic.data_logging_worker.logging_state_changed.connect(self.plot_widget.set_logging_state)

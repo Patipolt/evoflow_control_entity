@@ -30,6 +30,8 @@ class PlotWidget(QWidget):
     start_logging_requested = Signal(str, str, int)
     stop_logging_requested = Signal()
     timespan_minutes_changed = Signal(int)
+    plot_view_requested = Signal(int, int)
+    open_logged_data_requested = Signal(str)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -123,6 +125,9 @@ class PlotWidget(QWidget):
         self.scrollbar_max_loading_value = config.getint("plotConfiguration", "scrollbar_max_loading_value", fallback=2500)
 
         self._data_logging_active = False
+        self._total_data_points = 0
+        self._scroll_history_base_offset = 0
+        self._suppress_scrollbar_events = False
 
         # ===============================
         # Plot section
@@ -258,10 +263,10 @@ class PlotWidget(QWidget):
         self.scrollbar_ax.setMinimumHeight(20)
         self.scrollbar_ax.setMinimum(0)
         self.scrollbar_ax.setStyleSheet(scrollbar_style)
-        self.scrollbar_ax.setMaximum(self.timespan_minutes * 60)
-        self.scrollbar_ax.setPageStep(self.sampling_time_seconds)
-        self.scrollbar_ax.setSingleStep(self.sampling_time_seconds)
-        self.scrollbar_ax.setValue(self.timespan_minutes * 60)  # Start at the end of the timespan
+        self.scrollbar_ax.setMaximum(0)
+        self.scrollbar_ax.setPageStep(1)
+        self.scrollbar_ax.setSingleStep(1)
+        self.scrollbar_ax.setValue(0)
 
         self.scrollbar_row_widget = QWidget(self.plot_section_widget)
         self.scrollbar_row_widget.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
@@ -454,6 +459,8 @@ class PlotWidget(QWidget):
         self.start_logging_button.clicked.connect(self._on_start_logging_clicked)
         self.stop_logging_button.clicked.connect(self.stop_logging_requested)
         self.browse_location_button.clicked.connect(self._on_browse_location_clicked)
+        self.open_log_button.clicked.connect(self._on_open_logged_data_clicked)
+        self.scrollbar_ax.valueChanged.connect(self._on_scrollbar_value_changed)
 
     def _on_update_configuration_clicked(self):
         """Changing plot configuration parameters and replotting with new settings"""
@@ -475,10 +482,9 @@ class PlotWidget(QWidget):
         self.ax1.set_ylim(self.y_axis_temp_min, self.y_axis_temp_max)
         self.ax1_r.set_ylim(self.y_axis_od_min, self.y_axis_od_max)
 
-        self.scrollbar_ax.setMaximum(self.timespan_minutes * 60)
-        self.scrollbar_ax.setPageStep(self.sampling_time_seconds * 3)
-        self.scrollbar_ax.setSingleStep(self.sampling_time_seconds)
-        self.scrollbar_ax.setValue(self.timespan_minutes * 60)
+        self._refresh_scrollbar_bounds()
+
+        self.plot_view_requested.emit(self.timespan_minutes, self._current_history_offset_points())
         
         self.canvas.draw_idle()
 
@@ -507,9 +513,30 @@ class PlotWidget(QWidget):
         if selected_dir:
             self.log_location_label.setText(selected_dir)
 
+    def _on_open_logged_data_clicked(self):
+        """Select a logged-data folder and request loading it for history plotting"""
+        selected_dir = QFileDialog.getExistingDirectory(
+            self,
+            "Select Logged Data Folder",
+            self.log_location_label.text().strip() or os.getcwd(),
+        )
+        if not selected_dir:
+            return
+
+        # Start loaded-history view at newest window; user can scroll backward afterward.
+        self._scroll_history_base_offset = 0
+        self._suppress_scrollbar_events = True
+        self.scrollbar_ax.setValue(self.scrollbar_ax.maximum())
+        self._suppress_scrollbar_events = False
+
+        self.open_logged_data_requested.emit(selected_dir)
+
     @Slot(dict, int)
     def update_plot_from_logged_data(self, payload: dict, total_data_points: int):
         """Update plotted series from logging worker payload"""
+        self._total_data_points = max(0, int(total_data_points))
+        self._refresh_scrollbar_bounds()
+
         x_values = payload.get("x_seconds", [])
         if not x_values:
             return
@@ -524,36 +551,19 @@ class PlotWidget(QWidget):
         self.od_bioReactor.set_data(x_values, payload.get("od_bioreactor", []))
         self.od_lagoon.set_data(x_values, payload.get("od_lagoon", []))
         self.sample_extraction_events.set_data(x_values, payload.get("sample_event", []))
-        self.update_x_axis()
-        self.canvas.draw_idle()
 
-        # scrollbar management
-        # the scrollbar should handle at maximum the number defined in the settings file.
-        # but for the update purpose, the maximum value grows with the number of data points we have.
-        if total_data_points > self.scrollbar_max_loading_value:
-            self.scrollbar_ax.setMaximum(self.scrollbar_max_loading_value)
-            self.scrollbar_ax.setValue(self.scrollbar_max_loading_value)
-        else:
-            self.scrollbar_ax.setMaximum(total_data_points)
-            self.scrollbar_ax.setValue(total_data_points)
-
-    def update_x_axis(self):
-        """Update x-axis limits based on current time and timespan, keeping the same range of x-values visible"""
-        # X here is the time in the form of Unix timestamp seconds
-        # Because we defined the function to turn time in Unix timestamp seconds to date/time string for x-axis tick labels,
-        # we can directly use the current Unix timestamp seconds to set the x-axis limits, and the tick labels will automatically show the corresponding date/time.        
-        x_min, x_max = self.ax0.get_xlim()
-        if self._data_logging_active:
-            now_s = time.time()
-            window_s = float(self.timespan_minutes * 60)
-            x_min = now_s - window_s
-            x_max = now_s
-
+        # Keep the visible x-range fixed to the configured timespan window.
+        x_max = float(x_values[-1])
+        window_s = float(max(1, self.timespan_minutes) * 60)
+        x_min = x_max - window_s
+        if x_max <= x_min:
+            x_max = x_min + 1.0
         self.ax0.set_xlim(x_min, x_max)
         self.ax0_r.set_xlim(x_min, x_max)
         self.ax1.set_xlim(x_min, x_max)
         self.ax1_r.set_xlim(x_min, x_max)
         self.ax2.set_xlim(x_min, x_max)
+        self.canvas.draw_idle()
         
     @Slot(bool)
     def set_logging_state(self, is_logging: bool):
@@ -565,6 +575,10 @@ class PlotWidget(QWidget):
         self.browse_location_button.setEnabled(not is_logging)
         self.start_logging_button.setEnabled(not is_logging)
         self.stop_logging_button.setEnabled(is_logging)
+
+        if is_logging:
+            self._scroll_history_base_offset = 0
+            self._refresh_scrollbar_bounds(force_follow_latest=True)
 
     @Slot(str)
     def show_status_message(self, message: str):
@@ -628,6 +642,90 @@ class PlotWidget(QWidget):
     def resizeEvent(self, event):
         super().resizeEvent(event)
         QTimer.singleShot(0, self._sync_scrollbar_to_ax2)
+
+    def _current_history_offset_points(self) -> int:
+        """Return point offset from newest sample represented by scrollbar position"""
+        scroll_max = max(0, self.scrollbar_ax.maximum())
+        value = max(0, min(self.scrollbar_ax.value(), scroll_max))
+        return int(self._scroll_history_base_offset + (scroll_max - value))
+
+    def _refresh_scrollbar_bounds(self, force_follow_latest: bool = False):
+        """Update scrollbar range from total rows while preserving selected history position"""
+        old_max = max(0, self.scrollbar_ax.maximum())
+        old_value = max(0, min(self.scrollbar_ax.value(), old_max))
+        old_offset = int(self._scroll_history_base_offset + (old_max - old_value))
+
+        cap = max(0, self.scrollbar_max_loading_value)
+        scroll_max = min(self._total_data_points, cap)
+        self._update_scrollbar_step_sizes(scroll_max)
+        if scroll_max <= 0:
+            self._scroll_history_base_offset = 0
+            self._suppress_scrollbar_events = True
+            self.scrollbar_ax.setMaximum(0)
+            self.scrollbar_ax.setValue(0)
+            self._suppress_scrollbar_events = False
+            return
+
+        if force_follow_latest:
+            offset = 0
+        else:
+            offset = min(max(0, old_offset), max(0, self._total_data_points - 1))
+
+        if self._total_data_points <= scroll_max:
+            self._scroll_history_base_offset = 0
+        else:
+            max_base = self._total_data_points - scroll_max
+            self._scroll_history_base_offset = min(max(0, self._scroll_history_base_offset), max_base)
+
+            if offset < self._scroll_history_base_offset:
+                self._scroll_history_base_offset = offset
+            elif offset > self._scroll_history_base_offset + scroll_max:
+                self._scroll_history_base_offset = offset - scroll_max
+
+        value = scroll_max - (offset - self._scroll_history_base_offset)
+        value = max(0, min(scroll_max, value))
+
+        self._suppress_scrollbar_events = True
+        self.scrollbar_ax.setMaximum(scroll_max)
+        self.scrollbar_ax.setValue(value)
+        self._suppress_scrollbar_events = False
+
+    def _update_scrollbar_step_sizes(self, scroll_max: int):
+        """Set scrollbar handle width and stepping in data-point units"""
+        sampling_s = max(1, int(self.sampling_time_seconds))
+        window_points = max(1, int(round((self.timespan_minutes * 60) / sampling_s)))
+        if scroll_max > 0:
+            window_points = min(window_points, scroll_max)
+
+        self.scrollbar_ax.setPageStep(window_points)
+        self.scrollbar_ax.setSingleStep(1)
+
+    @Slot(int)
+    def _on_scrollbar_value_changed(self, value: int):
+        """Shift viewed timespan through history (past to present) using scrollbar position"""
+        if self._suppress_scrollbar_events:
+            return
+
+        scroll_max = max(0, self.scrollbar_ax.maximum())
+        if scroll_max <= 0:
+            return
+
+        if self._total_data_points > scroll_max:
+            shift = max(1, scroll_max // 2)
+
+            if value <= 0 and (self._scroll_history_base_offset + scroll_max) < (self._total_data_points - 1):
+                self._scroll_history_base_offset = min(self._total_data_points - scroll_max, self._scroll_history_base_offset + shift)
+                self._suppress_scrollbar_events = True
+                self.scrollbar_ax.setValue(min(shift, scroll_max))
+                self._suppress_scrollbar_events = False
+
+            elif value >= scroll_max and self._scroll_history_base_offset > 0:
+                self._scroll_history_base_offset = max(0, self._scroll_history_base_offset - shift)
+                self._suppress_scrollbar_events = True
+                self.scrollbar_ax.setValue(max(0, scroll_max - shift))
+                self._suppress_scrollbar_events = False
+
+        self.plot_view_requested.emit(self.timespan_minutes, self._current_history_offset_points())
 
     def test_data_plot(self):
         """Plot some test data to verify the plotting functionality"""
