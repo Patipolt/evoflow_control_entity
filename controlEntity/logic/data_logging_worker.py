@@ -28,7 +28,7 @@ class DataLoggingWorker(QObject):
     from the evoflow worker and sample extraction worker, but only serves a subset of that data to the PlotWidget for visualization"""
     status_message = Signal(str)
     logging_state_changed = Signal(bool)
-    plot_data_updated = Signal(dict)  # Emits plot payload dict for PlotWidget
+    plot_data_updated = Signal(dict, int)  # Emits plot payload dict for PlotWidget, along with all data points logged in the database
 
     def __init__(self):
         super().__init__()
@@ -215,7 +215,7 @@ class DataLoggingWorker(QObject):
         """Update current plot timespan window"""
         self._timespan_minutes = max(1, int(timespan_minutes))
         # Update plot data immediately to reflect new timespan setting
-        self.plot_data_updated.emit(self._load_plot_data(self._timespan_minutes))
+        self.plot_data_updated.emit(self._load_plot_data(self._timespan_minutes), self._count_total_logged_rows())
 
     @Slot()
     def shutdown(self):
@@ -368,8 +368,24 @@ class DataLoggingWorker(QObject):
         if self._row_count_current_db >= self._max_rows_per_db:
             self._rotate_segment_db()
 
+        all_data_points_logged = self._count_total_logged_rows()
+
         # Request updated plot data after each new log entry
-        self.plot_data_updated.emit(self._load_plot_data(self._timespan_minutes))
+        self.plot_data_updated.emit(self._load_plot_data(self._timespan_minutes), all_data_points_logged)
+    
+    def _count_total_logged_rows(self) -> int:
+        """Count total rows across all segment DB files for status reporting"""
+        total_rows = 0
+        for db_path in self._db_paths:
+            conn = sqlite3.connect(db_path)
+            try:
+                cursor = conn.cursor()
+                cursor.execute("SELECT COUNT(*) FROM telemetry")
+                count = cursor.fetchone()[0]
+                total_rows += count
+            finally:
+                conn.close()
+        return total_rows
 
     def _rotate_segment_db(self):
         """Close current DB segment and open a new one"""

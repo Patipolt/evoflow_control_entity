@@ -120,6 +120,7 @@ class PlotWidget(QWidget):
         self.y_axis_temp_max = config.getfloat("plotConfiguration", "y_axis_temp_max", fallback=40)
         self.y_axis_flowRate_min = config.getfloat("plotConfiguration", "y_axis_flowRate_min", fallback=0)
         self.y_axis_flowRate_max = config.getfloat("plotConfiguration", "y_axis_flowRate_max", fallback=10)
+        self.scrollbar_max_loading_value = config.getint("plotConfiguration", "scrollbar_max_loading_value", fallback=2500)
 
         self._data_logging_active = False
 
@@ -415,6 +416,10 @@ class PlotWidget(QWidget):
         self.open_log_button.setStyleSheet(button_style)
         self.open_log_button.setMinimumHeight(40)
         self.open_log_button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.export_log_button = QPushButton("Export Log to CSV")
+        self.export_log_button.setStyleSheet(button_style)
+        self.export_log_button.setMinimumHeight(40)
+        self.export_log_button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
 
         data_logging_first_row_layout.addWidget(log_name)
@@ -425,6 +430,7 @@ class PlotWidget(QWidget):
         data_logging_third_row_layout.addWidget(self.start_logging_button)
         data_logging_third_row_layout.addWidget(self.stop_logging_button)
         data_logging_forth_row_layout.addWidget(self.open_log_button)
+        data_logging_forth_row_layout.addWidget(self.export_log_button)
 
         data_logging_layout.addLayout(data_logging_first_row_layout)
         data_logging_layout.addLayout(data_logging_second_row_layout)
@@ -501,8 +507,8 @@ class PlotWidget(QWidget):
         if selected_dir:
             self.log_location_label.setText(selected_dir)
 
-    @Slot(dict)
-    def update_plot_from_logged_data(self, payload: dict):
+    @Slot(dict, int)
+    def update_plot_from_logged_data(self, payload: dict, total_data_points: int):
         """Update plotted series from logging worker payload"""
         x_values = payload.get("x_seconds", [])
         if not x_values:
@@ -520,6 +526,16 @@ class PlotWidget(QWidget):
         self.sample_extraction_events.set_data(x_values, payload.get("sample_event", []))
         self.update_x_axis()
         self.canvas.draw_idle()
+
+        # scrollbar management
+        # the scrollbar should handle at maximum the number defined in the settings file.
+        # but for the update purpose, the maximum value grows with the number of data points we have.
+        if total_data_points > self.scrollbar_max_loading_value:
+            self.scrollbar_ax.setMaximum(self.scrollbar_max_loading_value)
+            self.scrollbar_ax.setValue(self.scrollbar_max_loading_value)
+        else:
+            self.scrollbar_ax.setMaximum(total_data_points)
+            self.scrollbar_ax.setValue(total_data_points)
 
     def update_x_axis(self):
         """Update x-axis limits based on current time and timespan, keeping the same range of x-values visible"""
