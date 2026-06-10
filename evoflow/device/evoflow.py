@@ -9,6 +9,17 @@ Created: April 2026
 import struct
 import serial
 import time
+import importlib
+
+try:
+    GPIO = importlib.import_module("RPi.GPIO")  # Works with RPi.GPIO and rpi-lgpio compatibility layer.
+except ImportError:
+    GPIO = None
+
+try:
+    gpiozero = importlib.import_module("gpiozero")
+except ImportError:
+    gpiozero = None
 
 from utils import colored_text as tc
 
@@ -83,6 +94,8 @@ class EvoFlowDevice:
         timeout: float = 0.01,
         sender_addr: int = ADDR_GUI,
         receiver_addr: int = ADDR_EVOFLOW_NUCLEO,
+        evoflow_status_gpio_pin: int = 27,
+        evoflow_reset_gpio_pin: int = 17,
     ):
         self.port = port
         self.baudrate = baudrate
@@ -91,6 +104,13 @@ class EvoFlowDevice:
         self._rx_buffer = bytearray()
         self.evoflow_telemetry = EvoFlowTelemetry()
         self.profile_telemetry = False
+        self.gpio = None
+        self._gpio_initialized = False
+        self._gpio_backend = "none"
+        self._status_input = None
+        self._reset_output = None
+        self.evoflow_status_gpio_pin = evoflow_status_gpio_pin
+        self.evoflow_reset_gpio_pin = evoflow_reset_gpio_pin
 
         self.protocol_packet = ProtocolPacket(
             sender=sender_addr,
@@ -100,6 +120,49 @@ class EvoFlowDevice:
             id2=0,
             payload=b"",
         )
+
+        self._init_gpio()
+
+    def _init_gpio(self):
+        """Initialize Raspberry Pi GPIO input used for EvoFlow error status."""
+        self.gpio = None
+        self._gpio_initialized = False
+        self._gpio_backend = "none"
+        self._status_input = None
+        self._reset_output = None
+
+        if GPIO is not None:
+            try:
+                self.gpio = GPIO
+                self.gpio.setwarnings(False)
+                self.gpio.setmode(self.gpio.BCM)
+                # Pull-up avoids floating input; disconnected/off state reads HIGH -> error.
+                self.gpio.setup(self.evoflow_status_gpio_pin, self.gpio.IN, pull_up_down=self.gpio.PUD_UP)
+                self.gpio.setup(self.evoflow_reset_gpio_pin, self.gpio.OUT, initial=self.gpio.HIGH)
+                self._gpio_initialized = True
+                self._gpio_backend = "RPi.GPIO"
+                return
+            except Exception as e:
+                print(tc(f"Failed to initialize RPi GPIO backend: {e}", "Red"))
+
+        if gpiozero is not None:
+            try:
+                self._status_input = gpiozero.DigitalInputDevice(
+                    self.evoflow_status_gpio_pin,
+                    pull_up=True,
+                )
+                self._reset_output = gpiozero.DigitalOutputDevice(
+                    self.evoflow_reset_gpio_pin,
+                    active_high=True,
+                    initial_value=True,
+                )
+                self._gpio_initialized = True
+                self._gpio_backend = "gpiozero"
+                return
+            except Exception as e:
+                print(tc(f"Failed to initialize gpiozero backend: {e}", "Red"))
+
+        print(tc("GPIO backend not available. Install rpi-lgpio or gpiozero on Raspberry Pi.", "Red"))
 
     def connect(self):
         """Establish serial connection to the EvoFlow device"""
@@ -115,6 +178,25 @@ class EvoFlowDevice:
         if self.serial and self.serial.is_open:
             self.serial.close()
             print("Disconnected from EvoFlow device.")
+
+        if self._gpio_initialized:
+            try:
+                if self._gpio_backend == "RPi.GPIO" and self.gpio is not None:
+                    self.gpio.cleanup(self.evoflow_status_gpio_pin)
+                    self.gpio.cleanup(self.evoflow_reset_gpio_pin)
+                elif self._gpio_backend == "gpiozero":
+                    if self._status_input is not None:
+                        self._status_input.close()
+                    if self._reset_output is not None:
+                        self._reset_output.close()
+            except Exception:
+                pass
+            finally:
+                self._gpio_initialized = False
+                self._gpio_backend = "none"
+                self.gpio = None
+                self._status_input = None
+                self._reset_output = None
 
     def read_serial(self) -> bytes:
         """Read data from serial port until delimiter (0x00) is found, return the raw packet without the delimiter"""
@@ -942,5 +1024,54 @@ class EvoFlowDevice:
         except (serial.SerialException, struct.error, ValueError) as e:
             print(tc(f"Failed to read live feed telemetry: {e}", "Red"))
             pass # ignore for now
+
+    def is_evoflow_ok(self)-> bool:
+        """Check GPIO pin to determine if the EvoFlow device has error or not
+        0 = normal, 1 = error
+        """
+        if not self._gpio_initialized:
+            print(tc("GPIO not available, cannot read EvoFlow status.", "Red"))
+            return False
+
+        try:
+            if self._gpio_backend == "RPi.GPIO" and self.gpio is not None:
+                pin_state = self.gpio.input(self.evoflow_status_gpio_pin)
+                evoflow_ok = (pin_state == 0)
+            elif self._gpio_backend == "gpiozero" and self._status_input is not None:
+                pin_state = int(self._status_input.value)
+                evoflow_ok = (pin_state == 0)
+            else:
+                print(tc("GPIO backend is not initialized correctly.", "Red"))
+                return False
+
+            if not evoflow_ok:
+                print(tc("EvoFlow device error detected!", "Red"))
+            return evoflow_ok
+        except Exception as e:
+            print(tc(f"Failed to read EvoFlow status from GPIO: {e}", "Red"))
+            return False
     
+    def reset_evoflow(self):
+        """Reset the EvoFlow device by toggling GPIO pin"""
+        if not self._gpio_initialized:
+            print(tc("GPIO not available, cannot reset EvoFlow device!", "Red"))
+            return
+
+        try:
+            # Toggle the reset pin low for 1 second, then back high.
+            if self._gpio_backend == "RPi.GPIO" and self.gpio is not None:
+                self.gpio.output(self.evoflow_reset_gpio_pin, self.gpio.LOW)
+                time.sleep(1)
+                self.gpio.output(self.evoflow_reset_gpio_pin, self.gpio.HIGH)
+            elif self._gpio_backend == "gpiozero" and self._reset_output is not None:
+                self._reset_output.off()
+                time.sleep(1)
+                self._reset_output.on()
+            else:
+                print(tc("GPIO backend is not initialized correctly.", "Red"))
+                return
+
+            print(tc("EvoFlow device reset via GPIO pin!", "Yellow"))
+        except Exception as e:
+            print(tc(f"Failed to reset EvoFlow device via GPIO: {e}", "Red"))
             

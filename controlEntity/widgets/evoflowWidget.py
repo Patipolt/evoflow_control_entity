@@ -38,6 +38,8 @@ class EvoFlowWidget(QWidget):
     magneticStirrer_sp_update_requested = Signal(float, float)
     tempCtrl_sp_update_requested = Signal(float, float)
 
+    reset_evoflow_requested = Signal()
+
     # Incoming signals (to update the widget)
     evoflow_telemetry_updated = Signal(EvoFlowTelemetry)
 
@@ -46,9 +48,9 @@ class EvoFlowWidget(QWidget):
         super().__init__()
         self._width: int = width
         self._height: int = height
+        self.load_default_config()
         self.setup_ui()
         self.connect_signals()
-        self.load_default_config()
 
     def setup_ui(self):
         """Set up the UI components"""
@@ -298,14 +300,11 @@ class EvoFlowWidget(QWidget):
                 padding: 0px 3px;
             }
         """
+
         evoflow_control_groupbox = QGroupBox("EvoFlow Control", self)
         evoflow_control_groupbox.setStyleSheet(groupbox_style)
-        evoflow_control_groupbox.setGeometry(1250, 290, 500, 150)
+        evoflow_control_groupbox.setGeometry(1245, 290, 250, 150)
         evoflow_control_V_layout = QVBoxLayout(evoflow_control_groupbox)
-        evoflow_control_H1_layout = QHBoxLayout()
-        evoflow_control_H2_layout = QHBoxLayout()
-        evoflow_control_H3_layout = QHBoxLayout()
-        evoflow_control_H4_layout = QHBoxLayout()
 
         self.pumps_sp_update_btn = QPushButton("Update Pump Set Points", evoflow_control_groupbox)
         self.pumps_sp_update_btn.setStyleSheet(button_style)
@@ -316,24 +315,74 @@ class EvoFlowWidget(QWidget):
         self.magneticStirrers_sp_update_btn = QPushButton("Update Magnetic Stirrer Set Points", evoflow_control_groupbox)
         self.magneticStirrers_sp_update_btn.setStyleSheet(button_style)
         self.magneticStirrers_sp_update_btn.setMinimumHeight(24)
-
-
-        # For development purpose
         self.reset_all_slideswitches_btn = QPushButton("Reset All Slide Switches", evoflow_control_groupbox)
         self.reset_all_slideswitches_btn.setStyleSheet(button_style)
         self.reset_all_slideswitches_btn.setMinimumHeight(24)
 
-
-        evoflow_control_V_layout.addLayout(evoflow_control_H1_layout)
-        evoflow_control_V_layout.addLayout(evoflow_control_H2_layout)
-        evoflow_control_V_layout.addLayout(evoflow_control_H3_layout)
-        evoflow_control_V_layout.addLayout(evoflow_control_H4_layout)
+        evoflow_control_V_layout.addWidget(self.pumps_sp_update_btn)
+        evoflow_control_V_layout.addWidget(self.tempCtrls_sp_update_btn)
+        evoflow_control_V_layout.addWidget(self.magneticStirrers_sp_update_btn)
+        evoflow_control_V_layout.addWidget(self.reset_all_slideswitches_btn)
         evoflow_control_V_layout.addStretch()  # Push the buttons to the top
 
-        evoflow_control_H1_layout.addWidget(self.pumps_sp_update_btn)
-        evoflow_control_H2_layout.addWidget(self.tempCtrls_sp_update_btn)
-        evoflow_control_H3_layout.addWidget(self.magneticStirrers_sp_update_btn)
-        evoflow_control_H4_layout.addWidget(self.reset_all_slideswitches_btn)
+
+        controller_status_groupbox = QGroupBox("Controllers Status", self)
+        controller_status_groupbox.setStyleSheet(groupbox_style)
+        controller_status_groupbox.setGeometry(1505, 290, 250, 150)
+        controller_status_V_layout = QVBoxLayout(controller_status_groupbox)
+
+        controller_status_first_row_layout = QHBoxLayout()
+        controller_status_second_row_layout = QHBoxLayout()
+        controller_status_third_row_layout = QHBoxLayout()
+        controller_status_forth_row_layout = QHBoxLayout()
+        controller_status_fifth_row_layout = QHBoxLayout()
+
+        evoflow_status_label = QLabel("Evoflow Status:", controller_status_groupbox)
+        evoflow_status_label.setStyleSheet(font_small_value)
+        se_status_label = QLabel("SE Status:", controller_status_groupbox)
+        se_status_label.setStyleSheet(font_small_value)
+        self.led_evoflow_status = QLabel("⚪", controller_status_groupbox)  #🔴🟢
+        self.led_se_status = QLabel("⚪", controller_status_groupbox)  #🔴🟢
+        self.reset_evoflow_btn = QPushButton("Reset Evoflow", controller_status_groupbox)
+        self.reset_evoflow_btn.setStyleSheet(button_style)
+        self.reset_se_btn = QPushButton("Reset SE", controller_status_groupbox)
+        self.reset_se_btn.setStyleSheet(button_style)
+        temperature_label = QLabel("-----Temperature-----", controller_status_groupbox)
+        temperature_label.setStyleSheet(font_small_value)
+        rpi_temp_label = QLabel("RPI Temp: ", controller_status_groupbox)
+        rpi_temp_label.setStyleSheet(font_small_value)
+        self.rpi_temp_label = QLabel("0 °C", controller_status_groupbox)
+        self.rpi_temp_label.setStyleSheet(font_small_value)
+        evoflow_temp_label = QLabel("EvoFlow Temp:", controller_status_groupbox)
+        evoflow_temp_label.setStyleSheet(font_small_value)
+        self.evoflow_temp_label = QLabel("0 °C", controller_status_groupbox)
+        self.evoflow_temp_label.setStyleSheet(font_small_value)
+        other_temp_label = QLabel("Other Temp:", controller_status_groupbox)
+        other_temp_label.setStyleSheet(font_small_value)
+        self.other_temp_label = QLabel("0 °C", controller_status_groupbox)
+        self.other_temp_label.setStyleSheet(font_small_value)
+
+        controller_status_first_row_layout.addWidget(evoflow_status_label)
+        controller_status_first_row_layout.addWidget(self.led_evoflow_status)
+        controller_status_first_row_layout.addWidget(se_status_label)
+        controller_status_first_row_layout.addWidget(self.led_se_status)
+        controller_status_second_row_layout.addWidget(self.reset_evoflow_btn)
+        controller_status_second_row_layout.addWidget(self.reset_se_btn)
+        controller_status_third_row_layout.addStretch()
+        controller_status_third_row_layout.addWidget(temperature_label)
+        controller_status_third_row_layout.addStretch()
+        controller_status_forth_row_layout.addWidget(rpi_temp_label)
+        controller_status_forth_row_layout.addWidget(self.rpi_temp_label)
+        controller_status_forth_row_layout.addWidget(evoflow_temp_label)
+        controller_status_forth_row_layout.addWidget(self.evoflow_temp_label)
+        controller_status_fifth_row_layout.addWidget(other_temp_label)
+        controller_status_fifth_row_layout.addWidget(self.other_temp_label)
+
+        controller_status_V_layout.addLayout(controller_status_first_row_layout)
+        controller_status_V_layout.addLayout(controller_status_second_row_layout)
+        controller_status_V_layout.addLayout(controller_status_third_row_layout)
+        controller_status_V_layout.addLayout(controller_status_forth_row_layout)
+        controller_status_V_layout.addLayout(controller_status_fifth_row_layout)
 
 
         # LED
@@ -391,7 +440,8 @@ class EvoFlowWidget(QWidget):
                             color: #888888; }
                         """
 
-        self.pump_1_sp_edit = QLineEdit("0",self)
+        self.pump_1_sp_edit = QLineEdit(self)
+        self.pump_1_sp_edit.setText(str(self.default_pump_1))
         self.pump_1_sp_edit.setGeometry(116, 302, 45, 20)
         self.pump_1_sp_edit.setStyleSheet(edit_style)
         self.pump_1_feedback = QLabel("FB: 0 rpm\n0 rpm, 0.000 ml/min", self)
@@ -399,7 +449,8 @@ class EvoFlowWidget(QWidget):
         self.pump_1_feedback.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
         self.pump_1_feedback.setStyleSheet(font_small_value)
 
-        self.pump_2_sp_edit = QLineEdit("0",self)
+        self.pump_2_sp_edit = QLineEdit(self)
+        self.pump_2_sp_edit.setText(str(self.default_pump_2))
         self.pump_2_sp_edit.setGeometry(676, 302, 45, 20)
         self.pump_2_sp_edit.setStyleSheet(edit_style)
         self.pump_2_feedback = QLabel("FB: 0 rpm\n0 rpm, 0.000 ml/min", self)
@@ -407,7 +458,8 @@ class EvoFlowWidget(QWidget):
         self.pump_2_feedback.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
         self.pump_2_feedback.setStyleSheet(font_small_value)
 
-        self.pump_3_sp_edit = QLineEdit("0",self)
+        self.pump_3_sp_edit = QLineEdit(self)
+        self.pump_3_sp_edit.setText(str(self.default_pump_3))
         self.pump_3_sp_edit.setGeometry(1149, 323, 45, 20)
         self.pump_3_sp_edit.setStyleSheet(edit_style)
         self.pump_3_feedback = QLabel("FB: 0 rpm\n0 rpm, 0.000 ml/min", self)
@@ -415,7 +467,8 @@ class EvoFlowWidget(QWidget):
         self.pump_3_feedback.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
         self.pump_3_feedback.setStyleSheet(font_small_value)
 
-        self.pump_4_sp_edit = QLineEdit("0",self)
+        self.pump_4_sp_edit = QLineEdit(self)
+        self.pump_4_sp_edit.setText(str(self.default_pump_4))
         self.pump_4_sp_edit.setGeometry(1149, 157, 45, 20)
         self.pump_4_sp_edit.setStyleSheet(edit_style)
         self.pump_4_feedback = QLabel("FB: 0 rpm\n0 rpm, 0.000 ml/min", self)
@@ -423,7 +476,8 @@ class EvoFlowWidget(QWidget):
         self.pump_4_feedback.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
         self.pump_4_feedback.setStyleSheet(font_small_value)
 
-        self.magneticStirrer_bioreactor_sp_edit = QLineEdit("0",self)
+        self.magneticStirrer_bioreactor_sp_edit = QLineEdit(self)
+        self.magneticStirrer_bioreactor_sp_edit.setText(str(self.default_magneticStirrer_bioreactor))
         self.magneticStirrer_bioreactor_sp_edit.setGeometry(290, 326, 50, 20)
         self.magneticStirrer_bioreactor_sp_edit.setStyleSheet(edit_style)
         self.magneticStirrer_bioreactor_feedback = QLabel("FB: 0 rpm\n0 rpm, 0.0 %", self)
@@ -431,7 +485,8 @@ class EvoFlowWidget(QWidget):
         self.magneticStirrer_bioreactor_feedback.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
         self.magneticStirrer_bioreactor_feedback.setStyleSheet(font_small_value)
 
-        self.magneticStirrer_lagoon_sp_edit = QLineEdit("0",self)
+        self.magneticStirrer_lagoon_sp_edit = QLineEdit(self)
+        self.magneticStirrer_lagoon_sp_edit.setText(str(self.default_magneticStirrer_lagoon))
         self.magneticStirrer_lagoon_sp_edit.setGeometry(817, 326, 50, 20)
         self.magneticStirrer_lagoon_sp_edit.setStyleSheet(edit_style)
         self.magneticStirrer_lagoon_feedback = QLabel("FB: 0 rpm\n0 rpm, 0.0 %", self)
@@ -443,7 +498,8 @@ class EvoFlowWidget(QWidget):
         self.tempCtrl_bioreactor_feedback.setGeometry(237, 178, 100, 20)
         self.tempCtrl_bioreactor_feedback.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
         self.tempCtrl_bioreactor_feedback.setStyleSheet(font_value_2)
-        self.tempCtrl_bioreactor_sp_edit = QLineEdit("0.0",self)
+        self.tempCtrl_bioreactor_sp_edit = QLineEdit(self)
+        self.tempCtrl_bioreactor_sp_edit.setText(str(self.default_temp_ctrl_bioreactor))
         self.tempCtrl_bioreactor_sp_edit.setGeometry(401, 196, 50, 20)
         self.tempCtrl_bioreactor_sp_edit.setStyleSheet(edit_style)
         self.tempCtrl_bioreactor_feedback_sp_htr = QLabel("FB: 0.0 °C, Duty: 0.0 %", self)
@@ -455,7 +511,8 @@ class EvoFlowWidget(QWidget):
         self.tempCtrl_lagoon_feedback.setGeometry(764, 178, 100, 20)
         self.tempCtrl_lagoon_feedback.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
         self.tempCtrl_lagoon_feedback.setStyleSheet(font_value_2)
-        self.tempCtrl_lagoon_sp_edit = QLineEdit("0.0",self)
+        self.tempCtrl_lagoon_sp_edit = QLineEdit(self)
+        self.tempCtrl_lagoon_sp_edit.setText(str(self.default_temp_ctrl_lagoon))
         self.tempCtrl_lagoon_sp_edit.setGeometry(928, 196, 50, 20)
         self.tempCtrl_lagoon_sp_edit.setStyleSheet(edit_style)
         self.tempCtrl_lagoon_feedback_sp_htr = QLabel("FB: 0.0 °C, Duty: 0.0 %", self)
@@ -501,9 +558,19 @@ class EvoFlowWidget(QWidget):
 
         self.reset_all_slideswitches_btn.clicked.connect(self.handle_reset_all_slideswitches)
 
+        self.reset_evoflow_btn.clicked.connect(self.reset_evoflow_requested)
+
     def load_default_config(self):
         """Load flow rate conversion factors from config/settings.ini"""
         config = self.read_settings_file()
+        self.default_pump_1 = config.getfloat("defaultValues", "pump1_rpm")
+        self.default_pump_2 = config.getfloat("defaultValues", "pump2_rpm")
+        self.default_pump_3 = config.getfloat("defaultValues", "pump3_rpm")
+        self.default_pump_4 = config.getfloat("defaultValues", "pump4_rpm")
+        self.default_temp_ctrl_bioreactor = config.getfloat("defaultValues", "tempCtrl_bioreactor_sp")
+        self.default_temp_ctrl_lagoon = config.getfloat("defaultValues", "tempCtrl_lagoon_sp")
+        self.default_magneticStirrer_bioreactor = config.getfloat("defaultValues", "magneticStirrer_bioreactor_rpm")
+        self.default_magneticStirrer_lagoon = config.getfloat("defaultValues", "magneticStirrer_lagoon_rpm")
         self.pump_1_flow_conv = config.getfloat("flowRateConversionFactors", "pump_1")
         self.pump_2_flow_conv = config.getfloat("flowRateConversionFactors", "pump_2")
         self.pump_3_flow_conv = config.getfloat("flowRateConversionFactors", "pump_3")
@@ -639,6 +706,30 @@ class EvoFlowWidget(QWidget):
         if valve_status_mismatch:
             self.handle_valve_toggle(False)
 
+        # pump_sp_mismatch = (
+        #     evoflow_telemetry.pump_1_sp != float(self.pump_1_sp_edit.text())
+        #     or evoflow_telemetry.pump_2_sp != float(self.pump_2_sp_edit.text())
+        #     or evoflow_telemetry.pump_3_sp != float(self.pump_3_sp_edit.text())
+        #     or evoflow_telemetry.pump_4_sp != float(self.pump_4_sp_edit.text())
+        # )
+        # if pump_sp_mismatch:
+        #     self.handle_pump_sp_update()
+
+        # temp_ctrl_sp_mismatch = (
+        #     evoflow_telemetry.tempCtrl_bioreactor_sp != float(self.tempCtrl_bioreactor_sp_edit.text())
+        #     or evoflow_telemetry.tempCtrl_lagoon_sp != float(self.tempCtrl_lagoon_sp_edit.text())
+        # )
+        # if temp_ctrl_sp_mismatch:
+        #     self.handle_tempCtrl_sp_update()
+        
+        # magnetic_stirrer_sp_mismatch = (
+        #     evoflow_telemetry.magneticStirrer_bioreactor_sp != float(self.magneticStirrer_bioreactor_sp_edit.text())
+        #     or evoflow_telemetry.magneticStirrer_lagoon_sp != float(self.magneticStirrer_lagoon_sp_edit.text())
+        # )
+        # if magnetic_stirrer_sp_mismatch:
+        #     self.handle_magneticStirrer_sp_update()
+
+
         # Update pump 1
         if evoflow_telemetry.pump_1_status:
             self.led_pump_1.setText("🟢")
@@ -726,6 +817,13 @@ class EvoFlowWidget(QWidget):
             self.led_valve_sug2lag.setText("🟢")
         else:
             self.led_valve_sug2lag.setText("🔴")
+
+    def update_evoflow_status(self, evoflow_status):
+        """Update Evoflow status LED"""
+        if evoflow_status:
+            self.led_evoflow_status.setText("🟢")
+        else:
+            self.led_evoflow_status.setText("🔴")
 
     def read_settings_file(self):
         """Load default configuration values from settings.ini"""

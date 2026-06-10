@@ -29,7 +29,6 @@ class PlotWidget(QWidget):
 
     start_logging_requested = Signal(str, str, int)
     stop_logging_requested = Signal()
-    timespan_minutes_changed = Signal(int)
     plot_view_requested = Signal(int, int)
     open_logged_data_requested = Signal(str)
 
@@ -465,7 +464,6 @@ class PlotWidget(QWidget):
     def _on_update_configuration_clicked(self):
         """Changing plot configuration parameters and replotting with new settings"""
         self.timespan_minutes = max(1, self._safe_int(self.timespan_edit, self.timespan_minutes))
-        self.timespan_minutes_changed.emit(self.timespan_minutes)
         self.sampling_time_seconds = max(1, self._safe_int(self.sampling_time_edit, self.sampling_time_seconds))
 
         self.y_axis_flowRate_min = self._safe_float(self.y_axis_flowRate_min_edit, self.y_axis_flowRate_min)
@@ -486,18 +484,6 @@ class PlotWidget(QWidget):
 
         self.plot_view_requested.emit(self.timespan_minutes, self._current_history_offset_points())
         
-        self.canvas.draw_idle()
-
-    def clear_plots(self):
-        """Clear all plotted data series"""
-        self.flowRate_pump1.set_data([], [])
-        self.flowRate_pump2.set_data([], [])
-        self.phtCount_lagoon.set_data([], [])
-        self.temp_bioReactor.set_data([], [])
-        self.temp_lagoon.set_data([], [])
-        self.od_bioReactor.set_data([], [])
-        self.od_lagoon.set_data([], [])
-        self.sample_extraction_events.set_data([], [])
         self.canvas.draw_idle()
 
     def _on_start_logging_clicked(self):
@@ -583,7 +569,7 @@ class PlotWidget(QWidget):
     @Slot(str)
     def show_status_message(self, message: str):
         """Show worker status in widget tooltip and stdout for debugging"""
-        self.setToolTip(message)
+        # self.setToolTip(message)
         print(message)
 
     @staticmethod

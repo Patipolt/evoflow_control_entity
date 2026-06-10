@@ -74,6 +74,7 @@ class MainUI(QMainWindow):
         # Telemetry
         self.logic.evoflow_worker.telemetry_updated.connect(self.evoflow_widget.update_telemetry)
         self.logic.evoflow_worker.telemetry_updated.connect(self.logic.data_logging_worker.update_evoflow_telemetry)
+        self.logic.evoflow_worker.evoflow_status_updated.connect(self.evoflow_widget.update_evoflow_status)
 
         # Switches
         self.evoflow_widget.pump_on_off_requested.connect(self.logic.evoflow_worker.set_on_off_pumps)
@@ -87,6 +88,8 @@ class MainUI(QMainWindow):
         self.evoflow_widget.pump_sp_update_requested.connect(self.logic.evoflow_worker.set_setpoint_pumps)
         self.evoflow_widget.magneticStirrer_sp_update_requested.connect(self.logic.evoflow_worker.set_setpoint_magnetic_stirrers)
         self.evoflow_widget.tempCtrl_sp_update_requested.connect(self.logic.evoflow_worker.set_setpoint_temp_ctrls)
+
+        self.evoflow_widget.reset_evoflow_requested.connect(self.logic.evoflow_worker.reset_evoflow)
 
 
         # =====================================
@@ -103,7 +106,6 @@ class MainUI(QMainWindow):
         # =====================================
         self.plot_widget.start_logging_requested.connect(self.logic.data_logging_worker.start_logging)
         self.plot_widget.stop_logging_requested.connect(self.logic.data_logging_worker.stop_logging)
-        self.plot_widget.timespan_minutes_changed.connect(self.logic.data_logging_worker.set_timespan_minutes)
         self.plot_widget.plot_view_requested.connect(self.logic.data_logging_worker.request_plot_view)
         self.plot_widget.open_logged_data_requested.connect(self.logic.data_logging_worker.load_logged_data_from_directory)
 

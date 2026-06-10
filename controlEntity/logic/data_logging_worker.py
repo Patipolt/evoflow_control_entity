@@ -212,16 +212,6 @@ class DataLoggingWorker(QObject):
         self.logging_state_changed.emit(False)
         self.status_message.emit("Data logging stopped.")
 
-    @Slot(int)
-    def set_timespan_minutes(self, timespan_minutes: int):
-        """Update current plot timespan window"""
-        self._timespan_minutes = max(1, int(timespan_minutes))
-        # Update plot data immediately to reflect new timespan setting
-        self.plot_data_updated.emit(
-            self._load_plot_data(self._timespan_minutes, self._history_offset_points),
-            self._count_total_logged_rows(),
-        )
-
     @Slot(int, int)
     def request_plot_view(self, timespan_minutes: int, history_offset_points: int):
         """Load a plot view from a timespan window anchored at an offset from newest"""

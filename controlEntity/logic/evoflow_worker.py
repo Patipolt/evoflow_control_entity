@@ -13,13 +13,29 @@ class EvoFlowWorker(QObject):
     """Worker class to handle EvoFlow device communication in a separate thread"""
     
     telemetry_updated = Signal(EvoFlowTelemetry)
+    evoflow_status_updated = Signal(bool)
     
-    def __init__(self, port: str, baudrate: int = 115200, timeout: float = 0.01, sender_addr: int = 0x01, receiver_addr: int = 0xC9, sampling_rate_ms: int = 200):
+    def __init__(self, port: str, baudrate: int = 115200, 
+                 timeout: float = 0.01, 
+                 sender_addr: int = 0x01, 
+                 receiver_addr: int = 0xC9, 
+                 sampling_rate_ms: int = 200, 
+                 auto_reset_after_seconds: int = 5, 
+                 evoflow_status_gpio_pin: int = 27, 
+                 evoflow_reset_gpio_pin: int = 17):
         super().__init__()
-        self.evoflow = EvoFlowDevice(port, baudrate, timeout, sender_addr, receiver_addr)
+        self.evoflow = EvoFlowDevice(port, 
+                                     baudrate, 
+                                     timeout, 
+                                     sender_addr, 
+                                     receiver_addr, 
+                                     evoflow_status_gpio_pin, 
+                                     evoflow_reset_gpio_pin)
         self.sampling_rate_ms = sampling_rate_ms
+        self.auto_reset_after_seconds = auto_reset_after_seconds
         self._running = False
-        self.reading_thread = None
+        self.telemetry_thread = None
+        self.evoflow_status_thread = None
 
     @Slot()
     def start(self):
@@ -29,9 +45,17 @@ class EvoFlowWorker(QObject):
             self.evoflow.connect()
             # Optionally, you could start a timer here to read telemetry at regular intervals
             # Set up another thread reading telemetry every X ms and emitting the telemetry_updated signal
-            self.reading_thread = QThread()
-            self.reading_thread.run = self.get_all_telemetry
-            self.reading_thread.start()
+            self.telemetry_thread = QThread()
+            self.telemetry_thread.run = self.get_all_telemetry
+            self.telemetry_thread.start()
+
+            self.evoflow_status_thread = QThread()
+            self.evoflow_status_thread.run = self.is_evoflow_ok
+            self.evoflow_status_thread.start()
+
+            self.auto_reset_timer = QThread()
+            self.auto_reset_timer.run = self.auto_reset_evoflow
+            self.auto_reset_timer.start()
         except Exception as e:
             # print(f"Failed to connect to EvoFlow device: {e}")
             return
@@ -41,12 +65,12 @@ class EvoFlowWorker(QObject):
         """Stop the worker thread and clean up resources"""
         try:
             self._running = False
-            if self.reading_thread and self.reading_thread.isRunning():
-                self.reading_thread.requestInterruption()
-                self.reading_thread.quit()
-                if not self.reading_thread.wait(2000):
-                    self.reading_thread.terminate()
-                    self.reading_thread.wait(1000)
+            if self.telemetry_thread and self.telemetry_thread.isRunning():
+                self.telemetry_thread.requestInterruption()
+                self.telemetry_thread.quit()
+                if not self.telemetry_thread.wait(2000):
+                    self.telemetry_thread.terminate()
+                    self.telemetry_thread.wait(1000)
             self.evoflow.disconnect()
         except Exception as e:
             print(f"Failed to disconnect from EvoFlow device: {e}")
@@ -145,4 +169,34 @@ class EvoFlowWorker(QObject):
         while self._running:
             self.evoflow.get_all_telemetry_wo_asking()
             self.telemetry_updated.emit(self.evoflow.evoflow_telemetry)
+            QThread.msleep(self.sampling_rate_ms)
+
+    @Slot()
+    def is_evoflow_ok(self):
+        """Check if the EvoFlow device is operating normally"""
+        while self._running:
+            evoflow_ok = self.evoflow.is_evoflow_ok()
+            self.evoflow_status_updated.emit(evoflow_ok)
+            QThread.msleep(self.sampling_rate_ms)
+    
+    @Slot()
+    def reset_evoflow(self):
+        """Reset the EvoFlow device"""
+        self.evoflow.reset_evoflow()
+
+    def auto_reset_evoflow(self):
+        """Automatically reset the EvoFlow device if it's not operating normally for a certain duration"""
+        consecutive_not_ok_count = 0
+        while self._running:
+            evoflow_ok = self.evoflow.is_evoflow_ok()
+            if not evoflow_ok:
+                consecutive_not_ok_count += 1
+            else:
+                consecutive_not_ok_count = 0
+            
+            if consecutive_not_ok_count >= (self.auto_reset_after_seconds * 1000 / self.sampling_rate_ms):
+                print("EvoFlow has been NOT OK for the specified duration. Resetting EvoFlow...")
+                self.reset_evoflow()
+                consecutive_not_ok_count = 0
+            
             QThread.msleep(self.sampling_rate_ms)

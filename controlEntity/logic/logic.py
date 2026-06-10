@@ -43,7 +43,6 @@ class Logic(QObject):
         
         self.linux_system = True
         config = self.read_settings_file()
-        sampling_rate_ms = config.getint("HMI", "sampling_rate_ms", fallback=200)
 
         # ===============================
         # EvoFlow Worker Setup
@@ -54,7 +53,10 @@ class Logic(QObject):
                                             timeout= config.getfloat("Evoflow", "serial_timeout"),
                                             sender_addr= config.getint("HMI", "address"),
                                             receiver_addr= config.getint("Evoflow", "address"),
-                                            sampling_rate_ms= sampling_rate_ms)
+                                            sampling_rate_ms= config.getint("HMI", "sampling_rate_ms", fallback=200),
+                                            auto_reset_after_seconds= config.getint("Evoflow", "auto_reset_after_seconds"),
+                                            evoflow_status_gpio_pin= config.getint("Evoflow", "EVOFLOW_STATUS_GPIO_PIN", fallback=27),
+                                            evoflow_reset_gpio_pin= config.getint("Evoflow", "EVOFLOW_RESET_GPIO_PIN", fallback=17))
         self.evoflow_worker.moveToThread(self.evoflow_thread)
         self.evoflow_thread.started.connect(self.evoflow_worker.start)
         self.evoflow_thread.start()
@@ -69,7 +71,7 @@ class Logic(QObject):
                                                               timeout= config.getfloat("SampleExtraction", "serial_timeout"),
                                                               sender_addr= config.getint("HMI", "address"),
                                                               receiver_addr= config.getint("SampleExtraction", "address"),
-                                                              sampling_rate_ms= sampling_rate_ms)
+                                                              sampling_rate_ms= config.getint("HMI", "sampling_rate_ms", fallback=200))
         self.sample_extraction_worker.moveToThread(self.sample_extraction_thread)
         self.sample_extraction_thread.started.connect(self.sample_extraction_worker.start)
         self.sample_extraction_thread.start()
