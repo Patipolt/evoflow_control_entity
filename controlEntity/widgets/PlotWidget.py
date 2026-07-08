@@ -16,7 +16,7 @@ from matplotlib.ticker import ScalarFormatter
 from matplotlib.ticker import FormatStrFormatter
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from PySide6.QtWidgets import QApplication, QHBoxLayout, QMainWindow, QMessageBox, QScrollBar, QWidget, QVBoxLayout, QLCDNumber, QLineEdit, QComboBox, QCalendarWidget, QTextEdit, QTimeEdit, QSizePolicy, QFileDialog
-from PySide6.QtWidgets import QPushButton, QGroupBox, QTabWidget, QTableView, QMenuBar, QStatusBar, QLabel, QCheckBox, QColorDialog
+from PySide6.QtWidgets import QPushButton, QGroupBox, QTabWidget, QTableView, QMenuBar, QStatusBar, QLabel, QCheckBox, QColorDialog, QPlainTextEdit
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtCore import Qt, QFile, QTimer, QDate, QTime, QIODeviceBase, QEvent, Signal, Slot, QObject
 from PySide6.QtGui import QKeyEvent, QTextCharFormat, QStandardItemModel, QStandardItem, QWheelEvent, QCloseEvent, QAction, QPixmap, QColor, QPalette
@@ -31,13 +31,15 @@ class PlotWidget(QWidget):
     stop_logging_requested = Signal()
     plot_view_requested = Signal(int, int)
     open_logged_data_requested = Signal(str)
+    export_log_requested = Signal()
+    map_selected_x_axis_to_closest_data_point_requested = Signal(object)
+    add_annotation_requested = Signal(str)
+    delete_annotation_requested = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setup_ui()
         self.connect_signals()
-        self._on_update_configuration_clicked()
-        # self.test_data_plot()
 
     def setup_ui(self):
         """Build the plotting canvas (3 stacked subplots with additional horizontal scrollbar at the bottom) and control panel, using settings.ini defaults"""
@@ -88,6 +90,21 @@ class PlotWidget(QWidget):
                             color: #888888; } 
                         """
         
+        plaintextedit_style = """QPlainTextEdit {
+                        background-color: #5c5c5c;
+                        color: White;
+                        border-radius: 4px; }
+                        QPlainTextEdit:hover {
+                            background-color: #737373;
+                            color: White; }
+                        QPlainTextEdit:focus {
+                            background-color: #b4b4b4;
+                            color: Black; }
+                        QPlainTextEdit:disabled {
+                            background-color: #d9d9d9;
+                            color: #888888; } 
+                        """
+        
         text_style = """QLabel {
                         color: '#ffffff';
                         }"""
@@ -122,16 +139,24 @@ class PlotWidget(QWidget):
         self.y_axis_flowRate_min = config.getfloat("plotConfiguration", "y_axis_flowRate_min", fallback=0)
         self.y_axis_flowRate_max = config.getfloat("plotConfiguration", "y_axis_flowRate_max", fallback=10)
         self.scrollbar_max_loading_value = config.getint("plotConfiguration", "scrollbar_max_loading_value", fallback=2500)
+        self.max_data_points_to_load = config.getint("plotConfiguration", "max_data_points_to_load", fallback=7200)
 
         self._data_logging_active = False
         self._total_data_points = 0
         self._scroll_history_base_offset = 0
         self._suppress_scrollbar_events = False
+        self._scroll_drag_active = False
+
+        self._scroll_plot_request_timer = QTimer(self)
+        self._scroll_plot_request_timer.setSingleShot(True)
+        self._scroll_plot_request_timer.timeout.connect(self._emit_plot_view_request)
+        self._scroll_plot_request_interval_ms = 35
 
         # ===============================
         # Plot section
         # ===============================
         self.plot_section_widget = QWidget(self)
+        self.selected_x_axis = 0
 
         def style_axis(axis):
             """Apply a consistent dark-theme style to axis border, labels, and ticks"""
@@ -207,15 +232,16 @@ class PlotWidget(QWidget):
         self.od_lagoon = style_line(self.ax1_r, "OD Lagoon", "white", style="-", opacity=1.0)
 
         # Third subplot: scatter plot for the event when sample extraction takes a sample
-        self.ax2.set_ylabel("SE\nEvent")
+        self.ax2.set_ylabel("SE/Mark\nEvent")
         self.ax2.yaxis.set_label_coords(-0.045, 0.5)  # Move y-axis label to the left
         self.ax2.set_yticks([])
         self.ax2.set_yticklabels([])
-        self.ax2.set_ylim(0.9, 1.1)
+        self.ax2.set_ylim(0.5, 2.5)
         self.ax2.xaxis.set_major_formatter(FuncFormatter(self._format_unix_seconds_as_datetime))
         # self.ax2.set_xlabel("Date / Time")
         style_axis(self.ax2)
         self.sample_extraction_events, = self.ax2.plot([], [], label="Sample Extraction", marker="o", linestyle="", color="magenta", markersize=10)
+        self.annotation_events, = self.ax2.plot([], [], label="Markdown", marker="*", linestyle="", color="Yellow", markersize=10)
 
         # Remove Matplotlib's default horizontal data padding.
         self.ax0.margins(x=0)
@@ -376,7 +402,7 @@ class PlotWidget(QWidget):
 
         self.update_config_button = QPushButton("Update Configuration")
         self.update_config_button.setStyleSheet(button_style)
-        self.update_config_button.setMinimumHeight(40)
+        self.update_config_button.setMinimumHeight(30)
         self.update_config_button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         configuration_layout.addWidget(self.update_config_button)
         configuration_layout.addStretch(1)  # Push the button to the top
@@ -392,6 +418,9 @@ class PlotWidget(QWidget):
         data_logging_second_row_layout = QHBoxLayout()
         data_logging_third_row_layout = QHBoxLayout()
         data_logging_forth_row_layout = QHBoxLayout()
+        data_logging_fifth_row_layout = QHBoxLayout()
+        data_logging_sixth_row_layout = QHBoxLayout()
+        data_logging_seventh_row_layout = QHBoxLayout()
 
         log_name = QLabel("Log Name:")
         log_name.setStyleSheet(text_style)
@@ -409,21 +438,38 @@ class PlotWidget(QWidget):
         self.log_location_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
         self.start_logging_button = QPushButton("Start Logging")
         self.start_logging_button.setStyleSheet(button_style)
-        self.start_logging_button.setMinimumHeight(40)
+        self.start_logging_button.setMinimumHeight(30)
         self.start_logging_button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.stop_logging_button = QPushButton("Stop Logging")
         self.stop_logging_button.setStyleSheet(button_style)
-        self.stop_logging_button.setMinimumHeight(40)
+        self.stop_logging_button.setMinimumHeight(30)
         self.stop_logging_button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.stop_logging_button.setEnabled(False)
         self.open_log_button = QPushButton("Open Logged Data")
         self.open_log_button.setStyleSheet(button_style)
-        self.open_log_button.setMinimumHeight(40)
+        self.open_log_button.setMinimumHeight(30)
         self.open_log_button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.export_log_button = QPushButton("Export Log to CSV")
         self.export_log_button.setStyleSheet(button_style)
-        self.export_log_button.setMinimumHeight(40)
+        self.export_log_button.setMinimumHeight(30)
         self.export_log_button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.logging_plaintextedit = QPlainTextEdit()
+        self.logging_plaintextedit.setStyleSheet(plaintextedit_style)
+        self.logging_plaintextedit.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        selected_x_axis = QLabel("Selected X-axis:")     # normal time (already converted from unix timestamp)
+        selected_x_axis.setStyleSheet(text_style)
+        selected_x_axis.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        self.selected_x_axis_label = QLabel("None")
+        self.selected_x_axis_label.setStyleSheet(text_style)
+        self.selected_x_axis_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        self.delete_annotation_button = QPushButton("Delete Annotation")
+        self.delete_annotation_button.setStyleSheet(button_style)
+        self.delete_annotation_button.setMinimumHeight(30)
+        self.delete_annotation_button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.add_annotation_button = QPushButton("Add Annotation")
+        self.add_annotation_button.setStyleSheet(button_style)
+        self.add_annotation_button.setMinimumHeight(30)
+        self.add_annotation_button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
 
         data_logging_first_row_layout.addWidget(log_name)
@@ -435,16 +481,25 @@ class PlotWidget(QWidget):
         data_logging_third_row_layout.addWidget(self.stop_logging_button)
         data_logging_forth_row_layout.addWidget(self.open_log_button)
         data_logging_forth_row_layout.addWidget(self.export_log_button)
+        data_logging_fifth_row_layout.addWidget(self.logging_plaintextedit)
+        data_logging_sixth_row_layout.addWidget(selected_x_axis)
+        data_logging_sixth_row_layout.addWidget(self.selected_x_axis_label)
+        data_logging_sixth_row_layout.addStretch(1)  # Push the selected x-axis labels to the left
+        data_logging_seventh_row_layout.addWidget(self.delete_annotation_button)
+        data_logging_seventh_row_layout.addWidget(self.add_annotation_button)
+
 
         data_logging_layout.addLayout(data_logging_first_row_layout)
         data_logging_layout.addLayout(data_logging_second_row_layout)
         data_logging_layout.addLayout(data_logging_third_row_layout)
         data_logging_layout.addLayout(data_logging_forth_row_layout)
-        data_logging_layout.addStretch(1)  # Push the buttons to the top
+        data_logging_layout.addLayout(data_logging_fifth_row_layout, stretch=1)
+        data_logging_layout.addLayout(data_logging_sixth_row_layout)
+        data_logging_layout.addLayout(data_logging_seventh_row_layout)
 
         # Add groups to control panel layout
-        control_panel_layout.addWidget(configuration_group)
-        control_panel_layout.addWidget(data_logging_group)
+        control_panel_layout.addWidget(configuration_group, stretch=1)
+        control_panel_layout.addWidget(data_logging_group, stretch=3)
         control_panel_section_widget.setLayout(control_panel_layout)
 
         # Main widget split: plot area takes ~3/4 width, control panel ~1/4.
@@ -456,16 +511,92 @@ class PlotWidget(QWidget):
         """Wire local PlotWidget controls to slots/signals"""
         self.update_config_button.clicked.connect(self._on_update_configuration_clicked)
         self.start_logging_button.clicked.connect(self._on_start_logging_clicked)
-        self.stop_logging_button.clicked.connect(self.stop_logging_requested)
+        self.stop_logging_button.clicked.connect(self._on_stop_logging_clicked)
         self.browse_location_button.clicked.connect(self._on_browse_location_clicked)
         self.open_log_button.clicked.connect(self._on_open_logged_data_clicked)
+        self.export_log_button.clicked.connect(self.export_log_requested)
         self.scrollbar_ax.valueChanged.connect(self._on_scrollbar_value_changed)
+        self.scrollbar_ax.sliderPressed.connect(self._on_scrollbar_slider_pressed)
+        self.scrollbar_ax.sliderReleased.connect(self._on_scrollbar_slider_released)
+        self.canvas.mpl_connect("button_press_event", self.select_x_axis)
+        self.add_annotation_button.clicked.connect(self._on_add_annotation_clicked)
+        self.delete_annotation_button.clicked.connect(self._on_delete_annotation_clicked)
+
+        # Press enter to update config when editing config parameters
+        self.timespan_edit.returnPressed.connect(self._on_update_configuration_clicked)
+        self.sampling_time_edit.returnPressed.connect(self._on_update_configuration_clicked)
+        self.y_axis_flowRate_min_edit.returnPressed.connect(self._on_update_configuration_clicked)
+        self.y_axis_flowRate_max_edit.returnPressed.connect(self._on_update_configuration_clicked)
+        self.y_axis_phtCount_min_edit.returnPressed.connect(self._on_update_configuration_clicked)
+        self.y_axis_phtCount_max_edit.returnPressed.connect(self._on_update_configuration_clicked)
+        self.y_axis_temp_min_edit.returnPressed.connect(self._on_update_configuration_clicked)
+        self.y_axis_temp_max_edit.returnPressed.connect(self._on_update_configuration_clicked)
+        self.y_axis_od_min_edit.returnPressed.connect(self._on_update_configuration_clicked)
+        self.y_axis_od_max_edit.returnPressed.connect(self._on_update_configuration_clicked)
+
+    def select_x_axis(self, event):
+        """This function is used to select one x-axis value when the user clicks on the plot,
+        and store the selected x-axis value in self.selected_x_axis for later use 
+        (e.g., to add an annotation or marker at that x-axis position in the database)
+        So the returned value in this case is the unix timestamp in seconds corresponding to the selected x-axis position."""
+        valid_axes = {self.ax0, self.ax0_r, self.ax1, self.ax1_r, self.ax2}
+        if event.inaxes not in valid_axes or event.xdata is None:
+            return
+
+        self.selected_x_axis = int(event.xdata * 1000)
+        # print(f"Selected x-axis value (unix timestamp in milliseconds): {self.selected_x_axis}", flush=True)
+        if self._total_data_points > 0:
+            self.map_selected_x_axis_to_closest_data_point_requested.emit(self.selected_x_axis)
+
+    @Slot(object)
+    def handle_mapped_x_axis_selection(self, mapped_x_axis_ms: object):
+        """Handle the result of mapping the selected x-axis to the closest data point's x-axis value in the database"""
+        if mapped_x_axis_ms is not None:
+            mapped_x_axis_ms = int(mapped_x_axis_ms)
+            self.selected_x_axis = mapped_x_axis_ms
+            selected_dt = dt.datetime.fromtimestamp(mapped_x_axis_ms / 1000.0)
+            self.selected_x_axis_label.setText(selected_dt.strftime("%Y-%m-%d %H:%M:%S"))
+        else:
+            self.selected_x_axis_label.setText("None")
+
+    @Slot(str)
+    def display_annotation_for_selected_x_axis(self, annotation_text: str):
+        """Display the annotation text for the currently selected x-axis point in the UI"""
+        self.logging_plaintextedit.setPlainText(annotation_text)
+
+    def _on_add_annotation_clicked(self):
+        """Emit add-annotation request with the annotation text"""
+        user_text = self.logging_plaintextedit.toPlainText().strip()
+        if not user_text:
+            self._show_message_box("Input Error", "Please enter some text to add as an annotation.", icon=QMessageBox.Icon.Warning)
+            return
+        if self.selected_x_axis == 0:
+            self._show_message_box("Selection Error", "Please select a point on the plot to associate the annotation with.", icon=QMessageBox.Icon.Warning)
+            return
+        self.add_annotation_requested.emit(user_text)
+
+    def _on_delete_annotation_clicked(self):
+        """Emit delete-annotation request for the currently selected x-axis point (if it has an annotation)"""
+        if self.selected_x_axis == 0:
+            self._show_message_box("Selection Error", "Please select a point on the plot to delete its annotation.", icon=QMessageBox.Icon.Warning)
+            return
+        self.delete_annotation_requested.emit()
 
     def _on_update_configuration_clicked(self):
         """Changing plot configuration parameters and replotting with new settings"""
-        self.timespan_minutes = max(1, self._safe_int(self.timespan_edit, self.timespan_minutes))
-        self.sampling_time_seconds = max(1, self._safe_int(self.sampling_time_edit, self.sampling_time_seconds))
+        # check if timespan together with sampling time exceeds the max_data_points_to_load limit
+        timespan_min = max(1, self._safe_int(self.timespan_edit, self.timespan_minutes))
+        sampling_time_sec = max(1, self._safe_int(self.sampling_time_edit, self.sampling_time_seconds))
+        suggested_timespan_max = int(self.max_data_points_to_load / (60 / sampling_time_sec))
+        
+        if (timespan_min * (60 / sampling_time_sec)) > self.max_data_points_to_load:
+            self.timespan_edit.setText(str(suggested_timespan_max))
+            self._show_message_box("Configuration Warning", f"The selected timespan and sampling time exceed the maximum allowed points ({self.max_data_points_to_load}) for smooth visualization. The suggested maximum timespan value with the chosen sampling time ({sampling_time_sec} second(s)) is {suggested_timespan_max} minutes.", icon=QMessageBox.Icon.Warning)
+            self.timespan_minutes = suggested_timespan_max
+        else:
+            self.timespan_minutes = timespan_min
 
+        self.sampling_time_seconds = sampling_time_sec
         self.y_axis_flowRate_min = self._safe_float(self.y_axis_flowRate_min_edit, self.y_axis_flowRate_min)
         self.y_axis_flowRate_max = self._safe_float(self.y_axis_flowRate_max_edit, self.y_axis_flowRate_max)
         self.y_axis_phtCount_min = self._safe_float(self.y_axis_phtCount_min_edit, self.y_axis_phtCount_min)
@@ -482,7 +613,7 @@ class PlotWidget(QWidget):
 
         self._refresh_scrollbar_bounds()
 
-        self.plot_view_requested.emit(self.timespan_minutes, self._current_history_offset_points())
+        self._emit_plot_view_request()
         
         self.canvas.draw_idle()
 
@@ -492,6 +623,11 @@ class PlotWidget(QWidget):
         log_name = self.log_name_edit.text().strip()
         log_directory = self.log_location_label.text().strip()
         self.start_logging_requested.emit(log_name, log_directory, sampling_time_seconds)
+
+    def _on_stop_logging_clicked(self):
+        """Ask user confirmation in UI thread before stopping logging."""
+        if self._show_message_box("Stop Logging", "Are you sure you want to stop logging?", icon=QMessageBox.Warning, response_needed=True):
+            self.stop_logging_requested.emit()
 
     def _on_browse_location_clicked(self):
         """Browse and set data log target directory"""
@@ -517,6 +653,26 @@ class PlotWidget(QWidget):
 
         self.open_logged_data_requested.emit(selected_dir)
 
+    def _show_message_box(self, title: str, message: str, icon=QMessageBox.Icon.Information, response_needed=False) -> bool | None:
+        """Helper to show a message box with given title, message, and icon. If response_needed is True, returns True if user clicks OK, False if Cancel."""
+        msg_box = QMessageBox(self)
+        msg_box.setWindowTitle(title)
+        msg_box.setText(message)
+        msg_box.setIcon(icon)
+        if response_needed:
+            msg_box.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+            result = msg_box.exec()
+            return result == QMessageBox.Ok
+        else:
+            msg_box.setStandardButtons(QMessageBox.Ok)
+            msg_box.exec()
+            return None
+
+    @Slot(str, str, QMessageBox.Icon, bool)
+    def handle_message_box(self, title: str, message: str, icon=QMessageBox.Icon.Information, response_needed=False):
+        """Handle the result of the export logged data operation"""
+        self._show_message_box(title, message, icon=icon, response_needed=response_needed)
+
     @Slot(dict, int)
     def update_plot_from_logged_data(self, payload: dict, total_data_points: int):
         """Update plotted series from logging worker payload"""
@@ -537,6 +693,11 @@ class PlotWidget(QWidget):
         self.od_bioReactor.set_data(x_values, payload.get("od_bioreactor", []))
         self.od_lagoon.set_data(x_values, payload.get("od_lagoon", []))
         self.sample_extraction_events.set_data(x_values, payload.get("sample_event", []))
+
+        # if annotations exist, set the annotation_event scatter points to 2 so they appear above the sample extraction events
+        annotation_str = payload.get("annotation_event", [])
+        annotation = [2 if ann != "" else 0 for ann in annotation_str]
+        self.annotation_events.set_data(x_values, annotation)
 
         # Keep the visible x-range fixed to the configured timespan window.
         x_max = float(x_values[-1])
@@ -686,6 +847,34 @@ class PlotWidget(QWidget):
         self.scrollbar_ax.setPageStep(window_points)
         self.scrollbar_ax.setSingleStep(1)
 
+    @Slot()
+    def _on_scrollbar_slider_pressed(self):
+        """Track drag state so expensive plot requests can be coalesced while dragging."""
+        self._scroll_drag_active = True
+
+    @Slot()
+    def _on_scrollbar_slider_released(self):
+        """Emit the final history request immediately when dragging ends."""
+        self._scroll_drag_active = False
+        if self._scroll_plot_request_timer.isActive():
+            self._scroll_plot_request_timer.stop()
+        self._emit_plot_view_request()
+
+    def _emit_plot_view_request(self):
+        """Request the latest selected history window from the logging worker."""
+        self.plot_view_requested.emit(self.timespan_minutes, self._current_history_offset_points())
+
+    def _queue_plot_view_request(self):
+        """Debounce request frequency to keep scrollbar interaction responsive."""
+        if self._scroll_drag_active:
+            if not self._scroll_plot_request_timer.isActive():
+                self._scroll_plot_request_timer.start(self._scroll_plot_request_interval_ms)
+            return
+
+        if self._scroll_plot_request_timer.isActive():
+            self._scroll_plot_request_timer.stop()
+        self._emit_plot_view_request()
+
     @Slot(int)
     def _on_scrollbar_value_changed(self, value: int):
         """Shift viewed timespan through history (past to present) using scrollbar position"""
@@ -711,42 +900,5 @@ class PlotWidget(QWidget):
                 self.scrollbar_ax.setValue(max(0, scroll_max - shift))
                 self._suppress_scrollbar_events = False
 
-        self.plot_view_requested.emit(self.timespan_minutes, self._current_history_offset_points())
+        self._queue_plot_view_request()
 
-    def test_data_plot(self):
-        """Plot some test data to verify the plotting functionality"""
-        import numpy as np
-        now_s = time.time()
-        x_data = np.arange(
-            now_s - (self.timespan_minutes * 60),
-            now_s + self.sampling_time_seconds,
-            self.sampling_time_seconds,
-        )
-        od_bioReactor_data = np.random.uniform(0.5, 0.8, size=len(x_data))
-        od_lagoon_data = np.random.uniform(0.8, 1.0, size=len(x_data))
-        phtCount_lagoon_data = np.random.uniform(100, 120, size=len(x_data))
-        temp_bioReactor_data = np.random.uniform(36.7, 36.9, size=len(x_data))
-        temp_lagoon_data = np.random.uniform(37.0, 37.3, size=len(x_data))
-        flowRate_pump1_data = np.random.uniform(0.5, 2.5, size=len(x_data))
-        flowRate_pump2_data = np.random.uniform(1.8, 2.2, size=len(x_data))
-        sample_extraction_events_data = np.random.choice([0, 1], size=len(x_data), p=[0.9, 0.1])
-
-        self.od_bioReactor.set_data(x_data, od_bioReactor_data)
-        self.od_lagoon.set_data(x_data, od_lagoon_data)
-        self.phtCount_lagoon.set_data(x_data, phtCount_lagoon_data)
-        self.temp_bioReactor.set_data(x_data, temp_bioReactor_data)
-        self.temp_lagoon.set_data(x_data, temp_lagoon_data)
-        self.flowRate_pump1.set_data(x_data, flowRate_pump1_data)
-        self.flowRate_pump2.set_data(x_data, flowRate_pump2_data)
-        self.sample_extraction_events.set_data(x_data, sample_extraction_events_data)
-
-        # Keep all shared x-axes synchronized with incoming data range.
-        x_min = float(x_data[0])
-        x_max = float(x_data[-1])
-        self.ax0.set_xlim(x_min, x_max)
-        self.ax0_r.set_xlim(x_min, x_max)
-        self.ax1.set_xlim(x_min, x_max)
-        self.ax1_r.set_xlim(x_min, x_max)
-        self.ax2.set_xlim(x_min, x_max)
-
-        self.canvas.draw()

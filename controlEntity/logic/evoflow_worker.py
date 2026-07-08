@@ -6,7 +6,7 @@ Author: Patipol Thanuphol, Scientific Researcher at ZHAW — thau @zhaw.ch | pat
 Created: April 2026
 """
 
-from PySide6.QtCore import QObject, QThread, Signal, Slot
+from PySide6.QtCore import QObject, QTimer, Signal, Slot
 from evoflow.device.evoflow import EvoFlowDevice, EvoFlowTelemetry
 
 class EvoFlowWorker(QObject):
@@ -14,6 +14,9 @@ class EvoFlowWorker(QObject):
     
     telemetry_updated = Signal(EvoFlowTelemetry)
     evoflow_status_updated = Signal(bool)
+    evoflow_comm_status_updated = Signal(bool)
+    rpi_temp_updated = Signal(int)
+    no_of_evoflow_reset = Signal(int)
     
     def __init__(self, port: str, baudrate: int = 115200, 
                  timeout: float = 0.01, 
@@ -34,43 +37,51 @@ class EvoFlowWorker(QObject):
         self.sampling_rate_ms = sampling_rate_ms
         self.auto_reset_after_seconds = auto_reset_after_seconds
         self._running = False
-        self.telemetry_thread = None
-        self.evoflow_status_thread = None
+        self._consecutive_not_ok_count = 0
+        self._no_of_evoflow_reset = 0
+        self._telemetry_timer = None
+        self._status_timer = None
 
     @Slot()
     def start(self):
-        """Start the worker thread and begin reading telemetry"""
+        """Start device connection and periodic polling timers."""
         try:
+            if self._running:
+                return
+
             self._running = True
+            self._consecutive_not_ok_count = 0
             self.evoflow.connect()
-            # Optionally, you could start a timer here to read telemetry at regular intervals
-            # Set up another thread reading telemetry every X ms and emitting the telemetry_updated signal
-            self.telemetry_thread = QThread()
-            self.telemetry_thread.run = self.get_all_telemetry
-            self.telemetry_thread.start()
 
-            self.evoflow_status_thread = QThread()
-            self.evoflow_status_thread.run = self.is_evoflow_ok
-            self.evoflow_status_thread.start()
+            if self._telemetry_timer is None:
+                self._telemetry_timer = QTimer(self)
+                self._telemetry_timer.timeout.connect(self._poll_telemetry)
+            if self._status_timer is None:
+                self._status_timer = QTimer(self)
+                self._status_timer.timeout.connect(self._poll_status_and_temp)
 
-            self.auto_reset_timer = QThread()
-            self.auto_reset_timer.run = self.auto_reset_evoflow
-            self.auto_reset_timer.start()
+            self._telemetry_timer.start(self.sampling_rate_ms)
+            self._status_timer.start(self.sampling_rate_ms)
         except Exception as e:
             # print(f"Failed to connect to EvoFlow device: {e}")
+            self._running = False
             return
     
     @Slot()
     def stop(self):
-        """Stop the worker thread and clean up resources"""
+        """Stop polling timers and disconnect device."""
         try:
+            if not self._running:
+                return
+
             self._running = False
-            if self.telemetry_thread and self.telemetry_thread.isRunning():
-                self.telemetry_thread.requestInterruption()
-                self.telemetry_thread.quit()
-                if not self.telemetry_thread.wait(2000):
-                    self.telemetry_thread.terminate()
-                    self.telemetry_thread.wait(1000)
+            self._consecutive_not_ok_count = 0
+
+            if self._telemetry_timer is not None:
+                self._telemetry_timer.stop()
+            if self._status_timer is not None:
+                self._status_timer.stop()
+
             self.evoflow.disconnect()
         except Exception as e:
             print(f"Failed to disconnect from EvoFlow device: {e}")
@@ -148,55 +159,63 @@ class EvoFlowWorker(QObject):
             print(f"Failed to set photon counter status: {e}")
 
     @Slot()
-    def get_telemetry(self):
-        """Read telemetry data from the EvoFlow device and emit it"""
-        while self._running:
-            self.evoflow.get_telemetry()
-            self.telemetry_updated.emit(self.evoflow.evoflow_telemetry)
-            QThread.msleep(self.sampling_rate_ms)
+    def _poll_telemetry(self):
+        """Timer callback to fetch telemetry and emit latest values."""
+        if not self._running:
+            return
+
+        try:
+            if self.evoflow.get_all_telemetry():
+                self.telemetry_updated.emit(self.evoflow.evoflow_telemetry)
+                self.evoflow_comm_status_updated.emit(True)
+            else:
+                self.evoflow_comm_status_updated.emit(False)
+        except Exception as e:
+            print(f"Failed to get telemetry from EvoFlow device: {e}")
 
     @Slot()
-    def get_all_telemetry(self):
-        """Continuously read telemetry data from the EvoFlow device and emit it"""
-        while self._running:
-            self.evoflow.get_all_telemetry()
-            self.telemetry_updated.emit(self.evoflow.evoflow_telemetry)
-            QThread.msleep(self.sampling_rate_ms)
+    def _poll_status_and_temp(self):
+        """Timer callback to emit status/temp and perform auto-reset check."""
+        if not self._running:
+            return
 
-    @Slot()
-    def get_all_telemetry_wo_asking(self):
-        """Continuously read telemetry data from the EvoFlow device and emit it"""
-        while self._running:
-            self.evoflow.get_all_telemetry_wo_asking()
-            self.telemetry_updated.emit(self.evoflow.evoflow_telemetry)
-            QThread.msleep(self.sampling_rate_ms)
-
-    @Slot()
-    def is_evoflow_ok(self):
-        """Check if the EvoFlow device is operating normally"""
-        while self._running:
+        try:
             evoflow_ok = self.evoflow.is_evoflow_ok()
+            rpi_temp = self.get_rpi_temp()
             self.evoflow_status_updated.emit(evoflow_ok)
-            QThread.msleep(self.sampling_rate_ms)
+            self.rpi_temp_updated.emit(rpi_temp)
+
+            if not evoflow_ok:
+                self._consecutive_not_ok_count += 1
+            else:
+                self._consecutive_not_ok_count = 0
+
+            threshold = max(1, int((self.auto_reset_after_seconds * 1000) / self.sampling_rate_ms))
+            if self._consecutive_not_ok_count >= threshold:
+                print("EvoFlow has been NOT OK for the specified duration. Resetting EvoFlow...")
+                self._no_of_evoflow_reset += 1
+                self.no_of_evoflow_reset.emit(self._no_of_evoflow_reset)
+                self.reset_evoflow()
+                self._consecutive_not_ok_count = 0
+        except Exception as e:
+            print(f"Failed to check EvoFlow status / RPi temp: {e}")
     
     @Slot()
     def reset_evoflow(self):
         """Reset the EvoFlow device"""
         self.evoflow.reset_evoflow()
 
-    def auto_reset_evoflow(self):
-        """Automatically reset the EvoFlow device if it's not operating normally for a certain duration"""
-        consecutive_not_ok_count = 0
-        while self._running:
-            evoflow_ok = self.evoflow.is_evoflow_ok()
-            if not evoflow_ok:
-                consecutive_not_ok_count += 1
-            else:
-                consecutive_not_ok_count = 0
-            
-            if consecutive_not_ok_count >= (self.auto_reset_after_seconds * 1000 / self.sampling_rate_ms):
-                print("EvoFlow has been NOT OK for the specified duration. Resetting EvoFlow...")
-                self.reset_evoflow()
-                consecutive_not_ok_count = 0
-            
-            QThread.msleep(self.sampling_rate_ms)
+    def get_rpi_temp(self) -> int:
+        """Get the Raspberry Pi's CPU temperature in Celsius"""
+        try:
+            with open("/sys/class/thermal/thermal_zone0/temp", "r") as f:
+                temp_str = f.read().strip()
+                temp_c = int(temp_str) // 1000  # Convert from millidegrees to degrees
+                return temp_c
+        except Exception as e:
+            print(f"Failed to read Raspberry Pi CPU temperature: {e}")
+            return -1
+        
+    def low_pass_filter(self, current_value: float, previous_value: float, alpha: float = 0.1) -> float:
+        """Apply a simple low-pass filter to smoothen"""
+        

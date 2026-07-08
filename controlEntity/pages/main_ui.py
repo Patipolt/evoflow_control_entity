@@ -72,9 +72,12 @@ class MainUI(QMainWindow):
         # =====================================
         
         # Telemetry
-        self.logic.evoflow_worker.telemetry_updated.connect(self.evoflow_widget.update_telemetry)
+        self.logic.evoflow_worker.telemetry_updated.connect(self.evoflow_widget.update_telemetry,Qt.ConnectionType.QueuedConnection,)
         self.logic.evoflow_worker.telemetry_updated.connect(self.logic.data_logging_worker.update_evoflow_telemetry)
-        self.logic.evoflow_worker.evoflow_status_updated.connect(self.evoflow_widget.update_evoflow_status)
+        self.logic.evoflow_worker.evoflow_status_updated.connect(self.evoflow_widget.update_evoflow_status,Qt.ConnectionType.QueuedConnection,)
+        self.logic.evoflow_worker.evoflow_comm_status_updated.connect(self.evoflow_widget.update_evoflow_comm_status,Qt.ConnectionType.QueuedConnection,)
+        self.logic.evoflow_worker.rpi_temp_updated.connect(self.evoflow_widget.update_rpi_temp,Qt.ConnectionType.QueuedConnection,)
+        self.logic.evoflow_worker.no_of_evoflow_reset.connect(self.evoflow_widget.update_no_of_evoflow_reset,Qt.ConnectionType.QueuedConnection,)
 
         # Switches
         self.evoflow_widget.pump_on_off_requested.connect(self.logic.evoflow_worker.set_on_off_pumps)
@@ -108,10 +111,18 @@ class MainUI(QMainWindow):
         self.plot_widget.stop_logging_requested.connect(self.logic.data_logging_worker.stop_logging)
         self.plot_widget.plot_view_requested.connect(self.logic.data_logging_worker.request_plot_view)
         self.plot_widget.open_logged_data_requested.connect(self.logic.data_logging_worker.load_logged_data_from_directory)
+        self.plot_widget.export_log_requested.connect(self.logic.data_logging_worker.export_logged_data_to_csv)
+        self.plot_widget.map_selected_x_axis_to_closest_data_point_requested.connect(self.logic.data_logging_worker.map_selected_x_axis_to_closest_data_point)
+        self.plot_widget.add_annotation_requested.connect(self.logic.data_logging_worker.add_annotation_to_selected_x_axis)
+        self.plot_widget.delete_annotation_requested.connect(self.logic.data_logging_worker.delete_annotation_at_selected_x_axis)
 
         self.logic.data_logging_worker.plot_data_updated.connect(self.plot_widget.update_plot_from_logged_data)
         self.logic.data_logging_worker.logging_state_changed.connect(self.plot_widget.set_logging_state)
         self.logic.data_logging_worker.status_message.connect(self.plot_widget.show_status_message)
+        self.logic.data_logging_worker.message_box_requested.connect(self.plot_widget.handle_message_box)
+        self.logic.data_logging_worker.x_axis_selection_mapped.connect(self.plot_widget.handle_mapped_x_axis_selection)
+        self.logic.data_logging_worker.annotation_for_selected_x_axis.connect(self.plot_widget.display_annotation_for_selected_x_axis)
+        self.logic.data_logging_worker.update_configuration_requested.connect(self.plot_widget._on_update_configuration_clicked)
 
     def closeEvent(self, event: QCloseEvent):
         """Stop background threads before the main window closes"""

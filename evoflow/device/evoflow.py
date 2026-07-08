@@ -84,6 +84,8 @@ class EvoFlowTelemetry:
         self.phtCount_lagoon_value      : float = 0.0
         self.phtCount_lagoon_overlight  : bool = False
 
+        self.nucleo_temperature         : float = 0.0
+
 
 class EvoFlowDevice:
     """Class representing the EvoFlow device, handling serial communication and telemetry"""
@@ -845,17 +847,17 @@ class EvoFlowDevice:
         for name, dt_ms in timings:
             print(f"  {name:>16}: {dt_ms:.2f} ms")
 
-    def get_all_telemetry(self):
+    def get_all_telemetry(self) -> bool:
         """Continuously read telemetry data from the EvoFlow device and emit it"""
         def read_f32(offset: int) -> float:
-                    return struct.unpack_from('<f', payload, offset)[0]
+            return struct.unpack_from('<f', payload, offset)[0]
         
         try:
             self.protocol_packet.is_write = False
             self.protocol_packet.id1 = Component.TELEMETRY
             self.protocol_packet.id2 = CMD.READ_ALL
-            # payload needs 106 bytes, setup 106 of 0 bytes
-            dummy_payload_length = 106
+            # payload needs 110 bytes, setup 110 of 0 bytes
+            dummy_payload_length = 110
             self.protocol_packet.payload = bytes([0] * dummy_payload_length)
             
             if self.serial and self.serial.is_open:
@@ -866,10 +868,11 @@ class EvoFlowDevice:
 
             raw_response = self.read_serial()
             decoded_protocol_packet = parse_packet(raw_response)
+            # print(tc(f"Received payload length: {len(raw_response)} bytes", "Green"))
             if decoded_protocol_packet and decoded_protocol_packet.payload:
                 payload = decoded_protocol_packet.payload
 
-                expected_payload_length = 106
+                expected_payload_length = 110
                 if len(payload) < expected_payload_length:
                     # ignore the payload
                     return
@@ -891,6 +894,7 @@ class EvoFlowDevice:
                 # [100] photon count on/off status
                 # [101-104] photon count values (1 float)
                 # [105] photon count overlight status
+                # [106-109] nucleo temp
                 self.evoflow_telemetry.pump_1_status = bool(payload[0])
                 self.evoflow_telemetry.pump_2_status = bool(payload[1])
                 self.evoflow_telemetry.pump_3_status = bool(payload[2])
@@ -926,104 +930,16 @@ class EvoFlowDevice:
                 self.evoflow_telemetry.magneticStirrer_bioreactor_fan_duty_cycle = read_f32(92)
                 self.evoflow_telemetry.magneticStirrer_lagoon_fan_duty_cycle = read_f32(96)
                 self.evoflow_telemetry.phtCount_lagoon_status = bool(payload[100])
-                self.evoflow_telemetry.phtCount_lagoon_value = read_f32(101)
+                self.evoflow_telemetry.phtCount_lagoon_value = read_f32(101) / 1000000 # convert from Hz to MHz
                 self.evoflow_telemetry.phtCount_lagoon_overlight = bool(payload[105])
+                self.evoflow_telemetry.nucleo_temperature = read_f32(106)
                 
                 if verbose:
                     print(tc(f"Received live feed telemetry: {payload.hex()}", "Green"))
+            return True
         except (serial.SerialException, struct.error, ValueError) as e:
             print(tc(f"Failed to read live feed telemetry: {e}", "Red"))
-            pass # ignore for now
-
-    def get_all_telemetry_wo_asking(self):
-        """Continuously read telemetry data from the EvoFlow device and emit it"""
-        def read_f32(offset: int) -> float:
-                    return struct.unpack_from('<f', payload, offset)[0]
-        
-        try:
-            # self.protocol_packet.is_write = False
-            # self.protocol_packet.id1 = Component.TELEMETRY
-            # self.protocol_packet.id2 = CMD.READ_ALL
-            # # payload needs 106 bytes, setup 106 of 0 bytes
-            # dummy_payload_length = 106
-            # self.protocol_packet.payload = bytes([0] * dummy_payload_length)
-            
-            # if self.serial and self.serial.is_open:
-            #     packet_bytes = build_packet(self.protocol_packet)
-            #     self.serial.write(packet_bytes) 
-            #     if verbose:
-            #         print(f"Sent telemetry read command: {packet_bytes.hex()}")
-
-            raw_response = self.read_serial()
-            decoded_protocol_packet = parse_packet(raw_response)
-            if decoded_protocol_packet and decoded_protocol_packet.payload:
-                payload = decoded_protocol_packet.payload
-
-                expected_payload_length = 106
-                if len(payload) < expected_payload_length:
-                    # ignore the payload
-                    return
-
-                # [0-3] pump on/off status
-                # [4-19] pump setpoints (4 floats)
-                # [20-35] pump speeds (4 floats)
-                # [36-37] valve on/off status
-                # [38-39] temp ctrl on/off status
-                # [40-47] temp ctrl setpoints (2 floats)
-                # [48-55] temp values (2 floats)
-                # [56-63] temp heater duty cycles (2 floats)
-                # [64-65] OD ctrl on/off status
-                # [66-73] OD values (2 floats)
-                # [74-75] mag stirrer on/off status
-                # [76-83] mag stirrer setpoints (2 floats)
-                # [84-91] mag stirrer speeds (2 floats)
-                # [92-99] mag stirrer fan duty cycles (2 floats)
-                # [100] photon count on/off status
-                # [101-104] photon count values (1 float)
-                # [105] photon count overlight status
-                self.evoflow_telemetry.pump_1_status = bool(payload[0])
-                self.evoflow_telemetry.pump_2_status = bool(payload[1])
-                self.evoflow_telemetry.pump_3_status = bool(payload[2])
-                self.evoflow_telemetry.pump_4_status = bool(payload[3])
-                self.evoflow_telemetry.pump_1_sp = read_f32(4)
-                self.evoflow_telemetry.pump_2_sp = read_f32(8)
-                self.evoflow_telemetry.pump_3_sp = read_f32(12)
-                self.evoflow_telemetry.pump_4_sp = read_f32(16)
-                self.evoflow_telemetry.pump_1_speed = read_f32(20)
-                self.evoflow_telemetry.pump_2_speed = read_f32(24)
-                self.evoflow_telemetry.pump_3_speed = read_f32(28)
-                self.evoflow_telemetry.pump_4_speed = read_f32(32)
-                self.evoflow_telemetry.valve_bio2lag_status = bool(payload[36])
-                self.evoflow_telemetry.valve_sug2lag_status = bool(payload[37])
-                self.evoflow_telemetry.tempCtrl_bioreactor_status = bool(payload[38])
-                self.evoflow_telemetry.tempCtrl_lagoon_status = bool(payload[39])
-                self.evoflow_telemetry.tempCtrl_bioreactor_sp = read_f32(40)
-                self.evoflow_telemetry.tempCtrl_lagoon_sp = read_f32(44)
-                self.evoflow_telemetry.tempCtrl_bioreactor_value = read_f32(48)
-                self.evoflow_telemetry.tempCtrl_lagoon_value = read_f32(52)
-                self.evoflow_telemetry.tempCtrl_bioreactor_heater_duty_cycle = read_f32(56) * 100.0
-                self.evoflow_telemetry.tempCtrl_lagoon_heater_duty_cycle = read_f32(60) * 100.0
-                self.evoflow_telemetry.od_bioreactor_status = bool(payload[64])
-                self.evoflow_telemetry.od_lagoon_status = bool(payload[65])
-                self.evoflow_telemetry.od_bioreactor_value = read_f32(66)
-                self.evoflow_telemetry.od_lagoon_value = read_f32(70)
-                self.evoflow_telemetry.magneticStirrer_bioreactor_status = bool(payload[74])
-                self.evoflow_telemetry.magneticStirrer_lagoon_status = bool(payload[75])
-                self.evoflow_telemetry.magneticStirrer_bioreactor_sp = read_f32(76)
-                self.evoflow_telemetry.magneticStirrer_lagoon_sp = read_f32(80)
-                self.evoflow_telemetry.magneticStirrer_bioreactor_speed = read_f32(84)
-                self.evoflow_telemetry.magneticStirrer_lagoon_speed = read_f32(88)
-                self.evoflow_telemetry.magneticStirrer_bioreactor_fan_duty_cycle = read_f32(92) * 100.0
-                self.evoflow_telemetry.magneticStirrer_lagoon_fan_duty_cycle = read_f32(96) * 100.0
-                self.evoflow_telemetry.phtCount_lagoon_status = bool(payload[100])
-                self.evoflow_telemetry.phtCount_lagoon_value = read_f32(101)
-                self.evoflow_telemetry.phtCount_lagoon_overlight = bool(payload[105])
-                
-                if verbose:
-                    print(tc(f"Received live feed telemetry: {payload.hex()}", "Green"))
-        except (serial.SerialException, struct.error, ValueError) as e:
-            print(tc(f"Failed to read live feed telemetry: {e}", "Red"))
-            pass # ignore for now
+            return False
 
     def is_evoflow_ok(self)-> bool:
         """Check GPIO pin to determine if the EvoFlow device has error or not
@@ -1074,4 +990,5 @@ class EvoFlowDevice:
             print(tc("EvoFlow device reset via GPIO pin!", "Yellow"))
         except Exception as e:
             print(tc(f"Failed to reset EvoFlow device via GPIO: {e}", "Red"))
+
             

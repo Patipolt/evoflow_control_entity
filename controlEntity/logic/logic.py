@@ -55,8 +55,8 @@ class Logic(QObject):
                                             receiver_addr= config.getint("Evoflow", "address"),
                                             sampling_rate_ms= config.getint("HMI", "sampling_rate_ms", fallback=200),
                                             auto_reset_after_seconds= config.getint("Evoflow", "auto_reset_after_seconds"),
-                                            evoflow_status_gpio_pin= config.getint("Evoflow", "EVOFLOW_STATUS_GPIO_PIN", fallback=27),
-                                            evoflow_reset_gpio_pin= config.getint("Evoflow", "EVOFLOW_RESET_GPIO_PIN", fallback=17))
+                                            evoflow_status_gpio_pin= config.getint("RPI", "evoflow_status_gpio_pin", fallback=27),
+                                            evoflow_reset_gpio_pin= config.getint("RPI", "evoflow_reset_gpio_pin", fallback=17))
         self.evoflow_worker.moveToThread(self.evoflow_thread)
         self.evoflow_thread.started.connect(self.evoflow_worker.start)
         self.evoflow_thread.start()

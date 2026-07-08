@@ -167,6 +167,7 @@ bool Protocol_CPP::get_command_spec(uint8_t id1, uint8_t id2, size_t& payload_le
 
     case COMPONENT_TELEMETRY:
         if (id2 == 0) {
+            // READ_ALL payload includes all module telemetry + nucleo temperature float.
             payload_len = N_BYTE_READ_ALL; allow_read = true; allow_write = false; return true;
         }
         return false;

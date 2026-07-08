@@ -25,7 +25,7 @@
 #define N_SINGLE_BYTE                   1U
 #define N_BYTE_POS                      2U
 #define N_BYTE_FLOAT                    4U
-#define N_BYTE_READ_ALL                 106U  // for all read-commands for evoflow telemetry, (SUM of all payload lengths)
+#define N_BYTE_READ_ALL                 110U  // for all read-commands for evoflow telemetry, includes nucleo temperature float
 
 // Addresses
 #define ADDR_GUI                        1U

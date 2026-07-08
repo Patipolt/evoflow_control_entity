@@ -40,14 +40,16 @@ class EvoFlowWidget(QWidget):
 
     reset_evoflow_requested = Signal()
 
-    # Incoming signals (to update the widget)
-    evoflow_telemetry_updated = Signal(EvoFlowTelemetry)
 
     def __init__(self, width: int=1800, height: int=450):
         """"Initialize the EvoFlowWidget"""
         super().__init__()
         self._width: int = width
         self._height: int = height
+        self._evoflow_comm_led_hold_ms = 75
+        self._evoflow_comm_led_reset_timer = QTimer(self)
+        self._evoflow_comm_led_reset_timer.setSingleShot(True)
+        self._evoflow_comm_led_reset_timer.timeout.connect(self._reset_evoflow_comm_led)
         self.load_default_config()
         self.setup_ui()
         self.connect_signals()
@@ -343,12 +345,13 @@ class EvoFlowWidget(QWidget):
         se_status_label.setStyleSheet(font_small_value)
         self.led_evoflow_status = QLabel("⚪", controller_status_groupbox)  #🔴🟢
         self.led_se_status = QLabel("⚪", controller_status_groupbox)  #🔴🟢
+        evoflow_comm_label = QLabel("Evoflow Comm.:", controller_status_groupbox)
+        evoflow_comm_label.setStyleSheet(font_small_value)
+        self.led_evoflow_comm = QLabel("⚪", controller_status_groupbox)  #🔴🟢
         self.reset_evoflow_btn = QPushButton("Reset Evoflow", controller_status_groupbox)
         self.reset_evoflow_btn.setStyleSheet(button_style)
         self.reset_se_btn = QPushButton("Reset SE", controller_status_groupbox)
         self.reset_se_btn.setStyleSheet(button_style)
-        temperature_label = QLabel("-----Temperature-----", controller_status_groupbox)
-        temperature_label.setStyleSheet(font_small_value)
         rpi_temp_label = QLabel("RPI Temp: ", controller_status_groupbox)
         rpi_temp_label.setStyleSheet(font_small_value)
         self.rpi_temp_label = QLabel("0 °C", controller_status_groupbox)
@@ -357,26 +360,26 @@ class EvoFlowWidget(QWidget):
         evoflow_temp_label.setStyleSheet(font_small_value)
         self.evoflow_temp_label = QLabel("0 °C", controller_status_groupbox)
         self.evoflow_temp_label.setStyleSheet(font_small_value)
-        other_temp_label = QLabel("Other Temp:", controller_status_groupbox)
-        other_temp_label.setStyleSheet(font_small_value)
-        self.other_temp_label = QLabel("0 °C", controller_status_groupbox)
-        self.other_temp_label.setStyleSheet(font_small_value)
+        no_of_evoflow_reset_label = QLabel("No. of Evoflow Resets:", controller_status_groupbox)
+        no_of_evoflow_reset_label.setStyleSheet(font_small_value)
+        self.no_of_evoflow_reset_label = QLabel("0", controller_status_groupbox)
+        self.no_of_evoflow_reset_label.setStyleSheet(font_small_value)
 
         controller_status_first_row_layout.addWidget(evoflow_status_label)
         controller_status_first_row_layout.addWidget(self.led_evoflow_status)
         controller_status_first_row_layout.addWidget(se_status_label)
         controller_status_first_row_layout.addWidget(self.led_se_status)
-        controller_status_second_row_layout.addWidget(self.reset_evoflow_btn)
-        controller_status_second_row_layout.addWidget(self.reset_se_btn)
-        controller_status_third_row_layout.addStretch()
-        controller_status_third_row_layout.addWidget(temperature_label)
-        controller_status_third_row_layout.addStretch()
+        controller_status_second_row_layout.addWidget(evoflow_comm_label)
+        controller_status_second_row_layout.addWidget(self.led_evoflow_comm)
+        controller_status_second_row_layout.addStretch()
+        controller_status_third_row_layout.addWidget(self.reset_evoflow_btn)
+        controller_status_third_row_layout.addWidget(self.reset_se_btn)
         controller_status_forth_row_layout.addWidget(rpi_temp_label)
         controller_status_forth_row_layout.addWidget(self.rpi_temp_label)
         controller_status_forth_row_layout.addWidget(evoflow_temp_label)
         controller_status_forth_row_layout.addWidget(self.evoflow_temp_label)
-        controller_status_fifth_row_layout.addWidget(other_temp_label)
-        controller_status_fifth_row_layout.addWidget(self.other_temp_label)
+        controller_status_fifth_row_layout.addWidget(no_of_evoflow_reset_label)
+        controller_status_fifth_row_layout.addWidget(self.no_of_evoflow_reset_label)
 
         controller_status_V_layout.addLayout(controller_status_first_row_layout)
         controller_status_V_layout.addLayout(controller_status_second_row_layout)
@@ -536,7 +539,6 @@ class EvoFlowWidget(QWidget):
 
     def connect_signals(self):
         """Connect signals to their respective slots"""
-        self.evoflow_telemetry_updated.connect(self.update_telemetry)
         self.slide_switch_pump_1.toggled.connect(self.handle_pump_toggle)
         self.slide_switch_pump_2.toggled.connect(self.handle_pump_toggle)
         self.slide_switch_pump_3.toggled.connect(self.handle_pump_toggle)
@@ -559,6 +561,16 @@ class EvoFlowWidget(QWidget):
         self.reset_all_slideswitches_btn.clicked.connect(self.handle_reset_all_slideswitches)
 
         self.reset_evoflow_btn.clicked.connect(self.reset_evoflow_requested)
+
+        # Pressing enter in the setpoint edits should also trigger the update
+        self.pump_1_sp_edit.returnPressed.connect(self.handle_pump_sp_update)
+        self.pump_2_sp_edit.returnPressed.connect(self.handle_pump_sp_update)
+        self.pump_3_sp_edit.returnPressed.connect(self.handle_pump_sp_update)
+        self.pump_4_sp_edit.returnPressed.connect(self.handle_pump_sp_update)
+        self.magneticStirrer_bioreactor_sp_edit.returnPressed.connect(self.handle_magneticStirrer_sp_update)
+        self.magneticStirrer_lagoon_sp_edit.returnPressed.connect(self.handle_magneticStirrer_sp_update)
+        self.tempCtrl_bioreactor_sp_edit.returnPressed.connect(self.handle_tempCtrl_sp_update)
+        self.tempCtrl_lagoon_sp_edit.returnPressed.connect(self.handle_tempCtrl_sp_update)
 
     def load_default_config(self):
         """Load flow rate conversion factors from config/settings.ini"""
@@ -801,7 +813,7 @@ class EvoFlowWidget(QWidget):
             self.led_phtCount_lagoon.setText("🟢")
         else:
             self.led_phtCount_lagoon.setText("🔴")
-        self.phtCount_feedback.setText(f"{evoflow_telemetry.phtCount_lagoon_value/1000000:.2f} MHz")
+        self.phtCount_feedback.setText(f"{evoflow_telemetry.phtCount_lagoon_value:.2f} MHz")
         if evoflow_telemetry.phtCount_lagoon_overlight:
             self.led_overlight.setText("🔴")
         else:
@@ -818,12 +830,38 @@ class EvoFlowWidget(QWidget):
         else:
             self.led_valve_sug2lag.setText("🔴")
 
+        # Update nucleo temperature
+        self.evoflow_temp_label.setText(f"{evoflow_telemetry.nucleo_temperature:.0f} °C")
+
+    @Slot(bool)
     def update_evoflow_status(self, evoflow_status):
         """Update Evoflow status LED"""
         if evoflow_status:
             self.led_evoflow_status.setText("🟢")
         else:
             self.led_evoflow_status.setText("🔴")
+
+    @Slot(bool)
+    def update_evoflow_comm_status(self, evoflow_comm_status):
+        """Update Evoflow communication status LED"""
+        self.led_evoflow_comm.setText("🔵" if evoflow_comm_status else "🔴")
+
+        # Reuse one timer to avoid creating unbounded timer objects during long runs.
+        self._evoflow_comm_led_reset_timer.start(self._evoflow_comm_led_hold_ms)
+
+    @Slot()
+    def _reset_evoflow_comm_led(self):
+        self.led_evoflow_comm.setText("⚪")
+
+    @Slot(int)
+    def update_rpi_temp(self, rpi_temp):
+        """Update Raspberry Pi temperature label"""
+        self.rpi_temp_label.setText(f"{rpi_temp:.0f} °C")
+
+    @Slot(int)
+    def update_no_of_evoflow_reset(self, no_of_evoflow_reset):
+        """Update the number of Evoflow resets label"""
+        self.no_of_evoflow_reset_label.setText(f"{no_of_evoflow_reset}")
 
     def read_settings_file(self):
         """Load default configuration values from settings.ini"""
