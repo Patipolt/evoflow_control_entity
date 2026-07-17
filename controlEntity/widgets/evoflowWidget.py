@@ -238,37 +238,54 @@ class EvoFlowWidget(QWidget):
 
 
         # Slide Switches
+        config = self.read_settings_file()
+
         self.slide_switch_pump_1 = TapSwitch(self)
         self.slide_switch_pump_1.setGeometry(94, 263, 40, 20)
+        self.slide_switch_pump_1.setChecked(config.getboolean('defaultComponentStatus', 'pump1_status', fallback=False))
         self.slide_switch_pump_2 = TapSwitch(self)
         self.slide_switch_pump_2.setGeometry(654, 263, 40, 20)
+        self.slide_switch_pump_2.setChecked(config.getboolean('defaultComponentStatus', 'pump2_status', fallback=False))
         self.slide_switch_pump_3 = TapSwitch(self)
         self.slide_switch_pump_3.setGeometry(1127, 284, 40, 20)
+        self.slide_switch_pump_3.setChecked(config.getboolean('defaultComponentStatus', 'pump3_status', fallback=False))
         self.slide_switch_pump_4 = TapSwitch(self)
         self.slide_switch_pump_4.setGeometry(1127, 118, 40, 20)
+        self.slide_switch_pump_4.setChecked(config.getboolean('defaultComponentStatus', 'pump4_status', fallback=False))
 
         self.slide_switch_magneticStirrer_bioreactor = TapSwitch(self)
         self.slide_switch_magneticStirrer_bioreactor.setGeometry(267, 285, 40, 20)
+        self.slide_switch_magneticStirrer_bioreactor.setChecked(config.getboolean('defaultComponentStatus', 'magneticStirrer_bioreactor_status', fallback=False))
         self.slide_switch_magneticStirrer_lagoon = TapSwitch(self)
         self.slide_switch_magneticStirrer_lagoon.setGeometry(794, 285, 40, 20)
+        self.slide_switch_magneticStirrer_lagoon.setChecked(config.getboolean('defaultComponentStatus', 'magneticStirrer_lagoon_status', fallback=False))
 
         self.slide_switch_valve_bio2lag = TapSwitch(self)
         self.slide_switch_valve_bio2lag.setGeometry(520, 247, 40, 20)
+        self.slide_switch_valve_bio2lag.setChecked(config.getboolean('defaultComponentStatus', 'bio2lagValve_status', fallback=False))
         self.slide_switch_valve_sug2lag = TapSwitch(self)
         self.slide_switch_valve_sug2lag.setGeometry(548, 156, 40, 20)
+        self.slide_switch_valve_sug2lag.setChecked(config.getboolean('defaultComponentStatus', 'sug2lagValve_status', fallback=False))
 
         self.slide_switch_od_bioreactor = TapSwitch(self)
         self.slide_switch_od_bioreactor.setGeometry(190, 200, 40, 20)
+        self.slide_switch_od_bioreactor.setChecked(config.getboolean('defaultComponentStatus', 'od_bioreactor_status', fallback=False))
         self.slide_switch_od_lagoon = TapSwitch(self)
         self.slide_switch_od_lagoon.setGeometry(717, 200, 40, 20)
+        self.slide_switch_od_lagoon.setChecked(config.getboolean('defaultComponentStatus', 'od_lagoon_status', fallback=False))
+        # In case of OD measurement can not be activated at the same time as photon counter
+        self.slide_switch_od_lagoon.setEnabled(config.getboolean('defaultComponentStatus', 'od_lagoon_enabled', fallback=False))
 
         self.slide_switch_tempCtrl_bioreactor = TapSwitch(self)
         self.slide_switch_tempCtrl_bioreactor.setGeometry(379, 155, 40, 20)
+        self.slide_switch_tempCtrl_bioreactor.setChecked(config.getboolean('defaultComponentStatus', 'tempCtrl_bioreactor_status', fallback=False))
         self.slide_switch_tempCtrl_lagoon = TapSwitch(self)
         self.slide_switch_tempCtrl_lagoon.setGeometry(906, 155, 40, 20)
+        self.slide_switch_tempCtrl_lagoon.setChecked(config.getboolean('defaultComponentStatus', 'tempCtrl_lagoon_status', fallback=False))
 
         self.slide_switch_phtCount_Lagoon = TapSwitch(self)
         self.slide_switch_phtCount_Lagoon.setGeometry(906, 110, 40, 20)
+        self.slide_switch_phtCount_Lagoon.setChecked(config.getboolean('defaultComponentStatus', 'phtCount_status', fallback=False))
 
 
         # Buttons
@@ -619,6 +636,10 @@ class EvoFlowWidget(QWidget):
         valve_bio2lag_status = self.slide_switch_valve_bio2lag.isChecked()
         valve_sug2lag_status = self.slide_switch_valve_sug2lag.isChecked()
         self.valve_on_off_requested.emit(valve_bio2lag_status, valve_sug2lag_status)
+        # check if both valves are off, turn off the pump no 2 as well to prevent creating vacuum in the system
+        if not valve_bio2lag_status and not valve_sug2lag_status:
+            self.slide_switch_pump_2.setChecked(False)
+            self.handle_pump_toggle(False)
 
     def handle_phtCount_toggle(self, checked):
         """Handle photon counter toggle"""

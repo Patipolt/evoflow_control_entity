@@ -11,6 +11,7 @@ Created: April 2026
 
 import configparser
 import struct
+import platform
 from typing import Optional, List
 from PySide6.QtWidgets import QApplication, QMainWindow, QMessageBox, QWidget, QVBoxLayout, QLCDNumber, QLineEdit, QComboBox, QCalendarWidget, QTextEdit, QTimeEdit
 from PySide6.QtWidgets import QPushButton, QGroupBox, QTabWidget, QTableView, QMenuBar, QStatusBar, QLabel, QCheckBox, QColorDialog
@@ -41,14 +42,14 @@ class Logic(QObject):
     def __init__(self):
         super().__init__()
         
-        self.linux_system = True
+        self.current_os = platform.system().lower()
         config = self.read_settings_file()
 
         # ===============================
         # EvoFlow Worker Setup
         # ===============================
         self.evoflow_thread = QThread()
-        self.evoflow_worker = EvoFlowWorker(port= config.get("Evoflow", "port_linux" if self.linux_system else "port_windows"),
+        self.evoflow_worker = EvoFlowWorker(port=self._resolve_port(config, "Evoflow"),
                                             baudrate= config.getint("Evoflow", "baudrate"),
                                             timeout= config.getfloat("Evoflow", "serial_timeout"),
                                             sender_addr= config.getint("HMI", "address"),
@@ -66,7 +67,7 @@ class Logic(QObject):
         # Sample Extraction Worker Setup
         # ===============================
         self.sample_extraction_thread = QThread()
-        self.sample_extraction_worker = SampleExtractionWorker(port= config.get("SampleExtraction", "port_linux" if self.linux_system else "port_windows"),
+        self.sample_extraction_worker = SampleExtractionWorker(port=self._resolve_port(config, "SampleExtraction"),
                                                               baudrate= config.getint("SampleExtraction", "baudrate"),
                                                               timeout= config.getfloat("SampleExtraction", "serial_timeout"),
                                                               sender_addr= config.getint("HMI", "address"),
@@ -91,6 +92,16 @@ class Logic(QObject):
         config = configparser.ConfigParser()
         config.read(str(config_path))
         return config
+
+    def _resolve_port(self, config: configparser.ConfigParser, section: str) -> str:
+        """Pick the serial port key based on OS, with sensible fallbacks."""
+        if self.current_os == "windows":
+            return config.get(section, "port_windows")
+
+        if self.current_os == "darwin":
+            return config.get(section, "port_macos", fallback=config.get(section, "port_linux"))
+
+        return config.get(section, "port_linux")
 
     def shutdown(self):
         """Stop worker threads before Qt destroys objects"""
