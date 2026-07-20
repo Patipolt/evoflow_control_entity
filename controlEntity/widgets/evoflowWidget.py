@@ -929,6 +929,8 @@ class EvoFlowWidget(QWidget):
         if ul_per_min == 0:
             return 0.0
 
+        flow_magnitude = abs(ul_per_min)
+
         if pump_number == 1:
             # Use second order polynomial fit for pump 1
             a, b, c = self._flow_rate_pump_1_list
@@ -944,35 +946,25 @@ class EvoFlowWidget(QWidget):
         else:
             raise ValueError("Invalid pump number. Must be 1, 2, 3, or 4.")
 
-        # Solve the quadratic equation: a*rpm^2 + b*rpm + (c - ul_per_min) = 0
-        coeffs = [a, b, c - ul_per_min]
+        # Use the fitted forward-direction curve to get RPM magnitude, then apply the requested flow sign.
+        coeffs = [a, b, c - flow_magnitude]
         roots = np.roots(coeffs)
         real_roots = roots[np.isreal(roots)].real
 
         if len(real_roots) == 0:
             raise ValueError("No real solution found for the given uL/min value.")
 
-        # Keep only physically valid operating RPMs; discard mathematically valid but unusable roots.
+        # Keep only physically valid positive RPM magnitudes; reverse direction is applied afterward.
         rpm_abs_max = 600.0
-        valid_roots = real_roots[(real_roots >= -rpm_abs_max) & (real_roots <= rpm_abs_max)]
+        valid_roots = real_roots[(real_roots >= 0.0) & (real_roots <= rpm_abs_max)]
 
         if len(valid_roots) == 0:
             raise ValueError(
-                f"No valid RPM solution in [-{rpm_abs_max}, {rpm_abs_max}] for pump {pump_number} and flow {ul_per_min} uL/min."
+                f"No valid RPM magnitude solution in [0.0, {rpm_abs_max}] for pump {pump_number} and flow {ul_per_min} uL/min."
             )
 
-        # Match RPM direction to requested flow direction.
-        if ul_per_min > 0:
-            direction_roots = valid_roots[valid_roots > 0]
-        else:
-            direction_roots = valid_roots[valid_roots < 0]
-
-        if len(direction_roots) == 0:
-            raise ValueError(
-                f"No RPM root with matching sign for pump {pump_number} and flow {ul_per_min} uL/min."
-            )
-
-        return float(direction_roots[np.argmin(np.abs(direction_roots))])
+        rpm_magnitude = float(valid_roots[np.argmin(np.abs(valid_roots))])
+        return rpm_magnitude if ul_per_min > 0 else -rpm_magnitude
 
     def read_settings_file(self):
         """Load default configuration values from settings.ini"""
