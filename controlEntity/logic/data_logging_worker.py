@@ -40,11 +40,14 @@ class DataLoggingWorker(QObject):
         super().__init__()
         config = self._read_settings_file()
 
-        self._flow_rate_factor_1 = config.getfloat("flowRateConversionFactors", "pump_1", fallback=1.0)
-        self._flow_rate_factor_2 = config.getfloat("flowRateConversionFactors", "pump_2", fallback=1.0)
-        self._flow_rate_factor_3 = config.getfloat("flowRateConversionFactors", "pump_3", fallback=1.0)
-        self._flow_rate_factor_4 = config.getfloat("flowRateConversionFactors", "pump_4", fallback=1.0)
         self._max_rows_per_db = config.getint("dataLogging", "max_rows_per_db", fallback=10000)
+
+        self._flow_rate_pump_1_list, self._flow_rate_pump_2_list, self._flow_rate_pump_3_list, self._flow_rate_pump_4_list = self.extract_flow_conversion_factors(
+            config.get("flowRateConversionFactors", "pump_1"),
+            config.get("flowRateConversionFactors", "pump_2"),
+            config.get("flowRateConversionFactors", "pump_3"),
+            config.get("flowRateConversionFactors", "pump_4"),
+        )
 
         self._latest_evoflow: dict[str, Any] = {}
         self._latest_sample_extraction: dict[str, Any] = {}
@@ -360,10 +363,10 @@ class DataLoggingWorker(QObject):
         evoflow_snapshot = copy.deepcopy(self._latest_evoflow)
         sample_snapshot = copy.deepcopy(self._latest_sample_extraction)
 
-        flow_rate_1 = float(evoflow_snapshot.get("pump_1_speed", 0.0)) * self._flow_rate_factor_1
-        flow_rate_2 = float(evoflow_snapshot.get("pump_2_speed", 0.0)) * self._flow_rate_factor_2
-        flow_rate_3 = float(evoflow_snapshot.get("pump_3_speed", 0.0)) * self._flow_rate_factor_3
-        flow_rate_4 = float(evoflow_snapshot.get("pump_4_speed", 0.0)) * self._flow_rate_factor_4
+        flow_rate_1 = self.rpm_to_ul_per_min(1, float(evoflow_snapshot.get("pump_1_speed", 0.0)))
+        flow_rate_2 = self.rpm_to_ul_per_min(2, float(evoflow_snapshot.get("pump_2_speed", 0.0)))
+        flow_rate_3 = self.rpm_to_ul_per_min(3, float(evoflow_snapshot.get("pump_3_speed", 0.0)))
+        flow_rate_4 = self.rpm_to_ul_per_min(4, float(evoflow_snapshot.get("pump_4_speed", 0.0)))
 
         # Keep derived flow rates in the full telemetry snapshot for later analysis.
         evoflow_snapshot["flow_rate_pump1"] = float(flow_rate_1)
@@ -412,10 +415,10 @@ class DataLoggingWorker(QObject):
             format(float(evoflow_snapshot.get("phtCount_lagoon_value", 0.0)), ".2f"),
             int(evoflow_snapshot.get("phtCount_lagoon_overlight", 0)),
             format(float(evoflow_snapshot.get("nucleo_temperature", 0.0)), ".2f"),
-            format(float(flow_rate_1), ".3f"),
-            format(float(flow_rate_2), ".3f"),
-            format(float(flow_rate_3), ".3f"),
-            format(float(flow_rate_4), ".3f"),
+            format(float(flow_rate_1), ".2f"),
+            format(float(flow_rate_2), ".2f"),
+            format(float(flow_rate_3), ".2f"),
+            format(float(flow_rate_4), ".2f"),
             int(sample_snapshot.get("sample_row", 0)),
             int(sample_snapshot.get("sample_col", 0)),
             int(sample_snapshot.get("sample_done_flag", 0)),
@@ -968,6 +971,67 @@ class DataLoggingWorker(QObject):
             return dt_local.isoformat()
         except Exception:
             return ""
+        
+    def extract_flow_conversion_factors(self, pump1_str_list: str, pump2_str_list: str, pump3_str_list: str, pump4_str_list: str) -> tuple[list[float], list[float], list[float], list[float]]:
+        """Extract flow conversion factors from string lists and store them as floats"""
+        try:
+            pump1_factors = [float(x) for x in pump1_str_list.split(",") if x.strip()]
+            pump2_factors = [float(x) for x in pump2_str_list.split(",") if x.strip()]
+            pump3_factors = [float(x) for x in pump3_str_list.split(",") if x.strip()]
+            pump4_factors = [float(x) for x in pump4_str_list.split(",") if x.strip()]
+
+            return pump1_factors, pump2_factors, pump3_factors, pump4_factors
+        except ValueError as e:
+            self.status_message.emit(f"Error parsing flow conversion factors: {e}")
+            return [], [], [], []
+        
+    def rpm_to_ul_per_min(self, pump_number: int, rpm: float) -> float:
+        """Convert RPM to ul/min using polynomial fit for the specified pump"""
+        if pump_number == 1:
+            # Use second order polynomial fit for pump 1
+            flow = self._flow_rate_pump_1_list[0]*rpm**2 + self._flow_rate_pump_1_list[1]*rpm + self._flow_rate_pump_1_list[2]
+            return flow
+        elif pump_number == 2:
+            # Use second order polynomial fit for pump 2
+            flow = self._flow_rate_pump_2_list[0]*rpm**2 + self._flow_rate_pump_2_list[1]*rpm + self._flow_rate_pump_2_list[2]
+            return flow
+        elif pump_number == 3:
+            # Use second order polynomial fit for pump 3
+            flow = self._flow_rate_pump_3_list[0]*rpm**2 + self._flow_rate_pump_3_list[1]*rpm + self._flow_rate_pump_3_list[2]
+            return flow
+        elif pump_number == 4:
+            # Use second order polynomial fit for pump 4
+            flow = self._flow_rate_pump_4_list[0]*rpm**2 + self._flow_rate_pump_4_list[1]*rpm + self._flow_rate_pump_4_list[2]
+            return flow
+        else:
+            raise ValueError("Invalid pump number. Must be 1, 2, 3, or 4.")
+        
+    def ul_per_min_to_rpm(self, pump_number: int, ul_per_min: float) -> float:
+        """Convert uL/min to RPM using polynomial fit for the specified pump"""
+        if pump_number == 1:
+            # Use second order polynomial fit for pump 1
+            a, b, c = self._flow_rate_pump_1_list
+        elif pump_number == 2:
+            # Use second order polynomial fit for pump 2
+            a, b, c = self._flow_rate_pump_2_list
+        elif pump_number == 3:
+            # Use second order polynomial fit for pump 3
+            a, b, c = self._flow_rate_pump_3_list
+        elif pump_number == 4:
+            # Use second order polynomial fit for pump 4
+            a, b, c = self._flow_rate_pump_4_list
+        else:
+            raise ValueError("Invalid pump number. Must be 1, 2, 3, or 4.")
+
+        # Solve the quadratic equation: a*rpm^2 + b*rpm + (c - ul_per_min) = 0
+        coeffs = [a, b, c - ul_per_min]
+        roots = np.roots(coeffs)
+        real_roots = roots[np.isreal(roots)].real
+
+        if len(real_roots) == 0:
+            raise ValueError("No real solution found for the given uL/min value.")
+        
+        return max(real_roots)  # Return the maximum real root as the RPM value
 
     @staticmethod
     def _is_valid_telemetry_db(db_path: Path) -> bool:

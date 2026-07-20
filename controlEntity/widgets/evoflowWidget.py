@@ -9,6 +9,7 @@ Created: April 2026
 import time
 import os
 import configparser
+import numpy as np
 from PySide6.QtWidgets import QApplication, QHBoxLayout, QMainWindow, QMessageBox, QWidget, QVBoxLayout, QLCDNumber, QLineEdit, QComboBox, QCalendarWidget, QTextEdit, QTimeEdit
 from PySide6.QtWidgets import QPushButton, QGroupBox, QTabWidget, QTableView, QMenuBar, QStatusBar, QLabel, QCheckBox, QColorDialog
 from PySide6.QtUiTools import QUiLoader
@@ -66,7 +67,6 @@ class EvoFlowWidget(QWidget):
         scaled_background = background_img.scaled(self._width, self._height, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
         self.background.setPixmap(scaled_background)
 
-
         # Info Labels (Static fonts, this won't change)
         font_component = """font-weight: bold; color: Orange; font-size: 11px;"""
         font_description = """font-weight: bold; color: LightGreen; font-size: 11px;"""
@@ -78,7 +78,7 @@ class EvoFlowWidget(QWidget):
         info_pump_1.setGeometry(90, 283, 50, 20)
         info_pump_1.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
         info_pump_1.setStyleSheet(font_component)
-        info_pump_1_sp = QLabel("SP(rpm):", self)
+        info_pump_1_sp = QLabel("SP(ul/m):", self)
         info_pump_1_sp.setGeometry(15, 300, 100, 20)
         info_pump_1_sp.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
         info_pump_1_sp.setStyleSheet(font_small_value)
@@ -87,7 +87,7 @@ class EvoFlowWidget(QWidget):
         info_pump_2.setGeometry(650, 283, 50, 20)
         info_pump_2.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
         info_pump_2.setStyleSheet(font_component)
-        info_pump_2_sp = QLabel("SP(rpm):", self)
+        info_pump_2_sp = QLabel("SP(ul/m):", self)
         info_pump_2_sp.setGeometry(575, 300, 100, 20)
         info_pump_2_sp.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
         info_pump_2_sp.setStyleSheet(font_small_value)
@@ -96,7 +96,7 @@ class EvoFlowWidget(QWidget):
         info_pump_3.setGeometry(1123, 304, 50, 20)
         info_pump_3.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
         info_pump_3.setStyleSheet(font_component)
-        info_pump_3_sp = QLabel("SP(rpm):", self)
+        info_pump_3_sp = QLabel("SP(ul/m):", self)
         info_pump_3_sp.setGeometry(1048, 321, 100, 20)
         info_pump_3_sp.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
         info_pump_3_sp.setStyleSheet(font_small_value)
@@ -105,7 +105,7 @@ class EvoFlowWidget(QWidget):
         info_pump_4.setGeometry(1123, 138, 50, 20)
         info_pump_4.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
         info_pump_4.setStyleSheet(font_component)
-        info_pump_4_sp = QLabel("SP(rpm):", self)
+        info_pump_4_sp = QLabel("SP(ul/m):", self)
         info_pump_4_sp.setGeometry(1048, 155, 100, 20)
         info_pump_4_sp.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
         info_pump_4_sp.setStyleSheet(font_small_value)
@@ -464,7 +464,7 @@ class EvoFlowWidget(QWidget):
         self.pump_1_sp_edit.setText(str(self.default_pump_1))
         self.pump_1_sp_edit.setGeometry(116, 302, 45, 20)
         self.pump_1_sp_edit.setStyleSheet(edit_style)
-        self.pump_1_feedback = QLabel("FB: 0 rpm\n0 rpm, 0.000 ml/min", self)
+        self.pump_1_feedback = QLabel("FB: 0 rpm\n0 rpm, 0 ul/min", self)
         self.pump_1_feedback.setGeometry(29, 322, 170, 30)
         self.pump_1_feedback.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
         self.pump_1_feedback.setStyleSheet(font_small_value)
@@ -473,7 +473,7 @@ class EvoFlowWidget(QWidget):
         self.pump_2_sp_edit.setText(str(self.default_pump_2))
         self.pump_2_sp_edit.setGeometry(676, 302, 45, 20)
         self.pump_2_sp_edit.setStyleSheet(edit_style)
-        self.pump_2_feedback = QLabel("FB: 0 rpm\n0 rpm, 0.000 ml/min", self)
+        self.pump_2_feedback = QLabel("FB: 0 rpm\n0 rpm, 0 ul/min", self)
         self.pump_2_feedback.setGeometry(592, 322, 170, 30)
         self.pump_2_feedback.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
         self.pump_2_feedback.setStyleSheet(font_small_value)
@@ -482,7 +482,7 @@ class EvoFlowWidget(QWidget):
         self.pump_3_sp_edit.setText(str(self.default_pump_3))
         self.pump_3_sp_edit.setGeometry(1149, 323, 45, 20)
         self.pump_3_sp_edit.setStyleSheet(edit_style)
-        self.pump_3_feedback = QLabel("FB: 0 rpm\n0 rpm, 0.000 ml/min", self)
+        self.pump_3_feedback = QLabel("FB: 0 rpm\n0 rpm, 0 ul/min", self)
         self.pump_3_feedback.setGeometry(1062, 343, 170, 30)
         self.pump_3_feedback.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
         self.pump_3_feedback.setStyleSheet(font_small_value)
@@ -491,7 +491,7 @@ class EvoFlowWidget(QWidget):
         self.pump_4_sp_edit.setText(str(self.default_pump_4))
         self.pump_4_sp_edit.setGeometry(1149, 157, 45, 20)
         self.pump_4_sp_edit.setStyleSheet(edit_style)
-        self.pump_4_feedback = QLabel("FB: 0 rpm\n0 rpm, 0.000 ml/min", self)
+        self.pump_4_feedback = QLabel("FB: 0 rpm\n0 rpm, 0 ul/min", self)
         self.pump_4_feedback.setGeometry(1062, 177, 170, 30)
         self.pump_4_feedback.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
         self.pump_4_feedback.setStyleSheet(font_small_value)
@@ -592,18 +592,20 @@ class EvoFlowWidget(QWidget):
     def load_default_config(self):
         """Load flow rate conversion factors from config/settings.ini"""
         config = self.read_settings_file()
-        self.default_pump_1 = config.getfloat("defaultValues", "pump1_rpm")
-        self.default_pump_2 = config.getfloat("defaultValues", "pump2_rpm")
-        self.default_pump_3 = config.getfloat("defaultValues", "pump3_rpm")
-        self.default_pump_4 = config.getfloat("defaultValues", "pump4_rpm")
+        self.default_pump_1 = config.getfloat("defaultValues", "pump1_flow")
+        self.default_pump_2 = config.getfloat("defaultValues", "pump2_flow")
+        self.default_pump_3 = config.getfloat("defaultValues", "pump3_flow")
+        self.default_pump_4 = config.getfloat("defaultValues", "pump4_flow")
         self.default_temp_ctrl_bioreactor = config.getfloat("defaultValues", "tempCtrl_bioreactor_sp")
         self.default_temp_ctrl_lagoon = config.getfloat("defaultValues", "tempCtrl_lagoon_sp")
         self.default_magneticStirrer_bioreactor = config.getfloat("defaultValues", "magneticStirrer_bioreactor_rpm")
         self.default_magneticStirrer_lagoon = config.getfloat("defaultValues", "magneticStirrer_lagoon_rpm")
-        self.pump_1_flow_conv = config.getfloat("flowRateConversionFactors", "pump_1")
-        self.pump_2_flow_conv = config.getfloat("flowRateConversionFactors", "pump_2")
-        self.pump_3_flow_conv = config.getfloat("flowRateConversionFactors", "pump_3")
-        self.pump_4_flow_conv = config.getfloat("flowRateConversionFactors", "pump_4")
+        self._flow_rate_pump_1_list, self._flow_rate_pump_2_list, self._flow_rate_pump_3_list, self._flow_rate_pump_4_list = self.extract_flow_conversion_factors(
+            config.get("flowRateConversionFactors", "pump_1"),
+            config.get("flowRateConversionFactors", "pump_2"),
+            config.get("flowRateConversionFactors", "pump_3"),
+            config.get("flowRateConversionFactors", "pump_4"),
+        )
 
     def handle_pump_toggle(self, checked):
         """Handle all 4 pump toggles"""
@@ -653,7 +655,11 @@ class EvoFlowWidget(QWidget):
             new_sp_2 = float(self.pump_2_sp_edit.text())
             new_sp_3 = float(self.pump_3_sp_edit.text())
             new_sp_4 = float(self.pump_4_sp_edit.text())
-            self.pump_sp_update_requested.emit(new_sp_1, new_sp_2, new_sp_3, new_sp_4)
+            rpm_1 = self.ul_per_min_to_rpm(1, new_sp_1)
+            rpm_2 = self.ul_per_min_to_rpm(2, new_sp_2)
+            rpm_3 = self.ul_per_min_to_rpm(3, new_sp_3)
+            rpm_4 = self.ul_per_min_to_rpm(4, new_sp_4)
+            self.pump_sp_update_requested.emit(rpm_1, rpm_2, rpm_3, rpm_4)
         except ValueError:
             pass  # Invalid input, ignore
 
@@ -768,25 +774,25 @@ class EvoFlowWidget(QWidget):
             self.led_pump_1.setText("🟢")
         else:
             self.led_pump_1.setText("🔴")
-        self.pump_1_feedback.setText(f"FB: {evoflow_telemetry.pump_1_sp:.0f} rpm\n{evoflow_telemetry.pump_1_speed:.0f} rpm, {(self.pump_1_flow_conv * evoflow_telemetry.pump_1_speed):.3f} ml/min")
+        self.pump_1_feedback.setText(f"FB: {evoflow_telemetry.pump_1_sp:.0f} rpm\n{evoflow_telemetry.pump_1_speed:.0f} rpm, {(self.rpm_to_ul_per_min(1, evoflow_telemetry.pump_1_speed)):.0f} ul/min")
         # Update pump 2
         if evoflow_telemetry.pump_2_status:
             self.led_pump_2.setText("🟢")
         else:
             self.led_pump_2.setText("🔴")
-        self.pump_2_feedback.setText(f"FB: {evoflow_telemetry.pump_2_sp:.0f} rpm\n{evoflow_telemetry.pump_2_speed:.0f} rpm, {(self.pump_2_flow_conv * evoflow_telemetry.pump_2_speed):.3f} ml/min")
+        self.pump_2_feedback.setText(f"FB: {evoflow_telemetry.pump_2_sp:.0f} rpm\n{evoflow_telemetry.pump_2_speed:.0f} rpm, {(self.rpm_to_ul_per_min(2, evoflow_telemetry.pump_2_speed)):.0f} ul/min")
         # Update pump 3
         if evoflow_telemetry.pump_3_status:
             self.led_pump_3.setText("🟢")
         else:
             self.led_pump_3.setText("🔴")
-        self.pump_3_feedback.setText(f"FB: {evoflow_telemetry.pump_3_sp:.0f} rpm\n{evoflow_telemetry.pump_3_speed:.0f} rpm, {(self.pump_3_flow_conv * evoflow_telemetry.pump_3_speed):.3f} ml/min")
+        self.pump_3_feedback.setText(f"FB: {evoflow_telemetry.pump_3_sp:.0f} rpm\n{evoflow_telemetry.pump_3_speed:.0f} rpm, {(self.rpm_to_ul_per_min(3, evoflow_telemetry.pump_3_speed)):.0f} ul/min")
         # Update pump 4
         if evoflow_telemetry.pump_4_status:
             self.led_pump_4.setText("🟢")
         else:
             self.led_pump_4.setText("🔴")
-        self.pump_4_feedback.setText(f"FB: {evoflow_telemetry.pump_4_sp:.0f} rpm\n{evoflow_telemetry.pump_4_speed:.0f} rpm, {(self.pump_4_flow_conv * evoflow_telemetry.pump_4_speed):.3f} ml/min")
+        self.pump_4_feedback.setText(f"FB: {evoflow_telemetry.pump_4_sp:.0f} rpm\n{evoflow_telemetry.pump_4_speed:.0f} rpm, {(self.rpm_to_ul_per_min(4, evoflow_telemetry.pump_4_speed)):.0f} ul/min")
 
         # Update magnetic stirrer bioreactor
         if evoflow_telemetry.magneticStirrer_bioreactor_status:
@@ -883,6 +889,67 @@ class EvoFlowWidget(QWidget):
     def update_no_of_evoflow_reset(self, no_of_evoflow_reset):
         """Update the number of Evoflow resets label"""
         self.no_of_evoflow_reset_label.setText(f"{no_of_evoflow_reset}")
+
+    def extract_flow_conversion_factors(self, pump1_str_list: str, pump2_str_list: str, pump3_str_list: str, pump4_str_list: str) -> tuple[list[float], list[float], list[float], list[float]]:
+        """Extract flow conversion factors from string lists and store them as floats"""
+        try:
+            pump1_factors = [float(x) for x in pump1_str_list.split(",") if x.strip()]
+            pump2_factors = [float(x) for x in pump2_str_list.split(",") if x.strip()]
+            pump3_factors = [float(x) for x in pump3_str_list.split(",") if x.strip()]
+            pump4_factors = [float(x) for x in pump4_str_list.split(",") if x.strip()]
+
+            return pump1_factors, pump2_factors, pump3_factors, pump4_factors
+        except ValueError as e:
+            self.status_message.emit(f"Error parsing flow conversion factors: {e}")
+            return [], [], [], []
+        
+    def rpm_to_ul_per_min(self, pump_number: int, rpm: float) -> float:
+        """Convert RPM to ul/min using polynomial fit for the specified pump"""
+        if pump_number == 1:
+            # Use second order polynomial fit for pump 1
+            flow = self._flow_rate_pump_1_list[0]*rpm**2 + self._flow_rate_pump_1_list[1]*rpm + self._flow_rate_pump_1_list[2]
+            return flow
+        elif pump_number == 2:
+            # Use second order polynomial fit for pump 2
+            flow = self._flow_rate_pump_2_list[0]*rpm**2 + self._flow_rate_pump_2_list[1]*rpm + self._flow_rate_pump_2_list[2]
+            return flow
+        elif pump_number == 3:
+            # Use second order polynomial fit for pump 3
+            flow = self._flow_rate_pump_3_list[0]*rpm**2 + self._flow_rate_pump_3_list[1]*rpm + self._flow_rate_pump_3_list[2]
+            return flow
+        elif pump_number == 4:
+            # Use second order polynomial fit for pump 4
+            flow = self._flow_rate_pump_4_list[0]*rpm**2 + self._flow_rate_pump_4_list[1]*rpm + self._flow_rate_pump_4_list[2]
+            return flow
+        else:
+            raise ValueError("Invalid pump number. Must be 1, 2, 3, or 4.")
+        
+    def ul_per_min_to_rpm(self, pump_number: int, ul_per_min: float) -> float:
+        """Convert uL/min to RPM using polynomial fit for the specified pump"""
+        if pump_number == 1:
+            # Use second order polynomial fit for pump 1
+            a, b, c = self._flow_rate_pump_1_list
+        elif pump_number == 2:
+            # Use second order polynomial fit for pump 2
+            a, b, c = self._flow_rate_pump_2_list
+        elif pump_number == 3:
+            # Use second order polynomial fit for pump 3
+            a, b, c = self._flow_rate_pump_3_list
+        elif pump_number == 4:
+            # Use second order polynomial fit for pump 4
+            a, b, c = self._flow_rate_pump_4_list
+        else:
+            raise ValueError("Invalid pump number. Must be 1, 2, 3, or 4.")
+
+        # Solve the quadratic equation: a*rpm^2 + b*rpm + (c - ul_per_min) = 0
+        coeffs = [a, b, c - ul_per_min]
+        roots = np.roots(coeffs)
+        real_roots = roots[np.isreal(roots)].real
+
+        if len(real_roots) == 0:
+            raise ValueError("No real solution found for the given uL/min value.")
+        
+        return max(real_roots)  # Return the maximum real root as the RPM value
 
     def read_settings_file(self):
         """Load default configuration values from settings.ini"""
