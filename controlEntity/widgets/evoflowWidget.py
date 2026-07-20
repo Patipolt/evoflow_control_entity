@@ -774,25 +774,25 @@ class EvoFlowWidget(QWidget):
             self.led_pump_1.setText("🟢")
         else:
             self.led_pump_1.setText("🔴")
-        self.pump_1_feedback.setText(f"FB: {evoflow_telemetry.pump_1_sp:.0f} rpm\n{evoflow_telemetry.pump_1_speed:.0f} rpm, {(self.rpm_to_ul_per_min(1, evoflow_telemetry.pump_1_speed)):.0f} ul/min")
+        self.pump_1_feedback.setText(f"FB: {evoflow_telemetry.pump_1_sp:.2f} rpm\n{evoflow_telemetry.pump_1_speed:.2f} rpm, {(self.rpm_to_ul_per_min(1, evoflow_telemetry.pump_1_speed)):.0f} ul/min")
         # Update pump 2
         if evoflow_telemetry.pump_2_status:
             self.led_pump_2.setText("🟢")
         else:
             self.led_pump_2.setText("🔴")
-        self.pump_2_feedback.setText(f"FB: {evoflow_telemetry.pump_2_sp:.0f} rpm\n{evoflow_telemetry.pump_2_speed:.0f} rpm, {(self.rpm_to_ul_per_min(2, evoflow_telemetry.pump_2_speed)):.0f} ul/min")
+        self.pump_2_feedback.setText(f"FB: {evoflow_telemetry.pump_2_sp:.2f} rpm\n{evoflow_telemetry.pump_2_speed:.2f} rpm, {(self.rpm_to_ul_per_min(2, evoflow_telemetry.pump_2_speed)):.0f} ul/min")
         # Update pump 3
         if evoflow_telemetry.pump_3_status:
             self.led_pump_3.setText("🟢")
         else:
             self.led_pump_3.setText("🔴")
-        self.pump_3_feedback.setText(f"FB: {evoflow_telemetry.pump_3_sp:.0f} rpm\n{evoflow_telemetry.pump_3_speed:.0f} rpm, {(self.rpm_to_ul_per_min(3, evoflow_telemetry.pump_3_speed)):.0f} ul/min")
+        self.pump_3_feedback.setText(f"FB: {evoflow_telemetry.pump_3_sp:.2f} rpm\n{evoflow_telemetry.pump_3_speed:.2f} rpm, {(self.rpm_to_ul_per_min(3, evoflow_telemetry.pump_3_speed)):.0f} ul/min")
         # Update pump 4
         if evoflow_telemetry.pump_4_status:
             self.led_pump_4.setText("🟢")
         else:
             self.led_pump_4.setText("🔴")
-        self.pump_4_feedback.setText(f"FB: {evoflow_telemetry.pump_4_sp:.0f} rpm\n{evoflow_telemetry.pump_4_speed:.0f} rpm, {(self.rpm_to_ul_per_min(4, evoflow_telemetry.pump_4_speed)):.0f} ul/min")
+        self.pump_4_feedback.setText(f"FB: {evoflow_telemetry.pump_4_sp:.2f} rpm\n{evoflow_telemetry.pump_4_speed:.2f} rpm, {(self.rpm_to_ul_per_min(4, evoflow_telemetry.pump_4_speed)):.0f} ul/min")
 
         # Update magnetic stirrer bioreactor
         if evoflow_telemetry.magneticStirrer_bioreactor_status:
@@ -926,6 +926,9 @@ class EvoFlowWidget(QWidget):
         
     def ul_per_min_to_rpm(self, pump_number: int, ul_per_min: float) -> float:
         """Convert uL/min to RPM using polynomial fit for the specified pump"""
+        if ul_per_min == 0:
+            return 0.0
+
         if pump_number == 1:
             # Use second order polynomial fit for pump 1
             a, b, c = self._flow_rate_pump_1_list
@@ -948,8 +951,28 @@ class EvoFlowWidget(QWidget):
 
         if len(real_roots) == 0:
             raise ValueError("No real solution found for the given uL/min value.")
-        
-        return max(real_roots)  # Return the maximum real root as the RPM value
+
+        # Keep only physically valid operating RPMs; discard mathematically valid but unusable roots.
+        rpm_abs_max = 600.0
+        valid_roots = real_roots[(real_roots >= -rpm_abs_max) & (real_roots <= rpm_abs_max)]
+
+        if len(valid_roots) == 0:
+            raise ValueError(
+                f"No valid RPM solution in [-{rpm_abs_max}, {rpm_abs_max}] for pump {pump_number} and flow {ul_per_min} uL/min."
+            )
+
+        # Match RPM direction to requested flow direction.
+        if ul_per_min > 0:
+            direction_roots = valid_roots[valid_roots > 0]
+        else:
+            direction_roots = valid_roots[valid_roots < 0]
+
+        if len(direction_roots) == 0:
+            raise ValueError(
+                f"No RPM root with matching sign for pump {pump_number} and flow {ul_per_min} uL/min."
+            )
+
+        return float(direction_roots[np.argmin(np.abs(direction_roots))])
 
     def read_settings_file(self):
         """Load default configuration values from settings.ini"""

@@ -10,6 +10,7 @@ import configparser
 import copy
 import csv
 import datetime as dt
+import numpy as np
 import os
 import sqlite3
 import time
@@ -1008,6 +1009,9 @@ class DataLoggingWorker(QObject):
         
     def ul_per_min_to_rpm(self, pump_number: int, ul_per_min: float) -> float:
         """Convert uL/min to RPM using polynomial fit for the specified pump"""
+        if ul_per_min == 0:
+            return 0.0
+
         if pump_number == 1:
             # Use second order polynomial fit for pump 1
             a, b, c = self._flow_rate_pump_1_list
@@ -1030,8 +1034,28 @@ class DataLoggingWorker(QObject):
 
         if len(real_roots) == 0:
             raise ValueError("No real solution found for the given uL/min value.")
-        
-        return max(real_roots)  # Return the maximum real root as the RPM value
+
+        # Keep only physically valid operating RPMs; discard mathematically valid but unusable roots.
+        rpm_abs_max = 600.0
+        valid_roots = real_roots[(real_roots >= -rpm_abs_max) & (real_roots <= rpm_abs_max)]
+
+        if len(valid_roots) == 0:
+            raise ValueError(
+                f"No valid RPM solution in [-{rpm_abs_max}, {rpm_abs_max}] for pump {pump_number} and flow {ul_per_min} uL/min."
+            )
+
+        # Match RPM direction to requested flow direction.
+        if ul_per_min > 0:
+            direction_roots = valid_roots[valid_roots > 0]
+        else:
+            direction_roots = valid_roots[valid_roots < 0]
+
+        if len(direction_roots) == 0:
+            raise ValueError(
+                f"No RPM root with matching sign for pump {pump_number} and flow {ul_per_min} uL/min."
+            )
+
+        return float(direction_roots[np.argmin(np.abs(direction_roots))])
 
     @staticmethod
     def _is_valid_telemetry_db(db_path: Path) -> bool:
