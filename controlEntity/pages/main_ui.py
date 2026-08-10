@@ -94,7 +94,6 @@ class MainUI(QMainWindow):
 
         self.evoflow_widget.reset_evoflow_requested.connect(self.logic.evoflow_worker.reset_evoflow)
 
-
         # =====================================
         # Sample Extraction signals
         # =====================================

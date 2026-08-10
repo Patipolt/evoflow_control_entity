@@ -20,6 +20,8 @@ from controlEntity.widgets.TapSwitchWidget import TapSwitch
 from controlEntity.utils import resource_path
 from evoflow.device.evoflow import EvoFlowTelemetry
 
+magneticStirrer_swapping_mode_enabled = True
+
 
 class EvoFlowWidget(QWidget):
     """EvoFlowWidget for graphical representation of the EvoFlow system"""
@@ -554,6 +556,48 @@ class EvoFlowWidget(QWidget):
         self.phtCount_feedback.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
         self.phtCount_feedback.setStyleSheet(font_value_2)
 
+        
+        # Testing
+        if magneticStirrer_swapping_mode_enabled:
+            self.magneticStirrer_bioreactor_swapping_mode_slide_switch = TapSwitch(self)
+            self.magneticStirrer_bioreactor_swapping_mode_slide_switch.setGeometry(400, 285, 40, 20)
+            self.magneticStirrer_lagoon_swapping_mode_slide_switch = TapSwitch(self)
+            self.magneticStirrer_lagoon_swapping_mode_slide_switch.setGeometry(927, 285, 40, 20)
+
+            magneticStirrer_bioreactor_swapping_mode_label = QLabel("Swapping Mode", self)
+            magneticStirrer_bioreactor_swapping_mode_label.setGeometry(375, 305, 100, 20)
+            magneticStirrer_bioreactor_swapping_mode_label.setStyleSheet(font_component)
+            magneticStirrer_lagoon_swapping_mode_label = QLabel("Swapping Mode", self)
+            magneticStirrer_lagoon_swapping_mode_label.setGeometry(902, 305, 100, 20)
+            magneticStirrer_lagoon_swapping_mode_label.setStyleSheet(font_component)
+
+            magneticStirrer_bioreactor_duration_label = QLabel("Duration(s):", self)
+            magneticStirrer_bioreactor_duration_label.setGeometry(375, 325, 100, 20)
+            magneticStirrer_bioreactor_duration_label.setStyleSheet(font_small_value)
+            self.magneticStirrer_bioreactor_duration_edit = QLineEdit(self)
+            self.magneticStirrer_bioreactor_duration_edit.setText("3600")
+            self.magneticStirrer_bioreactor_duration_edit.setGeometry(440, 325, 50, 20)
+            self.magneticStirrer_bioreactor_duration_edit.setStyleSheet(edit_style)
+            magneticStirrer_lagoon_duration_label = QLabel("Duration(s):", self)
+            magneticStirrer_lagoon_duration_label.setGeometry(902, 325, 100, 20)
+            magneticStirrer_lagoon_duration_label.setStyleSheet(font_small_value)
+            self.magneticStirrer_lagoon_duration_edit = QLineEdit(self)
+            self.magneticStirrer_lagoon_duration_edit.setText("3600")
+            self.magneticStirrer_lagoon_duration_edit.setGeometry(967, 325, 50, 20)
+            self.magneticStirrer_lagoon_duration_edit.setStyleSheet(edit_style)
+
+            self.magneticStirrer_bioreactor_duration = 0
+            self.magneticStirrer_lagoon_duration = 0
+
+            self.magneticStirrer_bioreactor_swapping_mode_status = False
+            self.magneticStirrer_lagoon_swapping_mode_status = False
+
+            # Timers for swapping mode
+            self.magneticStirrer_bioreactor_swapping_mode_timer = QTimer(self)
+            self.magneticStirrer_lagoon_swapping_mode_timer = QTimer(self)
+            self.magneticStirrer_bioreactor_swapping_mode_timer.timeout.connect(self.handle_magneticStirrer_bioreactor_swapping_mode_timeout)
+            self.magneticStirrer_lagoon_swapping_mode_timer.timeout.connect(self.handle_magneticStirrer_lagoon_swapping_mode_timeout)
+
     def connect_signals(self):
         """Connect signals to their respective slots"""
         self.slide_switch_pump_1.toggled.connect(self.handle_pump_toggle)
@@ -589,6 +633,11 @@ class EvoFlowWidget(QWidget):
         self.tempCtrl_bioreactor_sp_edit.returnPressed.connect(self.handle_tempCtrl_sp_update)
         self.tempCtrl_lagoon_sp_edit.returnPressed.connect(self.handle_tempCtrl_sp_update)
 
+        if magneticStirrer_swapping_mode_enabled:
+            self.magneticStirrer_bioreactor_swapping_mode_slide_switch.toggled.connect(self.handle_magneticStirrer_bioreactor_swapping_mode_toggle)
+            self.magneticStirrer_lagoon_swapping_mode_slide_switch.toggled.connect(self.handle_magneticStirrer_lagoon_swapping_mode_toggle)
+
+        
     def load_default_config(self):
         """Load flow rate conversion factors from config/settings.ini"""
         config = self.read_settings_file()
@@ -696,6 +745,36 @@ class EvoFlowWidget(QWidget):
         self.slide_switch_valve_bio2lag.setChecked(False)
         self.slide_switch_valve_sug2lag.setChecked(False)
         self.slide_switch_phtCount_Lagoon.setChecked(False)
+
+    def handle_magneticStirrer_bioreactor_swapping_mode_toggle(self, checked):
+        """Handle magnetic stirrer bioreactor swapping mode toggle"""
+        duration = int(self.magneticStirrer_bioreactor_duration_edit.text())
+        if checked:
+            self.magneticStirrer_bioreactor_swapping_mode_timer.start(duration * 1000)  # Convert seconds to milliseconds
+            self.magneticStirrer_bioreactor_swapping_mode_status = True
+        else:
+            self.magneticStirrer_bioreactor_swapping_mode_timer.stop()
+            self.magneticStirrer_bioreactor_swapping_mode_status = False
+
+    def handle_magneticStirrer_lagoon_swapping_mode_toggle(self, checked):
+        """Handle magnetic stirrer lagoon swapping mode toggle"""
+        duration = int(self.magneticStirrer_lagoon_duration_edit.text())
+        if checked:
+            self.magneticStirrer_lagoon_swapping_mode_timer.start(duration * 1000)  # Convert seconds to milliseconds
+            self.magneticStirrer_lagoon_swapping_mode_status = True
+        else:
+            self.magneticStirrer_lagoon_swapping_mode_timer.stop()
+            self.magneticStirrer_lagoon_swapping_mode_status = False
+
+    def handle_magneticStirrer_bioreactor_swapping_mode_timeout(self):
+        """Handle timeout for magnetic stirrer bioreactor swapping mode"""
+        magneticStirrer_bioreactor_status = self.slide_switch_magneticStirrer_bioreactor.isChecked()
+        self.slide_switch_magneticStirrer_bioreactor.setChecked(not magneticStirrer_bioreactor_status)
+
+    def handle_magneticStirrer_lagoon_swapping_mode_timeout(self):
+        """Handle timeout for magnetic stirrer lagoon swapping mode"""
+        magneticStirrer_lagoon_status = self.slide_switch_magneticStirrer_lagoon.isChecked()
+        self.slide_switch_magneticStirrer_lagoon.setChecked(not magneticStirrer_lagoon_status)
 
     @Slot(EvoFlowTelemetry)
     def update_telemetry(self, evoflow_telemetry):

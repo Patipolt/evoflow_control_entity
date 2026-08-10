@@ -62,7 +62,6 @@ class Logic(QObject):
         self.evoflow_thread.started.connect(self.evoflow_worker.start)
         self.evoflow_thread.start()
 
-
         # ===============================
         # Sample Extraction Worker Setup
         # ===============================
