@@ -571,26 +571,43 @@ class EvoFlowWidget(QWidget):
             magneticStirrer_lagoon_swapping_mode_label.setGeometry(902, 305, 100, 20)
             magneticStirrer_lagoon_swapping_mode_label.setStyleSheet(font_component)
 
-            magneticStirrer_bioreactor_duration_label = QLabel("Duration(s):", self)
-            magneticStirrer_bioreactor_duration_label.setGeometry(375, 325, 100, 20)
-            magneticStirrer_bioreactor_duration_label.setStyleSheet(font_small_value)
-            self.magneticStirrer_bioreactor_duration_edit = QLineEdit(self)
-            self.magneticStirrer_bioreactor_duration_edit.setText("3600")
-            self.magneticStirrer_bioreactor_duration_edit.setGeometry(440, 325, 50, 20)
-            self.magneticStirrer_bioreactor_duration_edit.setStyleSheet(edit_style)
-            magneticStirrer_lagoon_duration_label = QLabel("Duration(s):", self)
-            magneticStirrer_lagoon_duration_label.setGeometry(902, 325, 100, 20)
-            magneticStirrer_lagoon_duration_label.setStyleSheet(font_small_value)
-            self.magneticStirrer_lagoon_duration_edit = QLineEdit(self)
-            self.magneticStirrer_lagoon_duration_edit.setText("3600")
-            self.magneticStirrer_lagoon_duration_edit.setGeometry(967, 325, 50, 20)
-            self.magneticStirrer_lagoon_duration_edit.setStyleSheet(edit_style)
+            magneticStirrer_bioreactor_on_label = QLabel("On(s):", self)
+            magneticStirrer_bioreactor_on_label.setGeometry(375, 325, 100, 20)
+            magneticStirrer_bioreactor_on_label.setStyleSheet(font_small_value)
+            self.magneticStirrer_bioreactor_on_edit = QLineEdit(self)
+            self.magneticStirrer_bioreactor_on_edit.setText("3600")
+            self.magneticStirrer_bioreactor_on_edit.setGeometry(415, 325, 50, 20)
+            self.magneticStirrer_bioreactor_on_edit.setStyleSheet(edit_style)
+            magneticStirrer_lagoon_on_label = QLabel("On(s):", self)
+            magneticStirrer_lagoon_on_label.setGeometry(902, 325, 100, 20)
+            magneticStirrer_lagoon_on_label.setStyleSheet(font_small_value)
+            self.magneticStirrer_lagoon_on_edit = QLineEdit(self)
+            self.magneticStirrer_lagoon_on_edit.setText("3600")
+            self.magneticStirrer_lagoon_on_edit.setGeometry(942, 325, 50, 20)
+            self.magneticStirrer_lagoon_on_edit.setStyleSheet(edit_style)
 
-            self.magneticStirrer_bioreactor_duration = 0
-            self.magneticStirrer_lagoon_duration = 0
+            magneticStirrer_bioreactor_off_label = QLabel("Off(s):", self)
+            magneticStirrer_bioreactor_off_label.setGeometry(375, 350, 100, 20)
+            magneticStirrer_bioreactor_off_label.setStyleSheet(font_small_value)
+            self.magneticStirrer_bioreactor_off_edit = QLineEdit(self)
+            self.magneticStirrer_bioreactor_off_edit.setText("3600")
+            self.magneticStirrer_bioreactor_off_edit.setGeometry(415, 350, 50, 20)
+            self.magneticStirrer_bioreactor_off_edit.setStyleSheet(edit_style)
+            magneticStirrer_lagoon_off_label = QLabel("Off(s):", self)
+            magneticStirrer_lagoon_off_label.setGeometry(902, 350, 100, 20)
+            magneticStirrer_lagoon_off_label.setStyleSheet(font_small_value)
+            self.magneticStirrer_lagoon_off_edit = QLineEdit(self)
+            self.magneticStirrer_lagoon_off_edit.setText("3600")
+            self.magneticStirrer_lagoon_off_edit.setGeometry(942, 350, 50, 20)
+            self.magneticStirrer_lagoon_off_edit.setStyleSheet(edit_style)
 
-            self.magneticStirrer_bioreactor_swapping_mode_status = False
-            self.magneticStirrer_lagoon_swapping_mode_status = False
+            self.magneticStirrer_bioreactor_duration_on = 0
+            self.magneticStirrer_lagoon_duration_on = 0
+            self.magneticStirrer_bioreactor_duration_off = 0
+            self.magneticStirrer_lagoon_duration_off = 0
+
+            self.magneticStirrer_bioreactor_swapping_mode_on_status = False
+            self.magneticStirrer_lagoon_swapping_mode_on_status = False
 
             # Timers for swapping mode
             self.magneticStirrer_bioreactor_swapping_mode_timer = QTimer(self)
@@ -748,32 +765,44 @@ class EvoFlowWidget(QWidget):
 
     def handle_magneticStirrer_bioreactor_swapping_mode_toggle(self, checked):
         """Handle magnetic stirrer bioreactor swapping mode toggle"""
-        duration = int(self.magneticStirrer_bioreactor_duration_edit.text())
+        on_duration = int(self.magneticStirrer_bioreactor_on_edit.text())
+        self.slide_switch_magneticStirrer_bioreactor.setChecked(True)  # Ensure the switch is on when swapping mode is enabled
         if checked:
-            self.magneticStirrer_bioreactor_swapping_mode_timer.start(duration * 1000)  # Convert seconds to milliseconds
-            self.magneticStirrer_bioreactor_swapping_mode_status = True
+            self.magneticStirrer_bioreactor_swapping_mode_timer.start(on_duration * 1000)  # Convert seconds to milliseconds
         else:
             self.magneticStirrer_bioreactor_swapping_mode_timer.stop()
-            self.magneticStirrer_bioreactor_swapping_mode_status = False
 
     def handle_magneticStirrer_lagoon_swapping_mode_toggle(self, checked):
         """Handle magnetic stirrer lagoon swapping mode toggle"""
-        duration = int(self.magneticStirrer_lagoon_duration_edit.text())
+        on_duration = int(self.magneticStirrer_lagoon_on_edit.text())
+        self.slide_switch_magneticStirrer_lagoon.setChecked(True)  # Ensure the switch is on when swapping mode is enabled
         if checked:
-            self.magneticStirrer_lagoon_swapping_mode_timer.start(duration * 1000)  # Convert seconds to milliseconds
-            self.magneticStirrer_lagoon_swapping_mode_status = True
+            self.magneticStirrer_lagoon_swapping_mode_timer.start(on_duration * 1000)  # Convert seconds to milliseconds
         else:
             self.magneticStirrer_lagoon_swapping_mode_timer.stop()
-            self.magneticStirrer_lagoon_swapping_mode_status = False
 
     def handle_magneticStirrer_bioreactor_swapping_mode_timeout(self):
         """Handle timeout for magnetic stirrer bioreactor swapping mode"""
         magneticStirrer_bioreactor_status = self.slide_switch_magneticStirrer_bioreactor.isChecked()
+        self.magneticStirrer_bioreactor_swapping_mode_timer.stop()  # Stop the timer before starting it again
+        if magneticStirrer_bioreactor_status:
+            off_duration = int(self.magneticStirrer_bioreactor_off_edit.text())
+            self.magneticStirrer_bioreactor_swapping_mode_timer.start(off_duration * 1000)  # Convert seconds to milliseconds
+        else:
+            on_duration = int(self.magneticStirrer_bioreactor_on_edit.text())
+            self.magneticStirrer_bioreactor_swapping_mode_timer.start(on_duration * 1000)  # Convert seconds to milliseconds
         self.slide_switch_magneticStirrer_bioreactor.setChecked(not magneticStirrer_bioreactor_status)
 
     def handle_magneticStirrer_lagoon_swapping_mode_timeout(self):
         """Handle timeout for magnetic stirrer lagoon swapping mode"""
         magneticStirrer_lagoon_status = self.slide_switch_magneticStirrer_lagoon.isChecked()
+        self.magneticStirrer_lagoon_swapping_mode_timer.stop()  # Stop the timer before starting it again
+        if magneticStirrer_lagoon_status:
+            off_duration = int(self.magneticStirrer_lagoon_off_edit.text())
+            self.magneticStirrer_lagoon_swapping_mode_timer.start(off_duration * 1000)  # Convert seconds to milliseconds
+        else:
+            on_duration = int(self.magneticStirrer_lagoon_on_edit.text())
+            self.magneticStirrer_lagoon_swapping_mode_timer.start(on_duration * 1000)  # Convert seconds to milliseconds
         self.slide_switch_magneticStirrer_lagoon.setChecked(not magneticStirrer_lagoon_status)
 
     @Slot(EvoFlowTelemetry)
