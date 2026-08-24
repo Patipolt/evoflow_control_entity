@@ -25,14 +25,15 @@ class GlassVialThermometerWidget(QWidget):
     # gradient stops (position 0..1, color) used to color the mercury column
     _COLOR_STOPS = [
         (0.2, QColor("#4FC3F7")),   # light blue
-        (0.5, QColor("#4CAF50")),  # green
-        (0.6, QColor("#FFEB3B")),  # yellow
+        (0.5, QColor("#4CAF50")),   # green
+        (0.6, QColor("#FFEB3B")),   # yellow
         (0.7, QColor("#F44336")),   # red
     ]
 
     def __init__(self, parent=None, min_value: float = 0.0, max_value: float = 50.0, value: float = 0.0):
         super().__init__(parent)
-        self.setMinimumSize(50, 100)
+        self.setMinimumSize(40, 100)
+        self.setMaximumSize(100, 300)
 
         self._min_value = min_value
         self._max_value = max_value
@@ -110,13 +111,13 @@ class GlassVialThermometerWidget(QWidget):
 
         bulb_d = min(w * 0.6, h * 0.28)
         bulb_d = max(bulb_d, 18)
-        margin_top = 10
-        margin_bottom = 10
+        self.margin_top = 5  # pixel
+        self.margin_bottom_percent = 20  # percent
 
         tube_w = bulb_d * 0.42
         tube_x = (w - tube_w) / 2.0
-        tube_top = margin_top
-        tube_bottom = h - margin_bottom - bulb_d
+        tube_top = self.margin_top
+        tube_bottom = h - (h * self.margin_bottom_percent / 100) - bulb_d
         tube_bottom = max(tube_bottom, tube_top + bulb_d)
 
         bulb_cx = w / 2.0
@@ -194,13 +195,18 @@ class GlassVialThermometerWidget(QWidget):
             p.drawLine(QPointF(tube_rect.right() + 2, y), QPointF(tube_rect.right() + 8, y))
 
         # value label above the bulb
-        p.setPen(QColor(30, 30, 30))
+        p.setPen(QColor(255, 255, 255))
         font = QFont()
-        font.setPointSize(15)
+        # make the font size fit to the width of the widget
+        height_for_font = self.margin_bottom_percent / 100 * self.height()
+        width_for_font = self.width()
+        # choose font size based on "xx.xoC" numbers of characters, which is 6 characters wide
+        font_size = max(8, int(min(width_for_font / 6, height_for_font * 0.8)))
+        font.setPointSize(font_size)
         font.setBold(True)
         p.setFont(font)
         label = f"{self._display_value:.{self._decimals}f}{self._unit}"
-        text_rect = QRectF(0, bulb_rect.top() - 22, self.width(), 120)
+        text_rect = QRectF(0, self.height()-height_for_font, self.width(), height_for_font)
         p.drawText(text_rect, Qt.AlignCenter, label)
 
         p.end()

@@ -17,6 +17,7 @@ from PySide6.QtCore import Qt, QFile, QTimer, QDate, QTime, QIODeviceBase, QEven
 from PySide6.QtGui import QKeyEvent, QTextCharFormat, QStandardItemModel, QStandardItem, QWheelEvent, QCloseEvent, QAction, QPixmap
 
 from controlEntity.widgets.TapSwitchWidget import TapSwitch
+from controlEntity.widgets.glassVialThermometerWidget import GlassVialThermometerWidget
 from controlEntity.utils import resource_path
 from evoflow.device.evoflow import EvoFlowTelemetry
 
@@ -237,6 +238,16 @@ class EvoFlowWidget(QWidget):
         info_od_lagoon.setGeometry(764, 203, 100, 25)
         info_od_lagoon.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
         info_od_lagoon.setStyleSheet(font_value)
+
+        info_ambient_temp = QLabel("Ambient Temp", self)
+        info_ambient_temp.setGeometry(35, 135, 100, 25)
+        info_ambient_temp.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
+        info_ambient_temp.setStyleSheet(font_component)
+
+
+        # Thermometer
+        self.thermo_ambient_temp = GlassVialThermometerWidget(min_value=0, max_value=50, value=25, parent=self)
+        self.thermo_ambient_temp.setGeometry(68, 40, 40, 100)
 
 
         # Slide Switches
@@ -967,6 +978,9 @@ class EvoFlowWidget(QWidget):
 
         # Update nucleo temperature
         self.evoflow_temp_label.setText(f"{evoflow_telemetry.nucleo_temperature:.0f} °C")
+
+        # Update NTC ambient temperature
+        self.thermo_ambient_temp.setValue(evoflow_telemetry.ntc_ambient_temperature)
 
     @Slot(bool)
     def update_evoflow_status(self, evoflow_status):
