@@ -139,6 +139,7 @@ class DataLoggingWorker(QObject):
         # self.phtCount_lagoon_overlight  : bool = False
 
         # self.nucleo_temperature         : float = 0.0
+        # self.ntc1_ambient_temp           : float = 0.0
 
         self._latest_evoflow = {
             "pump_1_status": 1 if bool(getattr(telemetry, "pump_1_status", False)) else 0,
@@ -179,6 +180,7 @@ class DataLoggingWorker(QObject):
             "phtCount_lagoon_value": float(getattr(telemetry, "phtCount_lagoon_value", 0.0)),
             "phtCount_lagoon_overlight": 1 if bool(getattr(telemetry, "phtCount_lagoon_overlight", False)) else 0,
             "nucleo_temperature": float(getattr(telemetry, "nucleo_temperature", 0.0)),
+            "ntc1_ambient_temp": float(getattr(telemetry, "ntc1_ambient_temp", 0.0)),
         }
 
     @Slot(SampleExtractionTelemetry)
@@ -416,6 +418,7 @@ class DataLoggingWorker(QObject):
             format(float(evoflow_snapshot.get("phtCount_lagoon_value", 0.0)), ".2f"),
             int(evoflow_snapshot.get("phtCount_lagoon_overlight", 0)),
             format(float(evoflow_snapshot.get("nucleo_temperature", 0.0)), ".2f"),
+            format(float(evoflow_snapshot.get("ntc1_ambient_temp", 0.0)), ".2f"),
             format(float(flow_rate_1), ".2f"),
             format(float(flow_rate_2), ".2f"),
             format(float(flow_rate_3), ".2f"),
@@ -471,6 +474,7 @@ class DataLoggingWorker(QObject):
                 phtCount_lagoon_value,
                 phtCount_lagoon_overlight,
                 nucleo_temperature,
+                ntc1_ambient_temp,
                 flow_rate_pump1,
                 flow_rate_pump2,
                 flow_rate_pump3,
@@ -484,7 +488,7 @@ class DataLoggingWorker(QObject):
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 
-                ?, ?, ?, ?, ?, ?, ?, ''
+                ?, ?, ?, ?, ?, ?, ?, ?, ''
             )
             """,
             row,
@@ -608,6 +612,7 @@ class DataLoggingWorker(QObject):
                 phtCount_lagoon_value REAL,
                 phtCount_lagoon_overlight INTEGER,
                 nucleo_temperature REAL,
+                ntc1_ambient_temp REAL,
                 flow_rate_pump1 REAL,
                 flow_rate_pump2 REAL,
                 flow_rate_pump3 REAL,

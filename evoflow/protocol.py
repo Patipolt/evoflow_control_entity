@@ -34,11 +34,12 @@ N_OD_MODULE = 2
 N_MAG_MODULE = 2
 N_PHOTON_COUNTER = 1
 N_TRAY = 1
+N_TEMP_IN_TEMPARRAY = 2
 
 N_SINGLE_BYTE = 1
 N_BYTE_POS = 2
 N_BYTE_FLOAT = 4
-N_BYTE_READ_ALL = 110 # for all read-commands for evoflow telemetry, (SUM of all payload lengths)
+N_BYTE_READ_ALL = 114 # for all read-commands for evoflow telemetry, (SUM of all payload lengths)
 
 
 # ===============================
@@ -62,6 +63,7 @@ class Component(IntEnum):
 	MAG_MODULE = 14
 	PHOTON_COUNTER = 15
 	TRAY = 16
+	TEMP_ARRAY = 17
 	TELEMETRY = 100
 
 
@@ -127,6 +129,8 @@ COMMAND_SPECS: Dict[Tuple[int, int], CommandSpec] = {
 	# Tray
 	(Component.TRAY, 0): CommandSpec(payload_len=N_TRAY*N_BYTE_POS, allow_read=True, allow_write=True),
 	(Component.TRAY, 1): CommandSpec(payload_len=N_TRAY*N_SINGLE_BYTE, allow_read=False, allow_write=True),
+	# Temp array
+	(Component.TEMP_ARRAY, 2): CommandSpec(payload_len=N_TEMP_IN_TEMPARRAY*N_BYTE_FLOAT, allow_read=True, allow_write=False),
 	# Telemetry
 	(Component.TELEMETRY, 0): CommandSpec(payload_len=N_BYTE_READ_ALL, allow_read=True, allow_write=False),
 }
