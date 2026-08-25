@@ -180,7 +180,7 @@ class DataLoggingWorker(QObject):
             "phtCount_lagoon_value": float(getattr(telemetry, "phtCount_lagoon_value", 0.0)),
             "phtCount_lagoon_overlight": 1 if bool(getattr(telemetry, "phtCount_lagoon_overlight", False)) else 0,
             "nucleo_temperature": float(getattr(telemetry, "nucleo_temperature", 0.0)),
-            "ntc1_ambient_temp": float(getattr(telemetry, "ntc1_ambient_temp", 0.0)),
+            # "ntc1_ambient_temp": float(getattr(telemetry, "ntc1_ambient_temp", 0.0)),
         }
 
     @Slot(SampleExtractionTelemetry)
@@ -418,7 +418,7 @@ class DataLoggingWorker(QObject):
             format(float(evoflow_snapshot.get("phtCount_lagoon_value", 0.0)), ".2f"),
             int(evoflow_snapshot.get("phtCount_lagoon_overlight", 0)),
             format(float(evoflow_snapshot.get("nucleo_temperature", 0.0)), ".2f"),
-            format(float(evoflow_snapshot.get("ntc1_ambient_temp", 0.0)), ".2f"),
+            # format(float(evoflow_snapshot.get("ntc1_ambient_temp", 0.0)), ".2f"),
             format(float(flow_rate_1), ".2f"),
             format(float(flow_rate_2), ".2f"),
             format(float(flow_rate_3), ".2f"),

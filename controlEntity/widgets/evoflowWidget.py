@@ -980,7 +980,7 @@ class EvoFlowWidget(QWidget):
         self.evoflow_temp_label.setText(f"{evoflow_telemetry.nucleo_temperature:.0f} °C")
 
         # Update NTC ambient temperature
-        self.thermo_ambient_temp.setValue(evoflow_telemetry.ntc_ambient_temperature)
+        # self.thermo_ambient_temp.setValue(evoflow_telemetry.ntc1_ambient_temp)
 
     @Slot(bool)
     def update_evoflow_status(self, evoflow_status):

@@ -39,7 +39,7 @@ N_TEMP_IN_TEMPARRAY = 2
 N_SINGLE_BYTE = 1
 N_BYTE_POS = 2
 N_BYTE_FLOAT = 4
-N_BYTE_READ_ALL = 114 # for all read-commands for evoflow telemetry, (SUM of all payload lengths)
+N_BYTE_READ_ALL = 110 # for all read-commands for evoflow telemetry, (SUM of all payload lengths)
 
 
 # ===============================
