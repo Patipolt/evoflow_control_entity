@@ -180,7 +180,7 @@ class DataLoggingWorker(QObject):
             "phtCount_lagoon_value": float(getattr(telemetry, "phtCount_lagoon_value", 0.0)),
             "phtCount_lagoon_overlight": 1 if bool(getattr(telemetry, "phtCount_lagoon_overlight", False)) else 0,
             "nucleo_temperature": float(getattr(telemetry, "nucleo_temperature", 0.0)),
-            # "ntc1_ambient_temp": float(getattr(telemetry, "ntc1_ambient_temp", 0.0)),
+            "ntc1_ambient_temp": float(getattr(telemetry, "ntc1_ambient_temp", 0.0)),
         }
 
     @Slot(SampleExtractionTelemetry)
@@ -257,7 +257,7 @@ class DataLoggingWorker(QObject):
         selected_dir = Path(directory_path).expanduser()
         if not selected_dir.exists() or not selected_dir.is_dir():
             self.status_message.emit(f"Invalid logged-data folder: {selected_dir}")
-            self.message_box_requested.emit("Invalid Folder", f"The selected folder does not exist or is not a directory:\n{selected_dir}", QMessageBox.Icon.Warning, False) 
+            self.message_box_requested.emit("Invalid Folder", f"The selected folder does not exist or is not a directory:\n{selected_dir}", QMessageBox.Icon.Warning, False)
             return
 
         discovered = self._discover_db_files(selected_dir)
@@ -285,12 +285,12 @@ class DataLoggingWorker(QObject):
             return
 
         csv_path = self._session_dir / f"{self._session_dir.name}_export.csv"
-        
+
         if self._is_logging:
             self.status_message.emit("Stop active logging before exporting to CSV.")
             self.message_box_requested.emit("Stop Logging", "Stop active logging before exporting to CSV.", QMessageBox.Icon.Warning, False)
             return
-    
+
         try:
             with open(csv_path, "w", newline="") as csvfile:
                 columns = self._get_db_columns()
@@ -418,7 +418,7 @@ class DataLoggingWorker(QObject):
             format(float(evoflow_snapshot.get("phtCount_lagoon_value", 0.0)), ".2f"),
             int(evoflow_snapshot.get("phtCount_lagoon_overlight", 0)),
             format(float(evoflow_snapshot.get("nucleo_temperature", 0.0)), ".2f"),
-            # format(float(evoflow_snapshot.get("ntc1_ambient_temp", 0.0)), ".2f"),
+            format(float(evoflow_snapshot.get("ntc1_ambient_temp", 0.0)), ".2f"),
             format(float(flow_rate_1), ".2f"),
             format(float(flow_rate_2), ".2f"),
             format(float(flow_rate_3), ".2f"),
@@ -484,10 +484,10 @@ class DataLoggingWorker(QObject):
                 sample_done_flag,
                 Annotations
             ) VALUES (
-                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 
-                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 
-                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 
-                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                 ?, ?, ?, ?, ?, ?, ?, ?, ''
             )
             """,
@@ -538,7 +538,7 @@ class DataLoggingWorker(QObject):
             self._load_plot_data(self._timespan_minutes, self._history_offset_points),
             self._total_rows_logged,
         )
-    
+
     def _count_total_logged_rows(self) -> int:
         """Count total rows across all segment DB files for status reporting"""
         total_rows = 0
@@ -791,14 +791,14 @@ class DataLoggingWorker(QObject):
                 valid_paths.append(db_path)
 
         return valid_paths
-    
+
     @Slot(object)
     def map_selected_x_axis_to_closest_data_point(self, selected_x_ms: object):
         """Map selected x-axis value in seconds to closest timestamp the first one in the past in telemetry and emit for annotation"""
         if not self._session_dir or not self._db_paths:
             return
 
-        # instead of searching for the closest timestamp across all DB files, we will find the first timestamp in the past relative to the selected_x_ms, 
+        # instead of searching for the closest timestamp across all DB files, we will find the first timestamp in the past relative to the selected_x_ms,
         # starting from the newest DB file and moving backwards. This way, we ensure that the annotation corresponds to a real data point that is at or before the selected x-axis value.
         # and probably reduce searching time for large datasets, since we expect users to select recent points more often than very old points.
         target_ts_ms = int(selected_x_ms)
@@ -898,7 +898,7 @@ class DataLoggingWorker(QObject):
         else:
             self.status_message.emit(f"No telemetry row found for timestamp {converted_ts}.")
             self.message_box_requested.emit("Annotation Failed", f"No telemetry row found for timestamp {converted_ts}. Annotation not added.", QMessageBox.Icon.Warning, False)
-    
+
     @Slot()
     def delete_annotation_at_selected_x_axis(self):
         """Delete annotation at the currently mapped x-axis timestamp"""
@@ -977,7 +977,7 @@ class DataLoggingWorker(QObject):
             return dt_local.isoformat()
         except Exception:
             return ""
-        
+
     def extract_flow_conversion_factors(self, pump1_str_list: str, pump2_str_list: str, pump3_str_list: str, pump4_str_list: str) -> tuple[list[float], list[float], list[float], list[float]]:
         """Extract flow conversion factors from string lists and store them as floats"""
         try:
@@ -990,7 +990,7 @@ class DataLoggingWorker(QObject):
         except ValueError as e:
             self.status_message.emit(f"Error parsing flow conversion factors: {e}")
             return [], [], [], []
-        
+
     def rpm_to_ul_per_min(self, pump_number: int, rpm: float) -> float:
         """Convert RPM to ul/min using polynomial fit for the specified pump"""
         if pump_number == 1:
@@ -1011,7 +1011,7 @@ class DataLoggingWorker(QObject):
             return flow
         else:
             raise ValueError("Invalid pump number. Must be 1, 2, 3, or 4.")
-        
+
     def ul_per_min_to_rpm(self, pump_number: int, ul_per_min: float) -> float:
         """Convert uL/min to RPM using polynomial fit for the specified pump"""
         if ul_per_min == 0:

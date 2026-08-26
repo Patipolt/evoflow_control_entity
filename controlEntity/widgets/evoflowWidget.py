@@ -315,7 +315,7 @@ class EvoFlowWidget(QWidget):
                                 background-color: #d9d9d9;
                                 color: #888888; }
                             """
-      
+
         # Combined button design
         groupbox_style = """
             QGroupBox {
@@ -567,7 +567,7 @@ class EvoFlowWidget(QWidget):
         self.phtCount_feedback.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
         self.phtCount_feedback.setStyleSheet(font_value_2)
 
-        
+
         # Testing
         if magneticStirrer_swapping_mode_enabled:
             self.magneticStirrer_bioreactor_swapping_mode_slide_switch = TapSwitch(self)
@@ -665,7 +665,7 @@ class EvoFlowWidget(QWidget):
             self.magneticStirrer_bioreactor_swapping_mode_slide_switch.toggled.connect(self.handle_magneticStirrer_bioreactor_swapping_mode_toggle)
             self.magneticStirrer_lagoon_swapping_mode_slide_switch.toggled.connect(self.handle_magneticStirrer_lagoon_swapping_mode_toggle)
 
-        
+
     def load_default_config(self):
         """Load flow rate conversion factors from config/settings.ini"""
         config = self.read_settings_file()
@@ -879,7 +879,7 @@ class EvoFlowWidget(QWidget):
         # )
         # if temp_ctrl_sp_mismatch:
         #     self.handle_tempCtrl_sp_update()
-        
+
         # magnetic_stirrer_sp_mismatch = (
         #     evoflow_telemetry.magneticStirrer_bioreactor_sp != float(self.magneticStirrer_bioreactor_sp_edit.text())
         #     or evoflow_telemetry.magneticStirrer_lagoon_sp != float(self.magneticStirrer_lagoon_sp_edit.text())
@@ -980,7 +980,7 @@ class EvoFlowWidget(QWidget):
         self.evoflow_temp_label.setText(f"{evoflow_telemetry.nucleo_temperature:.0f} °C")
 
         # Update NTC ambient temperature
-        # self.thermo_ambient_temp.setValue(evoflow_telemetry.ntc1_ambient_temp)
+        self.thermo_ambient_temp.setValue(evoflow_telemetry.ntc1_ambient_temp)
 
     @Slot(bool)
     def update_evoflow_status(self, evoflow_status):
@@ -1024,7 +1024,7 @@ class EvoFlowWidget(QWidget):
         except ValueError as e:
             self.status_message.emit(f"Error parsing flow conversion factors: {e}")
             return [], [], [], []
-        
+
     def rpm_to_ul_per_min(self, pump_number: int, rpm: float) -> float:
         """Convert RPM to ul/min using polynomial fit for the specified pump"""
         if pump_number == 1:
@@ -1045,7 +1045,7 @@ class EvoFlowWidget(QWidget):
             return flow
         else:
             raise ValueError("Invalid pump number. Must be 1, 2, 3, or 4.")
-        
+
     def ul_per_min_to_rpm(self, pump_number: int, ul_per_min: float) -> float:
         """Convert uL/min to RPM using polynomial fit for the specified pump"""
         if ul_per_min == 0:
