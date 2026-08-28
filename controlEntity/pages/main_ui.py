@@ -86,12 +86,12 @@ class MainUI(QMainWindow):
         self.evoflow_widget.tempCtrl_on_off_requested.connect(self.logic.evoflow_worker.set_on_off_temp_ctrls)
         self.evoflow_widget.valve_on_off_requested.connect(self.logic.evoflow_worker.set_on_off_valves)
         self.evoflow_widget.phtCount_on_off_requested.connect(self.logic.evoflow_worker.set_on_off_pht_count)
+        self.evoflow_widget.od_controller_bioreactor_on_off_requested.connect(self.logic.ODController_bioreactor_worker.set_od_control_enabled)
 
         # Buttons
         self.evoflow_widget.pump_sp_update_requested.connect(self.logic.evoflow_worker.set_setpoint_pumps)
         self.evoflow_widget.magneticStirrer_sp_update_requested.connect(self.logic.evoflow_worker.set_setpoint_magnetic_stirrers)
         self.evoflow_widget.tempCtrl_sp_update_requested.connect(self.logic.evoflow_worker.set_setpoint_temp_ctrls)
-
         self.evoflow_widget.reset_evoflow_requested.connect(self.logic.evoflow_worker.reset_evoflow)
 
         # =====================================
@@ -122,6 +122,7 @@ class MainUI(QMainWindow):
         self.logic.data_logging_worker.x_axis_selection_mapped.connect(self.plot_widget.handle_mapped_x_axis_selection)
         self.logic.data_logging_worker.annotation_for_selected_x_axis.connect(self.plot_widget.display_annotation_for_selected_x_axis)
         self.logic.data_logging_worker.update_configuration_requested.connect(self.plot_widget._on_update_configuration_clicked)
+
 
     def closeEvent(self, event: QCloseEvent):
         """Stop background threads before the main window closes"""

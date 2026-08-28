@@ -44,6 +44,7 @@ class EvoFlowWidget(QWidget):
 
     reset_evoflow_requested = Signal()
 
+    od_controller_bioreactor_on_off_requested = Signal(bool)
 
     def __init__(self, width: int=1800, height: int=450):
         """"Initialize the EvoFlowWidget"""
@@ -131,12 +132,17 @@ class EvoFlowWidget(QWidget):
         info_sp_magneticStirrer_lagoon.setStyleSheet(font_small_value)
 
         info_od_bioreactor = QLabel("Optical\nDensity", self)
-        info_od_bioreactor.setGeometry(160, 158, 100, 40)
+        info_od_bioreactor.setGeometry(160, 165, 100, 40)
         info_od_bioreactor.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
         info_od_bioreactor.setStyleSheet(font_component)
 
+        info_od_controller_bioreactor = QLabel("OD Ctrl", self)
+        info_od_controller_bioreactor.setGeometry(160, 115, 100, 40)
+        info_od_controller_bioreactor.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
+        info_od_controller_bioreactor.setStyleSheet(font_component)
+
         info_od_lagoon = QLabel("Optical\nDensity", self)
-        info_od_lagoon.setGeometry(687, 158, 100, 40)
+        info_od_lagoon.setGeometry(687, 165, 100, 40)
         info_od_lagoon.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
         info_od_lagoon.setStyleSheet(font_component)
 
@@ -288,6 +294,10 @@ class EvoFlowWidget(QWidget):
         # In case of OD measurement can not be activated at the same time as photon counter
         self.slide_switch_od_lagoon.setEnabled(config.getboolean('defaultComponentStatus', 'od_lagoon_enabled', fallback=False))
 
+        self.slide_switch_od_controller_bioreactor = TapSwitch(self)
+        self.slide_switch_od_controller_bioreactor.setGeometry(190, 100, 40, 20)
+        self.slide_switch_od_controller_bioreactor.setChecked(config.getboolean('defaultComponentStatus', 'od_controller_bioreactor_status', fallback=False))
+
         self.slide_switch_tempCtrl_bioreactor = TapSwitch(self)
         self.slide_switch_tempCtrl_bioreactor.setGeometry(379, 155, 40, 20)
         self.slide_switch_tempCtrl_bioreactor.setChecked(config.getboolean('defaultComponentStatus', 'tempCtrl_bioreactor_status', fallback=False))
@@ -438,9 +448,9 @@ class EvoFlowWidget(QWidget):
         self.led_valve_sug2lag.setGeometry(583, 124, 20, 20)
 
         self.led_od_bioreactor = QLabel("⚪",self) #🔴🟢
-        self.led_od_bioreactor.setGeometry(203, 141, 20, 20)
+        self.led_od_bioreactor.setGeometry(203, 148, 20, 20)
         self.led_od_lagoon = QLabel("⚪",self) #🔴🟢
-        self.led_od_lagoon.setGeometry(730, 141, 20, 20)
+        self.led_od_lagoon.setGeometry(730, 148, 20, 20)
 
         self.led_tempCtrl_bioreactor = QLabel("⚪",self) #🔴🟢
         self.led_tempCtrl_bioreactor.setGeometry(359, 157, 20, 20)
@@ -635,6 +645,7 @@ class EvoFlowWidget(QWidget):
         self.slide_switch_magneticStirrer_lagoon.toggled.connect(self.handle_magneticStirrer_toggle)
         self.slide_switch_od_bioreactor.toggled.connect(self.handle_od_toggle)
         self.slide_switch_od_lagoon.toggled.connect(self.handle_od_toggle)
+        self.slide_switch_od_controller_bioreactor.toggled.connect(self.handle_od_controller_bioreactor_toggle)
         self.slide_switch_tempCtrl_bioreactor.toggled.connect(self.handle_tempCtrl_toggle)
         self.slide_switch_tempCtrl_lagoon.toggled.connect(self.handle_tempCtrl_toggle)
         self.slide_switch_valve_bio2lag.toggled.connect(self.handle_valve_toggle)
@@ -704,6 +715,12 @@ class EvoFlowWidget(QWidget):
         od_bioreactor_status = self.slide_switch_od_bioreactor.isChecked()
         od_lagoon_status = self.slide_switch_od_lagoon.isChecked()
         self.od_on_off_requested.emit(od_bioreactor_status, od_lagoon_status)
+
+    def handle_od_controller_bioreactor_toggle(self, checked):
+        """Handle OD controller bioreactor toggle"""
+        od_controller_bioreactor_status = self.slide_switch_od_controller_bioreactor.isChecked()
+        self.od_controller_bioreactor_on_off_requested.emit(od_controller_bioreactor_status)
+
 
     def handle_tempCtrl_toggle(self, checked):
         """Handle all temperature controller toggles"""

@@ -23,6 +23,7 @@ from controlEntity.utils import resource_path
 from controlEntity.logic.evoflow_worker import EvoFlowWorker, EvoFlowTelemetry
 from controlEntity.logic.sample_extraction_worker import SampleExtractionWorker, SampleExtractionTelemetry
 from controlEntity.logic.data_logging_worker import DataLoggingWorker
+from controlEntity.logic.odControl_worker import ODControlWorker
 from evoflow.protocol import ProtocolPacket, Component, CMD, build_packet, cobs_decode, parse_packet
 
 
@@ -84,6 +85,21 @@ class Logic(QObject):
         self.data_logging_worker.moveToThread(self.data_logging_thread)
         self.data_logging_thread.start()
 
+        # ===============================
+        # OD Control Worker Setup
+        # ===============================
+        self.ODController_bioreactor_thread = QThread()
+        self.ODController_bioreactor_worker = ODControlWorker(V0= config.getfloat("ODController", "V0"),
+                                                    A0= config.getfloat("ODController", "A0"),
+                                                    mu0= config.getfloat("ODController", "mu0"),
+                                                    kp= config.getfloat("ODController", "kp"),
+                                                    ki= config.getfloat("ODController", "ki"),
+                                                    q_max= config.getfloat("ODController", "q_max"),
+                                                    Ts= config.getfloat("ODController", "Ts"),
+                                                    A_setpoint= config.getfloat("ODController", "A_setpoint"))
+        self.ODController_bioreactor_worker.moveToThread(self.ODController_bioreactor_thread)
+        self.ODController_bioreactor_thread.start()
+
     def read_settings_file(self):
         """Load automation step defaults from config/settings.ini"""
         # config_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'config', 'settings.ini')      # for development
@@ -136,5 +152,10 @@ class Logic(QObject):
                 if not self.data_logging_thread.wait(2000):
                     self.data_logging_thread.terminate()
                     self.data_logging_thread.wait(1000)
+            if self.ODController_bioreactor_thread.isRunning():
+                self.ODController_bioreactor_thread.quit()
+                if not self.ODController_bioreactor_thread.wait(2000):
+                    self.ODController_bioreactor_thread.terminate()
+                    self.ODController_bioreactor_thread.wait(1000)
         except Exception as e:
             print(f"Failed to stop EvoFlow thread cleanly: {e}")

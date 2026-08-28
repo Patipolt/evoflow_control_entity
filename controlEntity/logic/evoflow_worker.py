@@ -213,7 +213,7 @@ class EvoFlowWorker(QObject):
                 temp_c = int(temp_str) // 1000  # Convert from millidegrees to degrees
                 return temp_c
         except Exception as e:
-            print(f"Failed to read Raspberry Pi CPU temperature: {e}")
+            # print(f"Failed to read Raspberry Pi CPU temperature: {e}")
             return -1
         
     def low_pass_filter(self, current_value: float, previous_value: float, alpha: float = 0.1) -> float:

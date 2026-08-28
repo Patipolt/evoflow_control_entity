@@ -221,7 +221,7 @@ class EvoFlowDevice:
                 if not packet:
                     continue
 
-                if True and t_first_byte is not None:
+                if verbose and t_first_byte is not None:
                     t_end = time.perf_counter()
                     print(tc(
                         f"read_serial latency: first byte after {(t_first_byte - t_start) * 1000:.2f} ms, "
@@ -1007,7 +1007,7 @@ class EvoFlowDevice:
         0 = normal, 1 = error
         """
         if not self._gpio_initialized:
-            print(tc("GPIO not available, cannot read EvoFlow status.", "Red"))
+            # print(tc("GPIO not available, cannot read EvoFlow status.", "Red"))
             return False
 
         try:
@@ -1031,7 +1031,7 @@ class EvoFlowDevice:
     def reset_evoflow(self):
         """Reset the EvoFlow device by toggling GPIO pin"""
         if not self._gpio_initialized:
-            print(tc("GPIO not available, cannot reset EvoFlow device!", "Red"))
+            # print(tc("GPIO not available, cannot reset EvoFlow device!", "Red"))
             return
 
         try:
