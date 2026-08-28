@@ -35,11 +35,14 @@ N_MAG_MODULE = 2
 N_PHOTON_COUNTER = 1
 N_TRAY = 1
 N_TEMP_IN_TEMPARRAY = 2
+N_TEMP_IN_TEMPARRAY_SE = 5
+N_FAN_SE_MODULE = 4
 
 N_SINGLE_BYTE = 1
 N_BYTE_POS = 2
 N_BYTE_FLOAT = 4
 N_BYTE_READ_ALL = 114 # for all read-commands for evoflow telemetry, (SUM of all payload lengths)
+N_BYTE_READ_ALL_SE = 76 # for all read-commands for sample extraction telemetry, (SUM of all payload lengths)
 
 
 # ===============================
@@ -64,6 +67,7 @@ class Component(IntEnum):
 	PHOTON_COUNTER = 15
 	TRAY = 16
 	TEMP_ARRAY = 17
+	FAN_MODULE = 18
 	TELEMETRY = 100
 
 
@@ -102,37 +106,41 @@ class CommandSpec:
 	allow_write: bool
 
 # To help check that commands have correct payload lengths and read/write permissions
-COMMAND_SPECS: Dict[Tuple[int, int], CommandSpec] = {
+COMMAND_SPECS: Dict[Tuple[int, int, int], CommandSpec] = {
 	# Pump
-	(Component.PUMP, 0): CommandSpec(payload_len=N_PUMP*N_SINGLE_BYTE, allow_read=True, allow_write=True),
-	(Component.PUMP, 1): CommandSpec(payload_len=N_PUMP*N_BYTE_FLOAT, allow_read=True, allow_write=True),
-	(Component.PUMP, 2): CommandSpec(payload_len=N_PUMP*N_BYTE_FLOAT, allow_read=True, allow_write=False),
+	(Component.PUMP, 0, ADDR_EVOFLOW_NUCLEO): CommandSpec(payload_len=N_PUMP*N_SINGLE_BYTE, allow_read=True, allow_write=True),
+	(Component.PUMP, 1, ADDR_EVOFLOW_NUCLEO): CommandSpec(payload_len=N_PUMP*N_BYTE_FLOAT, allow_read=True, allow_write=True),
+	(Component.PUMP, 2, ADDR_EVOFLOW_NUCLEO): CommandSpec(payload_len=N_PUMP*N_BYTE_FLOAT, allow_read=True, allow_write=False),
 	# Valve
-	(Component.VALVE, 0): CommandSpec(payload_len=N_VALVE*N_SINGLE_BYTE, allow_read=True, allow_write=True),
+	(Component.VALVE, 0, ADDR_EVOFLOW_NUCLEO): CommandSpec(payload_len=N_VALVE*N_SINGLE_BYTE, allow_read=True, allow_write=True),
 	# Temp module
-	(Component.TEMP_MODULE, 0): CommandSpec(payload_len=N_TEMP_MODULE*N_SINGLE_BYTE, allow_read=True, allow_write=True),
-	(Component.TEMP_MODULE, 1): CommandSpec(payload_len=N_TEMP_MODULE*N_BYTE_FLOAT, allow_read=True, allow_write=True),
-	(Component.TEMP_MODULE, 2): CommandSpec(payload_len=N_TEMP_MODULE*N_BYTE_FLOAT, allow_read=True, allow_write=False),
-	(Component.TEMP_MODULE, 3): CommandSpec(payload_len=N_TEMP_MODULE*N_BYTE_FLOAT, allow_read=True, allow_write=False),
+	(Component.TEMP_MODULE, 0, ADDR_EVOFLOW_NUCLEO): CommandSpec(payload_len=N_TEMP_MODULE*N_SINGLE_BYTE, allow_read=True, allow_write=True),
+	(Component.TEMP_MODULE, 1, ADDR_EVOFLOW_NUCLEO): CommandSpec(payload_len=N_TEMP_MODULE*N_BYTE_FLOAT, allow_read=True, allow_write=True),
+	(Component.TEMP_MODULE, 2, ADDR_EVOFLOW_NUCLEO): CommandSpec(payload_len=N_TEMP_MODULE*N_BYTE_FLOAT, allow_read=True, allow_write=False),
+	(Component.TEMP_MODULE, 3, ADDR_EVOFLOW_NUCLEO): CommandSpec(payload_len=N_TEMP_MODULE*N_BYTE_FLOAT, allow_read=True, allow_write=False),
 	# OD module
-	(Component.OD_MODULE, 0): CommandSpec(payload_len=N_OD_MODULE*N_SINGLE_BYTE, allow_read=True, allow_write=True),
-	(Component.OD_MODULE, 1): CommandSpec(payload_len=N_OD_MODULE*N_BYTE_FLOAT, allow_read=True, allow_write=False),
+	(Component.OD_MODULE, 0, ADDR_EVOFLOW_NUCLEO): CommandSpec(payload_len=N_OD_MODULE*N_SINGLE_BYTE, allow_read=True, allow_write=True),
+	(Component.OD_MODULE, 1, ADDR_EVOFLOW_NUCLEO): CommandSpec(payload_len=N_OD_MODULE*N_BYTE_FLOAT, allow_read=True, allow_write=False),
 	# Magnetic stirrer module
-	(Component.MAG_MODULE, 0): CommandSpec(payload_len=N_MAG_MODULE*N_SINGLE_BYTE, allow_read=True, allow_write=True),
-	(Component.MAG_MODULE, 1): CommandSpec(payload_len=N_MAG_MODULE*N_BYTE_FLOAT, allow_read=True, allow_write=True),
-	(Component.MAG_MODULE, 2): CommandSpec(payload_len=N_MAG_MODULE*N_BYTE_FLOAT, allow_read=True, allow_write=False),
-	(Component.MAG_MODULE, 3): CommandSpec(payload_len=N_MAG_MODULE*N_BYTE_FLOAT, allow_read=True, allow_write=False),
+	(Component.MAG_MODULE, 0, ADDR_EVOFLOW_NUCLEO): CommandSpec(payload_len=N_MAG_MODULE*N_SINGLE_BYTE, allow_read=True, allow_write=True),
+	(Component.MAG_MODULE, 1, ADDR_EVOFLOW_NUCLEO): CommandSpec(payload_len=N_MAG_MODULE*N_BYTE_FLOAT, allow_read=True, allow_write=True),
+	(Component.MAG_MODULE, 2, ADDR_EVOFLOW_NUCLEO): CommandSpec(payload_len=N_MAG_MODULE*N_BYTE_FLOAT, allow_read=True, allow_write=False),
+	(Component.MAG_MODULE, 3, ADDR_EVOFLOW_NUCLEO): CommandSpec(payload_len=N_MAG_MODULE*N_BYTE_FLOAT, allow_read=True, allow_write=False),
 	# Photon counter
-	(Component.PHOTON_COUNTER, 0): CommandSpec(payload_len=N_PHOTON_COUNTER*N_SINGLE_BYTE, allow_read=True, allow_write=True),
-	(Component.PHOTON_COUNTER, 1): CommandSpec(payload_len=N_PHOTON_COUNTER*N_BYTE_FLOAT, allow_read=True, allow_write=False),
-	(Component.PHOTON_COUNTER, 2): CommandSpec(payload_len=N_PHOTON_COUNTER*N_SINGLE_BYTE, allow_read=True, allow_write=False),
+	(Component.PHOTON_COUNTER, 0, ADDR_EVOFLOW_NUCLEO): CommandSpec(payload_len=N_PHOTON_COUNTER*N_SINGLE_BYTE, allow_read=True, allow_write=True),
+	(Component.PHOTON_COUNTER, 1, ADDR_EVOFLOW_NUCLEO): CommandSpec(payload_len=N_PHOTON_COUNTER*N_BYTE_FLOAT, allow_read=True, allow_write=False),
+	(Component.PHOTON_COUNTER, 2, ADDR_EVOFLOW_NUCLEO): CommandSpec(payload_len=N_PHOTON_COUNTER*N_SINGLE_BYTE, allow_read=True, allow_write=False),
 	# Tray
-	(Component.TRAY, 0): CommandSpec(payload_len=N_TRAY*N_BYTE_POS, allow_read=True, allow_write=True),
-	(Component.TRAY, 1): CommandSpec(payload_len=N_TRAY*N_SINGLE_BYTE, allow_read=False, allow_write=True),
+	(Component.TRAY, 0, ADDR_SAMPLE_EXTRACTION_NUCLEO): CommandSpec(payload_len=N_TRAY*N_BYTE_POS, allow_read=True, allow_write=True),
+	(Component.TRAY, 1, ADDR_SAMPLE_EXTRACTION_NUCLEO): CommandSpec(payload_len=N_TRAY*N_SINGLE_BYTE, allow_read=False, allow_write=True),
 	# Temp array
-	(Component.TEMP_ARRAY, 2): CommandSpec(payload_len=N_TEMP_IN_TEMPARRAY*N_BYTE_FLOAT, allow_read=True, allow_write=False),
+	(Component.TEMP_ARRAY, 2, ADDR_EVOFLOW_NUCLEO): CommandSpec(payload_len=N_TEMP_IN_TEMPARRAY*N_BYTE_FLOAT, allow_read=True, allow_write=False),
+	(Component.TEMP_ARRAY, 2, ADDR_SAMPLE_EXTRACTION_NUCLEO): CommandSpec(payload_len=N_TEMP_IN_TEMPARRAY_SE*N_BYTE_FLOAT, allow_read=True, allow_write=False),
+	# Fan module for sample extraction
+	(Component.FAN_MODULE, 3, ADDR_SAMPLE_EXTRACTION_NUCLEO): CommandSpec(payload_len=N_FAN_SE_MODULE*N_BYTE_FLOAT, allow_read=True, allow_write=False),
 	# Telemetry
-	(Component.TELEMETRY, 0): CommandSpec(payload_len=N_BYTE_READ_ALL, allow_read=True, allow_write=False),
+	(Component.TELEMETRY, 0, ADDR_EVOFLOW_NUCLEO): CommandSpec(payload_len=N_BYTE_READ_ALL, allow_read=True, allow_write=False),
+	(Component.TELEMETRY, 0, ADDR_SAMPLE_EXTRACTION_NUCLEO): CommandSpec(payload_len=N_BYTE_READ_ALL_SE, allow_read=True, allow_write=False),
 }
 
 
@@ -215,8 +223,8 @@ def decode_receiver_field(raw_receiver: int) -> Tuple[int, bool]:
 	return ((raw_receiver >> 1) & 0x7F, bool(raw_receiver & 0x01))
 
 
-def _validate_against_spec(id1: int, id2: int, is_write: bool, payload: bytes) -> None:
-	spec = COMMAND_SPECS.get((id1, id2))
+def _validate_against_spec(receiver_addr: int, id1: int, id2: int, is_write: bool, payload: bytes) -> None:
+	spec = COMMAND_SPECS.get((id1, id2, receiver_addr))
 	if spec is None:
 		return
 
@@ -245,7 +253,7 @@ def build_packet(
 	if len(payload) > MAX_PAYLOAD_LEN:
 		raise ValueError(f"Payload too large: {len(payload)} > {MAX_PAYLOAD_LEN}")
 	if validate_spec:
-		_validate_against_spec(id1, id2, is_write, payload)
+		_validate_against_spec(receiver_addr, id1, id2, is_write, payload)
 
 	receiver = encode_receiver_field(receiver_addr, is_write)
 	raw = struct.pack(

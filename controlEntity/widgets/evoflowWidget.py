@@ -50,11 +50,10 @@ class EvoFlowWidget(QWidget):
         super().__init__()
         self._width: int = width
         self._height: int = height
-        self._evoflow_comm_led_hold_ms = 75
+        self.load_default_config()
         self._evoflow_comm_led_reset_timer = QTimer(self)
         self._evoflow_comm_led_reset_timer.setSingleShot(True)
         self._evoflow_comm_led_reset_timer.timeout.connect(self._reset_evoflow_comm_led)
-        self.load_default_config()
         self.setup_ui()
         self.connect_signals()
 
@@ -683,6 +682,8 @@ class EvoFlowWidget(QWidget):
             config.get("flowRateConversionFactors", "pump_3"),
             config.get("flowRateConversionFactors", "pump_4"),
         )
+        self._sampling_rate_ms = config.getint("HMI", "sampling_rate_ms", fallback=50)
+        self._evoflow_comm_led_hold_ms = self._sampling_rate_ms * 0.75
 
     def handle_pump_toggle(self, checked):
         """Handle all 4 pump toggles"""

@@ -34,6 +34,8 @@ from evoflow.protocol import (
     parse_packet,
 )
 
+from evoflow.protocol import N_BYTE_READ_ALL
+
 verbose = False  # Set to True to enable debug prints
 
 class EvoFlowTelemetry:
@@ -206,6 +208,9 @@ class EvoFlowDevice:
         if not self.serial or not self.serial.is_open:
             raise serial.SerialException("Serial port is not open")
 
+        t_start = time.perf_counter()
+        t_first_byte = None  # latency until the first byte of the reply arrives
+
         while True:
             delimiter_index = self._rx_buffer.find(0x00)
             if delimiter_index != -1:
@@ -215,14 +220,37 @@ class EvoFlowDevice:
                 # Ignore empty frames from repeated delimiters/noise.
                 if not packet:
                     continue
+
+                if True and t_first_byte is not None:
+                    t_end = time.perf_counter()
+                    print(tc(
+                        f"read_serial latency: first byte after {(t_first_byte - t_start) * 1000:.2f} ms, "
+                        f"full packet after {(t_end - t_start) * 1000:.2f} ms",
+                        "Pale",
+                    ))
                 return packet
 
             bytes_waiting = self.serial.in_waiting
             bytes_to_read = bytes_waiting if bytes_waiting > 0 else 1
             chunk = self.serial.read(bytes_to_read)
             if not chunk:
+                # Drop any partial frame so it can't corrupt the next read's framing.
+                self._rx_buffer.clear()
                 raise serial.SerialException("Timeout while reading from serial port")
+            if t_first_byte is None:
+                t_first_byte = time.perf_counter()
             self._rx_buffer.extend(chunk)
+
+    def _is_expected_response(self, decoded_protocol_packet, expected_id1: int, expected_id2: int) -> bool:
+        """Reject stale/misaligned replies that don't echo the component/command just requested"""
+        if decoded_protocol_packet.id1 != expected_id1 or decoded_protocol_packet.id2 != expected_id2:
+            print(tc(
+                f"Response mismatch: expected id1={expected_id1}, id2={expected_id2}, "
+                f"got id1={decoded_protocol_packet.id1}, id2={decoded_protocol_packet.id2}",
+                "Red",
+            ))
+            return False
+        return True
 
     def set_on_off_pumps(self, pump_1_status: bool, pump_2_status: bool, pump_3_status: bool, pump_4_status: bool):
         """Send command to start/stop pumps based on their status"""
@@ -262,7 +290,8 @@ class EvoFlowDevice:
 
             raw_response = self.read_serial()
             decoded_protocol_packet = parse_packet(raw_response)
-            if decoded_protocol_packet and decoded_protocol_packet.payload:
+            if (decoded_protocol_packet and decoded_protocol_packet.payload
+                    and self._is_expected_response(decoded_protocol_packet, Component.PUMP, CMD.ON_OFF)):
                 pump_statuses = decoded_protocol_packet.payload
                 self.evoflow_telemetry.pump_1_status = bool(pump_statuses[0])
                 self.evoflow_telemetry.pump_2_status = bool(pump_statuses[1])
@@ -305,7 +334,8 @@ class EvoFlowDevice:
 
             raw_response = self.read_serial()
             decoded_protocol_packet = parse_packet(raw_response)
-            if decoded_protocol_packet and decoded_protocol_packet.payload:
+            if (decoded_protocol_packet and decoded_protocol_packet.payload
+                    and self._is_expected_response(decoded_protocol_packet, Component.PUMP, CMD.SET_POINT)):
                 pump_sps = struct.unpack('<4f', decoded_protocol_packet.payload)
                 self.evoflow_telemetry.pump_1_sp = pump_sps[0]
                 self.evoflow_telemetry.pump_2_sp = pump_sps[1]
@@ -331,7 +361,8 @@ class EvoFlowDevice:
 
             raw_response = self.read_serial()
             decoded_protocol_packet = parse_packet(raw_response)
-            if decoded_protocol_packet and decoded_protocol_packet.payload:
+            if (decoded_protocol_packet and decoded_protocol_packet.payload
+                    and self._is_expected_response(decoded_protocol_packet, Component.PUMP, CMD.SPEED)):
                 pump_speeds = struct.unpack('<4f', decoded_protocol_packet.payload)
                 self.evoflow_telemetry.pump_1_speed = pump_speeds[0]
                 self.evoflow_telemetry.pump_2_speed = pump_speeds[1]
@@ -377,7 +408,8 @@ class EvoFlowDevice:
 
             raw_response = self.read_serial()
             decoded_protocol_packet = parse_packet(raw_response)
-            if decoded_protocol_packet and decoded_protocol_packet.payload:
+            if (decoded_protocol_packet and decoded_protocol_packet.payload
+                    and self._is_expected_response(decoded_protocol_packet, Component.VALVE, CMD.ON_OFF)):
                 valve_statuses = decoded_protocol_packet.payload
                 self.evoflow_telemetry.valve_bio2lag_status = bool(valve_statuses[0])
                 self.evoflow_telemetry.valve_sug2lag_status = bool(valve_statuses[1])
@@ -421,7 +453,8 @@ class EvoFlowDevice:
 
             raw_response = self.read_serial()
             decoded_protocol_packet = parse_packet(raw_response)
-            if decoded_protocol_packet and decoded_protocol_packet.payload:
+            if (decoded_protocol_packet and decoded_protocol_packet.payload
+                    and self._is_expected_response(decoded_protocol_packet, Component.TEMP_MODULE, CMD.ON_OFF)):
                 temp_ctrl_statuses = decoded_protocol_packet.payload
                 self.evoflow_telemetry.tempCtrl_bioreactor_status = bool(temp_ctrl_statuses[0])
                 self.evoflow_telemetry.tempCtrl_lagoon_status = bool(temp_ctrl_statuses[1])
@@ -462,7 +495,8 @@ class EvoFlowDevice:
 
             raw_response = self.read_serial()
             decoded_protocol_packet = parse_packet(raw_response)
-            if decoded_protocol_packet and decoded_protocol_packet.payload:
+            if (decoded_protocol_packet and decoded_protocol_packet.payload
+                    and self._is_expected_response(decoded_protocol_packet, Component.TEMP_MODULE, CMD.SET_POINT)):
                 temp_ctrl_sps = struct.unpack('<2f', decoded_protocol_packet.payload)
                 self.evoflow_telemetry.tempCtrl_bioreactor_sp = temp_ctrl_sps[0]
                 self.evoflow_telemetry.tempCtrl_lagoon_sp = temp_ctrl_sps[1]
@@ -486,7 +520,8 @@ class EvoFlowDevice:
 
             raw_response = self.read_serial()
             decoded_protocol_packet = parse_packet(raw_response)
-            if decoded_protocol_packet and decoded_protocol_packet.payload:
+            if (decoded_protocol_packet and decoded_protocol_packet.payload
+                    and self._is_expected_response(decoded_protocol_packet, Component.TEMP_MODULE, CMD.TEMPERATURE)):
                 temp_ctrl_values = struct.unpack('<2f', decoded_protocol_packet.payload)
                 self.evoflow_telemetry.tempCtrl_bioreactor_value = temp_ctrl_values[0]
                 self.evoflow_telemetry.tempCtrl_lagoon_value = temp_ctrl_values[1]
@@ -510,7 +545,8 @@ class EvoFlowDevice:
 
             raw_response = self.read_serial()
             decoded_protocol_packet = parse_packet(raw_response)
-            if decoded_protocol_packet and decoded_protocol_packet.payload:
+            if (decoded_protocol_packet and decoded_protocol_packet.payload
+                    and self._is_expected_response(decoded_protocol_packet, Component.TEMP_MODULE, CMD.HEATER_DUTY_CYCLE)):
                 temp_ctrl_heater_duty_cycles = struct.unpack('<2f', decoded_protocol_packet.payload)
                 self.evoflow_telemetry.tempCtrl_bioreactor_heater_duty_cycle = temp_ctrl_heater_duty_cycles[0]
                 self.evoflow_telemetry.tempCtrl_lagoon_heater_duty_cycle = temp_ctrl_heater_duty_cycles[1]
@@ -554,7 +590,8 @@ class EvoFlowDevice:
 
             raw_response = self.read_serial()
             decoded_protocol_packet = parse_packet(raw_response)
-            if decoded_protocol_packet and decoded_protocol_packet.payload:
+            if (decoded_protocol_packet and decoded_protocol_packet.payload
+                    and self._is_expected_response(decoded_protocol_packet, Component.OD_MODULE, CMD.ON_OFF)):
                 od_ctrl_statuses = decoded_protocol_packet.payload
                 self.evoflow_telemetry.od_bioreactor_status = bool(od_ctrl_statuses[0])
                 self.evoflow_telemetry.od_lagoon_status = bool(od_ctrl_statuses[1])
@@ -578,7 +615,8 @@ class EvoFlowDevice:
 
             raw_response = self.read_serial()
             decoded_protocol_packet = parse_packet(raw_response)
-            if decoded_protocol_packet and decoded_protocol_packet.payload:
+            if (decoded_protocol_packet and decoded_protocol_packet.payload
+                    and self._is_expected_response(decoded_protocol_packet, Component.OD_MODULE, CMD.OD_VALUE)):
                 od_values = struct.unpack('<2f', decoded_protocol_packet.payload)
                 self.evoflow_telemetry.od_bioreactor_value = od_values[0]
                 self.evoflow_telemetry.od_lagoon_value = od_values[1]
@@ -622,7 +660,8 @@ class EvoFlowDevice:
 
             raw_response = self.read_serial()
             decoded_protocol_packet = parse_packet(raw_response)
-            if decoded_protocol_packet and decoded_protocol_packet.payload:
+            if (decoded_protocol_packet and decoded_protocol_packet.payload
+                    and self._is_expected_response(decoded_protocol_packet, Component.MAG_MODULE, CMD.ON_OFF)):
                 magnetic_stirrer_statuses = decoded_protocol_packet.payload
                 self.evoflow_telemetry.magneticStirrer_bioreactor_status = bool(magnetic_stirrer_statuses[0])
                 self.evoflow_telemetry.magneticStirrer_lagoon_status = bool(magnetic_stirrer_statuses[1])
@@ -663,7 +702,8 @@ class EvoFlowDevice:
 
             raw_response = self.read_serial()
             decoded_protocol_packet = parse_packet(raw_response)
-            if decoded_protocol_packet and decoded_protocol_packet.payload:
+            if (decoded_protocol_packet and decoded_protocol_packet.payload
+                    and self._is_expected_response(decoded_protocol_packet, Component.MAG_MODULE, CMD.SET_POINT)):
                 magnetic_stirrer_sps = struct.unpack('<2f', decoded_protocol_packet.payload)
                 self.evoflow_telemetry.magneticStirrer_bioreactor_sp = magnetic_stirrer_sps[0]
                 self.evoflow_telemetry.magneticStirrer_lagoon_sp = magnetic_stirrer_sps[1]
@@ -687,7 +727,8 @@ class EvoFlowDevice:
 
             raw_response = self.read_serial()
             decoded_protocol_packet = parse_packet(raw_response)
-            if decoded_protocol_packet and decoded_protocol_packet.payload:
+            if (decoded_protocol_packet and decoded_protocol_packet.payload
+                    and self._is_expected_response(decoded_protocol_packet, Component.MAG_MODULE, CMD.SPEED)):
                 magnetic_stirrer_speeds = struct.unpack('<2f', decoded_protocol_packet.payload)
                 self.evoflow_telemetry.magneticStirrer_bioreactor_speed = magnetic_stirrer_speeds[0]
                 self.evoflow_telemetry.magneticStirrer_lagoon_speed = magnetic_stirrer_speeds[1]
@@ -711,7 +752,8 @@ class EvoFlowDevice:
 
             raw_response = self.read_serial()
             decoded_protocol_packet = parse_packet(raw_response)
-            if decoded_protocol_packet and decoded_protocol_packet.payload:
+            if (decoded_protocol_packet and decoded_protocol_packet.payload
+                    and self._is_expected_response(decoded_protocol_packet, Component.MAG_MODULE, CMD.FAN_DUTY_CYCLE)):
                 magnetic_stirrer_fan_duty_cycles = struct.unpack('<2f', decoded_protocol_packet.payload)
                 self.evoflow_telemetry.magneticStirrer_bioreactor_fan_duty_cycle = magnetic_stirrer_fan_duty_cycles[0]
                 self.evoflow_telemetry.magneticStirrer_lagoon_fan_duty_cycle = magnetic_stirrer_fan_duty_cycles[1]
@@ -754,7 +796,8 @@ class EvoFlowDevice:
 
             raw_response = self.read_serial()
             decoded_protocol_packet = parse_packet(raw_response)
-            if decoded_protocol_packet and decoded_protocol_packet.payload:
+            if (decoded_protocol_packet and decoded_protocol_packet.payload
+                    and self._is_expected_response(decoded_protocol_packet, Component.PHOTON_COUNTER, CMD.ON_OFF)):
                 pht_count_statuses = decoded_protocol_packet.payload
                 self.evoflow_telemetry.phtCount_lagoon_status = bool(pht_count_statuses[0])
                 if verbose:
@@ -777,7 +820,8 @@ class EvoFlowDevice:
 
             raw_response = self.read_serial()
             decoded_protocol_packet = parse_packet(raw_response)
-            if decoded_protocol_packet and decoded_protocol_packet.payload:
+            if (decoded_protocol_packet and decoded_protocol_packet.payload
+                    and self._is_expected_response(decoded_protocol_packet, Component.PHOTON_COUNTER, CMD.PHOTON_COUNTS)):
                 pht_count_photon_counts = struct.unpack('<f', decoded_protocol_packet.payload)[0]
                 self.evoflow_telemetry.phtCount_lagoon_value = pht_count_photon_counts
                 if verbose:
@@ -800,7 +844,8 @@ class EvoFlowDevice:
 
             raw_response = self.read_serial()
             decoded_protocol_packet = parse_packet(raw_response)
-            if decoded_protocol_packet and decoded_protocol_packet.payload:
+            if (decoded_protocol_packet and decoded_protocol_packet.payload
+                    and self._is_expected_response(decoded_protocol_packet, Component.PHOTON_COUNTER, CMD.OVERLIGHT_DETECTION)):
                 pht_count_overlight_statuses = decoded_protocol_packet.payload
                 self.evoflow_telemetry.phtCount_lagoon_overlight = bool(pht_count_overlight_statuses[0])
                 if verbose:
@@ -857,26 +902,35 @@ class EvoFlowDevice:
             self.protocol_packet.is_write = False
             self.protocol_packet.id1 = Component.TELEMETRY
             self.protocol_packet.id2 = CMD.READ_ALL
-            # payload needs 114 bytes, setup 114 of 0 bytes
-            dummy_payload_length = 114
+            # payload needs N_BYTE_READ_ALL bytes, setup N_BYTE_READ_ALL of 0 bytes
+            dummy_payload_length = N_BYTE_READ_ALL
             self.protocol_packet.payload = bytes([0] * dummy_payload_length)
 
+            t_write = time.perf_counter()
             if self.serial and self.serial.is_open:
+                # Flush stale/backlogged bytes so this read can only capture the fresh reply.
+                self.serial.reset_input_buffer()
+                self._rx_buffer.clear()
                 packet_bytes = build_packet(self.protocol_packet)
                 self.serial.write(packet_bytes)
                 if verbose:
                     print(tc(f"Sent telemetry read command: {packet_bytes.hex()}", "Yellow"))
+                    print(tc(f"in_waiting right after write: {self.serial.in_waiting} bytes", "Pink"))
 
+            t_read = time.perf_counter()
             raw_response = self.read_serial()
+            if verbose:
+                print(tc(f"get_all_telemetry round trip: {(time.perf_counter() - t_write) * 1000:.2f} ms, read time: {(time.perf_counter() - t_read) * 1000:.2f} ms", "Pink"))
             decoded_protocol_packet = parse_packet(raw_response)
             # print(tc(f"Received payload length: {len(raw_response)} bytes", "Green"))
-            if decoded_protocol_packet and decoded_protocol_packet.payload:
+            if (decoded_protocol_packet and decoded_protocol_packet.payload 
+                    and self._is_expected_response(decoded_protocol_packet, Component.TELEMETRY, CMD.READ_ALL)):
                 payload = decoded_protocol_packet.payload
 
-                expected_payload_length = 114
+                expected_payload_length = N_BYTE_READ_ALL
                 if len(payload) < expected_payload_length:
-                    # ignore the payload
-                    return
+                    print(tc(f"Telemetry payload too short: {len(payload)} < {expected_payload_length}", "Red"))
+                    return False
 
                 # [0-3] pump on/off status
                 # [4-19] pump setpoints (4 floats)
@@ -939,7 +993,11 @@ class EvoFlowDevice:
 
                 if verbose:
                     print(tc(f"Received live feed telemetry: {payload.hex()}", "Green"))
-            return True
+                return True
+
+            # Response failed to decode (bad COBS/CRC) or carried an empty payload.
+            print(tc("Failed to decode telemetry response.", "Red"))
+            return False
         except (serial.SerialException, struct.error, ValueError) as e:
             print(tc(f"Failed to read live feed telemetry: {e}", "Red"))
             return False

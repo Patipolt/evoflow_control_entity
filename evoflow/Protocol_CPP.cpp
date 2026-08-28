@@ -107,7 +107,7 @@ void Protocol_CPP::decode_receiver_field(uint8_t raw_receiver, uint8_t& receiver
     is_write = ((raw_receiver & 0x01U) != 0U);
 }
 
-bool Protocol_CPP::get_command_spec(uint8_t id1, uint8_t id2, size_t& payload_len, bool& allow_read, bool& allow_write)
+bool Protocol_CPP::get_command_spec(uint8_t sender, uint8_t id1, uint8_t id2, size_t& payload_len, bool& allow_read, bool& allow_write)
 {
     switch (id1) {
     case COMPONENT_PUMP:
@@ -164,11 +164,44 @@ bool Protocol_CPP::get_command_spec(uint8_t id1, uint8_t id2, size_t& payload_le
         case 2: payload_len = N_TRAY * N_SINGLE_BYTE; allow_read = true; allow_write = false; return true;
         default: return false;
         }
+    
+    case COMPONENT_TEMPERATURE_SENSOR:
+        switch (sender) {
+        case ADDR_EVOFLOW_NUCLEO:
+            switch (id2) {
+            case 2: payload_len = N_TEMP_IN_TEMP_ARRAY * N_BYTE_FLOAT; allow_read = true; allow_write = false; return true;
+            default: return false;
+            }
+        case ADDR_SAMPLE_EXTRACTION_NUCLEO:
+            switch (id2) {
+            case 2: payload_len = N_TEMP_IN_TEMP_ARRAY_SE * N_BYTE_FLOAT; allow_read = true; allow_write = false; return true;
+            default: return false;
+            }
+        default: return false;
+        }
+
+    case COMPONENT_FAN_MODULE:
+        switch (id2) {
+        case 0: payload_len = N_FAN_SE_MODULE * N_SINGLE_BYTE; allow_read = true; allow_write = true; return true;
+        case 1: payload_len = N_FAN_SE_MODULE * N_BYTE_FLOAT;  allow_read = true; allow_write = true; return true;
+        case 2: payload_len = N_FAN_SE_MODULE * N_BYTE_FLOAT;  allow_read = true; allow_write = false; return true;
+        case 3: payload_len = N_FAN_SE_MODULE * N_BYTE_FLOAT;  allow_read = true; allow_write = false; return true;
+        default: return false;
+        }
 
     case COMPONENT_TELEMETRY:
-        if (id2 == 0) {
-            // READ_ALL payload includes all module telemetry + nucleo temperature float.
-            payload_len = N_BYTE_READ_ALL; allow_read = true; allow_write = false; return true;
+        switch(sender) {
+        case ADDR_EVOFLOW_NUCLEO:
+            switch (id2) {
+            case 0: payload_len = N_BYTE_READ_ALL; allow_read = true; allow_write = false; return true;
+            default: return false;
+            }
+        case ADDR_SAMPLE_EXTRACTION_NUCLEO:
+            switch (id2) {
+            case 0: payload_len = N_BYTE_READ_ALL_SE; allow_read = true; allow_write = false; return true;
+            default: return false;
+            }
+        default: return false;
         }
         return false;
 
@@ -177,13 +210,13 @@ bool Protocol_CPP::get_command_spec(uint8_t id1, uint8_t id2, size_t& payload_le
     }
 }
 
-bool Protocol_CPP::validate_against_spec(uint8_t id1, uint8_t id2, bool is_write, const std::vector<uint8_t>& payload)
+bool Protocol_CPP::validate_against_spec(uint8_t sender, uint8_t id1, uint8_t id2, bool is_write, const std::vector<uint8_t>& payload)
 {
     size_t payload_len = 0;
     bool allow_read = false;
     bool allow_write = false;
 
-    bool known_command = get_command_spec(id1, id2, payload_len, allow_read, allow_write);
+    bool known_command = get_command_spec(sender, id1, id2, payload_len, allow_read, allow_write);
     if (!known_command) {
         // Keep same behavior as Python: unknown commands are allowed.
         return true;
@@ -204,21 +237,24 @@ bool Protocol_CPP::validate_against_spec(uint8_t id1, uint8_t id2, bool is_write
     return true;
 }
 
-bool Protocol_CPP::build_packet(const ProtocolPacket& protocol_packet, std::vector<uint8_t>& out_packet, bool validate_spec)
+bool Protocol_CPP::build_packet(const ProtocolPacket_t& protocol_packet, std::vector<uint8_t>& out_packet, bool validate_spec)
 {
     out_packet.clear();
 
     if (protocol_packet.payload.size() > MAX_PAYLOAD_LEN) {
+        printf("Error: Payload size %u exceeds maximum allowed %u\n", (unsigned)protocol_packet.payload.size(), (unsigned)MAX_PAYLOAD_LEN);
         return false;
     }
 
     if (validate_spec) {
-        if (!validate_against_spec(protocol_packet.id1, protocol_packet.id2, protocol_packet.is_write, protocol_packet.payload)) {
+        if (!validate_against_spec(protocol_packet.sender, protocol_packet.id1, protocol_packet.id2, protocol_packet.is_write, protocol_packet.payload)) {
+            printf("Error: Packet validation failed\n");
             return false;
         }
     }
 
     if (protocol_packet.receiver_addr > 0x7FU) {
+        printf("Error: Receiver address %u exceeds maximum allowed 0x7F\n", protocol_packet.receiver_addr);
         return false;
     }
 
@@ -247,7 +283,7 @@ bool Protocol_CPP::build_packet(const ProtocolPacket& protocol_packet, std::vect
     return true;
 }
 
-bool Protocol_CPP::parse_packet(const std::vector<uint8_t>& raw_cobs_frame_no_delim, ProtocolPacket& out_packet)
+bool Protocol_CPP::parse_packet(const std::vector<uint8_t>& raw_cobs_frame_no_delim, ProtocolPacket_t& out_packet)
 {
     if (raw_cobs_frame_no_delim.size() < 7) {
         return false;
@@ -306,7 +342,7 @@ bool Protocol_CPP::parse_packet(const std::vector<uint8_t>& raw_cobs_frame_no_de
     return true;
 }
 
-bool Protocol_CPP::parse_packet_wire(const std::vector<uint8_t>& wire_data, ProtocolPacket& out_packet)
+bool Protocol_CPP::parse_packet_wire(const std::vector<uint8_t>& wire_data, ProtocolPacket_t& out_packet)
 {
     if (wire_data.size() == 0) {
         return false;
