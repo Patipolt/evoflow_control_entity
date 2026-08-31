@@ -18,6 +18,7 @@ from PySide6.QtGui import QKeyEvent, QTextCharFormat, QStandardItemModel, QStand
 
 from controlEntity.widgets.TapSwitchWidget import TapSwitch
 from controlEntity.widgets.glassVialThermometerWidget import GlassVialThermometerWidget
+from controlEntity.widgets.customizedImageButton import CustomizedImageButton
 from controlEntity.utils import resource_path
 from evoflow.device.evoflow import EvoFlowTelemetry
 
@@ -41,10 +42,10 @@ class EvoFlowWidget(QWidget):
     pump_sp_update_requested = Signal(float, float, float, float)
     magneticStirrer_sp_update_requested = Signal(float, float)
     tempCtrl_sp_update_requested = Signal(float, float)
-
+    od_control_bioreactor_customized_btn_requested = Signal(bool)
+    od_control_bioreactor_initial_od_update_requested = Signal(float)
+    od_control_bioreactor_setpoint_od_update_requested = Signal(float)
     reset_evoflow_requested = Signal()
-
-    od_controller_bioreactor_on_off_requested = Signal(bool)
 
     def __init__(self, width: int=1800, height: int=450):
         """"Initialize the EvoFlowWidget"""
@@ -135,11 +136,6 @@ class EvoFlowWidget(QWidget):
         info_od_bioreactor.setGeometry(160, 165, 100, 40)
         info_od_bioreactor.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
         info_od_bioreactor.setStyleSheet(font_component)
-
-        info_od_controller_bioreactor = QLabel("OD Ctrl", self)
-        info_od_controller_bioreactor.setGeometry(160, 115, 100, 40)
-        info_od_controller_bioreactor.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
-        info_od_controller_bioreactor.setStyleSheet(font_component)
 
         info_od_lagoon = QLabel("Optical\nDensity", self)
         info_od_lagoon.setGeometry(687, 165, 100, 40)
@@ -294,10 +290,6 @@ class EvoFlowWidget(QWidget):
         # In case of OD measurement can not be activated at the same time as photon counter
         self.slide_switch_od_lagoon.setEnabled(config.getboolean('defaultComponentStatus', 'od_lagoon_enabled', fallback=False))
 
-        self.slide_switch_od_controller_bioreactor = TapSwitch(self)
-        self.slide_switch_od_controller_bioreactor.setGeometry(190, 100, 40, 20)
-        self.slide_switch_od_controller_bioreactor.setChecked(config.getboolean('defaultComponentStatus', 'od_controller_bioreactor_status', fallback=False))
-
         self.slide_switch_tempCtrl_bioreactor = TapSwitch(self)
         self.slide_switch_tempCtrl_bioreactor.setGeometry(379, 155, 40, 20)
         self.slide_switch_tempCtrl_bioreactor.setChecked(config.getboolean('defaultComponentStatus', 'tempCtrl_bioreactor_status', fallback=False))
@@ -347,6 +339,23 @@ class EvoFlowWidget(QWidget):
         evoflow_control_groupbox.setGeometry(1245, 290, 250, 150)
         evoflow_control_V_layout = QVBoxLayout(evoflow_control_groupbox)
 
+        od_control_bioreactor_H_layout = QHBoxLayout()
+        self.od_control_bioreactor_customized_btn = CustomizedImageButton(60, 32, False, "OD_ctrl_off.png", "OD_ctrl_on.png", "OD_ctrl_pressed.png", evoflow_control_groupbox)
+        od_control_bioreactor_initial_od_label = QLabel("Initial", evoflow_control_groupbox)
+        od_control_bioreactor_initial_od_label.setStyleSheet(font_component)
+        self.od_control_bioreactor_initial_od_edit = QLineEdit(evoflow_control_groupbox)
+        self.od_control_bioreactor_initial_od_edit.setStyleSheet(font_small_value)
+        od_control_bioreactor_setpoint_od_label = QLabel("SetPoint", evoflow_control_groupbox)
+        od_control_bioreactor_setpoint_od_label.setStyleSheet(font_component)
+        self.od_control_bioreactor_setpoint_od_edit = QLineEdit(evoflow_control_groupbox)
+        self.od_control_bioreactor_setpoint_od_edit.setStyleSheet(font_small_value)
+
+        od_control_bioreactor_H_layout.addWidget(self.od_control_bioreactor_customized_btn)
+        od_control_bioreactor_H_layout.addWidget(od_control_bioreactor_initial_od_label)
+        od_control_bioreactor_H_layout.addWidget(self.od_control_bioreactor_initial_od_edit)
+        od_control_bioreactor_H_layout.addWidget(od_control_bioreactor_setpoint_od_label)
+        od_control_bioreactor_H_layout.addWidget(self.od_control_bioreactor_setpoint_od_edit)
+
         # self.pumps_sp_update_btn = QPushButton("Update Pump Set Points", evoflow_control_groupbox)
         # self.pumps_sp_update_btn.setStyleSheet(button_style)
         # self.pumps_sp_update_btn.setMinimumHeight(24)
@@ -363,8 +372,9 @@ class EvoFlowWidget(QWidget):
         # evoflow_control_V_layout.addWidget(self.pumps_sp_update_btn)
         # evoflow_control_V_layout.addWidget(self.tempCtrls_sp_update_btn)
         # evoflow_control_V_layout.addWidget(self.magneticStirrers_sp_update_btn)
+        evoflow_control_V_layout.addLayout(od_control_bioreactor_H_layout)
+        evoflow_control_V_layout.addStretch()
         evoflow_control_V_layout.addWidget(self.reset_all_slideswitches_btn)
-        evoflow_control_V_layout.addStretch()  # Push the buttons to the top
 
 
         controller_status_groupbox = QGroupBox("Controllers Status", self)
@@ -645,7 +655,6 @@ class EvoFlowWidget(QWidget):
         self.slide_switch_magneticStirrer_lagoon.toggled.connect(self.handle_magneticStirrer_toggle)
         self.slide_switch_od_bioreactor.toggled.connect(self.handle_od_toggle)
         self.slide_switch_od_lagoon.toggled.connect(self.handle_od_toggle)
-        self.slide_switch_od_controller_bioreactor.toggled.connect(self.handle_od_controller_bioreactor_toggle)
         self.slide_switch_tempCtrl_bioreactor.toggled.connect(self.handle_tempCtrl_toggle)
         self.slide_switch_tempCtrl_lagoon.toggled.connect(self.handle_tempCtrl_toggle)
         self.slide_switch_valve_bio2lag.toggled.connect(self.handle_valve_toggle)
@@ -656,7 +665,9 @@ class EvoFlowWidget(QWidget):
         # self.pumps_sp_update_btn.clicked.connect(self.handle_pump_sp_update)
         # self.magneticStirrers_sp_update_btn.clicked.connect(self.handle_magneticStirrer_sp_update)
         # self.tempCtrls_sp_update_btn.clicked.connect(self.handle_tempCtrl_sp_update)
-
+        self.od_control_bioreactor_customized_btn.clicked.connect(self.handle_od_control_bioreactor_toggle)
+        self.od_control_bioreactor_initial_od_edit.returnPressed.connect(self.handle_od_control_bioreactor_initial_od_update)
+        self.od_control_bioreactor_setpoint_od_edit.returnPressed.connect(self.handle_od_control_bioreactor_setpoint_od_update)
         self.reset_all_slideswitches_btn.clicked.connect(self.handle_reset_all_slideswitches)
 
         self.reset_evoflow_btn.clicked.connect(self.reset_evoflow_requested)
@@ -716,12 +727,6 @@ class EvoFlowWidget(QWidget):
         od_lagoon_status = self.slide_switch_od_lagoon.isChecked()
         self.od_on_off_requested.emit(od_bioreactor_status, od_lagoon_status)
 
-    def handle_od_controller_bioreactor_toggle(self, checked):
-        """Handle OD controller bioreactor toggle"""
-        od_controller_bioreactor_status = self.slide_switch_od_controller_bioreactor.isChecked()
-        self.od_controller_bioreactor_on_off_requested.emit(od_controller_bioreactor_status)
-
-
     def handle_tempCtrl_toggle(self, checked):
         """Handle all temperature controller toggles"""
         tempCtrl_bioreactor_status = self.slide_switch_tempCtrl_bioreactor.isChecked()
@@ -773,6 +778,27 @@ class EvoFlowWidget(QWidget):
             new_sp_bioreactor = float(self.tempCtrl_bioreactor_sp_edit.text())
             new_sp_lagoon = float(self.tempCtrl_lagoon_sp_edit.text())
             self.tempCtrl_sp_update_requested.emit(new_sp_bioreactor, new_sp_lagoon)
+        except ValueError:
+            pass  # Invalid input, ignore
+
+    def handle_od_control_bioreactor_toggle(self):
+        """Handle OD controller bioreactor toggle"""
+        od_controller_bioreactor_customized_btn_status = self.od_control_bioreactor_customized_btn.isChecked()
+        self.od_control_bioreactor_customized_btn_requested.emit(od_controller_bioreactor_customized_btn_status)
+
+    def handle_od_control_bioreactor_initial_od_update(self):
+        """Handle OD controller bioreactor initial OD update"""
+        try:
+            new_initial_od = float(self.od_control_bioreactor_initial_od_edit.text())
+            self.od_control_bioreactor_initial_od_update_requested.emit(new_initial_od)
+        except ValueError:
+            pass  # Invalid input, ignore
+
+    def handle_od_control_bioreactor_setpoint_od_update(self):
+        """Handle OD controller bioreactor setpoint OD update"""
+        try:
+            new_setpoint_od = float(self.od_control_bioreactor_setpoint_od_edit.text())
+            self.od_control_bioreactor_setpoint_od_update_requested.emit(new_setpoint_od)
         except ValueError:
             pass  # Invalid input, ignore
 

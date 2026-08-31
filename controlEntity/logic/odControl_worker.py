@@ -28,7 +28,6 @@ class ODControlWorker(QObject):
         self.estimated_od = 0
         self.q_in = 0
         self.q_waste = 0
-        self.q_lagoon_set = 0.005    # hardcoded for testing
         self.q_lagoon = 0
         self.first_run = 0
         self._control_timer = QTimer(self)
@@ -87,23 +86,25 @@ class ODControlWorker(QObject):
         self.first_run = 0
         self.q_lagoon = 0
 
+    @Slot(float)
+    def set_A_setpoint(self, A_setpoint: float):
+        """Set a new OD setpoint."""
+        self.od_control.A_setpoint = A_setpoint
+
+    @Slot(float)
+    def set_A0(self, A0: float):
+        """Set a new initial OD value."""
+        self.od_control.A0 = A0
+
     def run_control_loop(self):
         """Update the current OD measurement and compute the new inlet flow rate."""
         if self.first_run == 0:
             self.q_in, self.q_waste = self.calculate_dilution_flow(self.od_control.A0, self.q_lagoon)
             self.estimated_od = self.estimate_od(self.od_control.A0)
         else:
-            
-            if self.first_run > 120:
-                self.q_lagoon = self.q_lagoon_set
-
-            if self.first_run > 240:
-                self.od_control.set_A_setpoint(0.65)  # Change the setpoint after 2 minutes for testing
-
             self.q_in, self.q_waste = self.calculate_dilution_flow(self.estimated_od, self.q_lagoon)
             self.estimated_od = self.estimate_od(self.estimated_od)
 
         self.first_run += 1
-    
 
         print(f"OD Control Loop: Setpoint={self.od_control.A_setpoint:.3f}, Estimated OD={self.estimated_od:.10f}, q_in={self.q_in:.10f}, q_waste={self.q_waste:.10f}, q_lagoon={self.q_lagoon:.6f}, error={self.od_control.error:.10f}, integral={self.od_control.integral:.10f}, mu_hat={self.od_control.mu_hat:.10f}, q_unsaturated={self.od_control.q_unsaturated:.10f}, actuator_mismatch={self.od_control.actuator_mismatch:.10f}")

@@ -41,23 +41,41 @@ class ODControl:
     @actuator_mismatch.setter
     def actuator_mismatch(self, value):
         self._actuator_mismatch = value
+    @property
+    def A_setpoint(self):
+        return self._A_setpoint
+    @A_setpoint.setter
+    def A_setpoint(self, value):
+        self._A_setpoint = value
+    @property
+    def A0(self):
+        return self._A0
+    @A0.setter
+    def A0(self, value):
+        if value <= 0:
+            raise ValueError("A0 must be positive")
+        self._A0 = value
 
     def __init__(self, V0: float, A0: float, mu0: float, kp: float, ki: float, q_max: float, q_lagoon_max: float, Ts: float, A_setpoint: float, anti_windup_limit: float, back_calculation_gain: float):
-        if V0 <= 0 or A0 <= 0 or q_max <= 0 or Ts <= 0 or A_setpoint <= 0:
+        if V0 <= 0 or q_max <= 0 or Ts <= 0:
             raise ValueError("All parameters must be positive")
         else:
             self.V0 = V0                        # (ml) Volume of the bioreactor
-            self.A0 = A0                        # (OD) Initial optical density
             self.q_max = q_max                  # (ml/s) Maximum flow rate of the pump
             self.q_lagoon_max = q_lagoon_max    # (ml/s) Maximum flow rate to the lagoon
             self.Ts = Ts                        # (s) Sampling time for the control loop
-            self.A_setpoint = A_setpoint        # Desired OD setpoint
 
         if kp >= 0 or ki >= 0:
             raise ValueError("Both kp and ki must be negative for this control strategy")
         else:
             self.kp = kp                    # (ml/s) Proportional gain 
             self.ki = ki                    # (ml/s^2) Integral gain
+
+        if A0 <= 0 or A_setpoint < 0:
+            raise ValueError("Both A0 and A_setpoint must be non-negative")
+        else:
+            self.A0 = A0                    # Initial optical density
+            self.A_setpoint = A_setpoint    # Desired optical density setpoint
 
         self.mu0 = mu0                                      # Initial bacterial growth rate
         self.mu_hat = 0                                     # Estimated bacterial growth rate
@@ -158,18 +176,6 @@ class ODControl:
         self.actuator_mismatch = 0
         self.previous_od = None
         self.previous_flow = None
-
-    def set_A_setpoint(self, A_setpoint: float):
-        """Set a new OD setpoint."""
-        if A_setpoint <= 0:
-            raise ValueError("A_setpoint must be positive")
-        self.A_setpoint = A_setpoint
-
-    def set_A0(self, A0: float):
-        """Set a new initial OD value."""
-        if A0 <= 0:
-            raise ValueError("A0 must be positive")
-        self.A0 = A0
 
     # def calculate_outlet_flows(self, preferred_q_lagoon: float) -> tuple[float, float]:
     #     """Calculate the outlet flow rate based on the inlet flow rate and the required flow-to-lagoon."""
