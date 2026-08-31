@@ -95,8 +95,11 @@ class Logic(QObject):
                                                     kp= config.getfloat("ODController", "kp"),
                                                     ki= config.getfloat("ODController", "ki"),
                                                     q_max= config.getfloat("ODController", "q_max"),
+                                                    q_lagoon_max= config.getfloat("ODController", "q_lagoon_max"),
                                                     Ts= config.getfloat("ODController", "Ts"),
-                                                    A_setpoint= config.getfloat("ODController", "A_setpoint"))
+                                                    A_setpoint= config.getfloat("ODController", "A_setpoint"),
+                                                    anti_windup_limit= config.getfloat("ODController", "anti_windup_limit"),
+                                                    back_calculation_gain= config.getfloat("ODController", "back_calculation_gain"))
         self.ODController_bioreactor_worker.moveToThread(self.ODController_bioreactor_thread)
         self.ODController_bioreactor_thread.start()
 
@@ -135,6 +138,11 @@ class Logic(QObject):
             QMetaObject.invokeMethod(self.data_logging_worker, "shutdown", Qt.BlockingQueuedConnection)
         except Exception as e:
             print(f"Failed to stop Data Logging worker cleanly: {e}")
+
+        try:
+            QMetaObject.invokeMethod(self.ODController_bioreactor_worker, "stop", Qt.BlockingQueuedConnection)
+        except Exception as e:
+            print(f"Failed to stop OD Control worker cleanly: {e}")
 
         try:
             if self.evoflow_thread.isRunning():
