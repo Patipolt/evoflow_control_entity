@@ -347,22 +347,22 @@ class EvoFlowWidget(QWidget):
         evoflow_control_groupbox.setGeometry(1245, 290, 250, 150)
         evoflow_control_V_layout = QVBoxLayout(evoflow_control_groupbox)
 
-        self.pumps_sp_update_btn = QPushButton("Update Pump Set Points", evoflow_control_groupbox)
-        self.pumps_sp_update_btn.setStyleSheet(button_style)
-        self.pumps_sp_update_btn.setMinimumHeight(24)
-        self.tempCtrls_sp_update_btn = QPushButton("Update Temp. Ctrl Set Points", evoflow_control_groupbox)
-        self.tempCtrls_sp_update_btn.setStyleSheet(button_style)
-        self.tempCtrls_sp_update_btn.setMinimumHeight(24)
-        self.magneticStirrers_sp_update_btn = QPushButton("Update Magnetic Stirrer Set Points", evoflow_control_groupbox)
-        self.magneticStirrers_sp_update_btn.setStyleSheet(button_style)
-        self.magneticStirrers_sp_update_btn.setMinimumHeight(24)
+        # self.pumps_sp_update_btn = QPushButton("Update Pump Set Points", evoflow_control_groupbox)
+        # self.pumps_sp_update_btn.setStyleSheet(button_style)
+        # self.pumps_sp_update_btn.setMinimumHeight(24)
+        # self.tempCtrls_sp_update_btn = QPushButton("Update Temp. Ctrl Set Points", evoflow_control_groupbox)
+        # self.tempCtrls_sp_update_btn.setStyleSheet(button_style)
+        # self.tempCtrls_sp_update_btn.setMinimumHeight(24)
+        # self.magneticStirrers_sp_update_btn = QPushButton("Update Magnetic Stirrer Set Points", evoflow_control_groupbox)
+        # self.magneticStirrers_sp_update_btn.setStyleSheet(button_style)
+        # self.magneticStirrers_sp_update_btn.setMinimumHeight(24)
         self.reset_all_slideswitches_btn = QPushButton("Reset All Slide Switches", evoflow_control_groupbox)
         self.reset_all_slideswitches_btn.setStyleSheet(button_style)
         self.reset_all_slideswitches_btn.setMinimumHeight(24)
 
-        evoflow_control_V_layout.addWidget(self.pumps_sp_update_btn)
-        evoflow_control_V_layout.addWidget(self.tempCtrls_sp_update_btn)
-        evoflow_control_V_layout.addWidget(self.magneticStirrers_sp_update_btn)
+        # evoflow_control_V_layout.addWidget(self.pumps_sp_update_btn)
+        # evoflow_control_V_layout.addWidget(self.tempCtrls_sp_update_btn)
+        # evoflow_control_V_layout.addWidget(self.magneticStirrers_sp_update_btn)
         evoflow_control_V_layout.addWidget(self.reset_all_slideswitches_btn)
         evoflow_control_V_layout.addStretch()  # Push the buttons to the top
 
@@ -653,9 +653,9 @@ class EvoFlowWidget(QWidget):
         self.slide_switch_phtCount_Lagoon.toggled.connect(self.handle_phtCount_toggle)
 
         # Combined button design
-        self.pumps_sp_update_btn.clicked.connect(self.handle_pump_sp_update)
-        self.magneticStirrers_sp_update_btn.clicked.connect(self.handle_magneticStirrer_sp_update)
-        self.tempCtrls_sp_update_btn.clicked.connect(self.handle_tempCtrl_sp_update)
+        # self.pumps_sp_update_btn.clicked.connect(self.handle_pump_sp_update)
+        # self.magneticStirrers_sp_update_btn.clicked.connect(self.handle_magneticStirrer_sp_update)
+        # self.tempCtrls_sp_update_btn.clicked.connect(self.handle_tempCtrl_sp_update)
 
         self.reset_all_slideswitches_btn.clicked.connect(self.handle_reset_all_slideswitches)
 

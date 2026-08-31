@@ -88,6 +88,15 @@ class Logic(QObject):
         # ===============================
         # OD Control Worker Setup
         # ===============================
+        V0 = config.getfloat("ODController", "V0")
+        ki = config.getfloat("ODController", "ki")
+        Ts = config.getfloat("ODController", "Ts")
+        f = config.getfloat("ODController", "f")
+        q_max = config.getfloat("ODController", "q_max")
+        Tb = config.getfloat("ODController", "Tb")
+        anti_windup_limit = (f * q_max)/(V0 * abs(ki))  # abs(ki): limit must stay positive regardless of ki's sign
+        back_calculation_gain = Ts/(Tb*V0*ki)
+
         self.ODController_bioreactor_thread = QThread()
         self.ODController_bioreactor_worker = ODControlWorker(V0= config.getfloat("ODController", "V0"),
                                                     A0= config.getfloat("ODController", "A0"),
@@ -98,8 +107,8 @@ class Logic(QObject):
                                                     q_lagoon_max= config.getfloat("ODController", "q_lagoon_max"),
                                                     Ts= config.getfloat("ODController", "Ts"),
                                                     A_setpoint= config.getfloat("ODController", "A_setpoint"),
-                                                    anti_windup_limit= config.getfloat("ODController", "anti_windup_limit"),
-                                                    back_calculation_gain= config.getfloat("ODController", "back_calculation_gain"))
+                                                    anti_windup_limit= anti_windup_limit,
+                                                    back_calculation_gain= back_calculation_gain)
         self.ODController_bioreactor_worker.moveToThread(self.ODController_bioreactor_thread)
         self.ODController_bioreactor_thread.start()
 

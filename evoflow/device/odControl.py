@@ -100,7 +100,7 @@ class ODControl:
         # 3) Back-calculate the actuator mismatch and pull the integral back toward the feasible range.
         #    This reduces the windup that would otherwise occur when the pump is pinned at 0 or q_max.
         self.actuator_mismatch = q_in - self.q_unsaturated
-        self.integral += self.error * self.Ts + self.back_calculation_gain * self.actuator_mismatch
+        self.integral += (self.error * self.Ts) + (self.back_calculation_gain * self.actuator_mismatch)
         self.integral = max(-self.anti_windup_limit, min(self.anti_windup_limit, self.integral))
 
         # --- Previous conditional anti-windup (just for my reference only) ---
