@@ -34,14 +34,14 @@ N_OD_MODULE = 2
 N_MAG_MODULE = 2
 N_PHOTON_COUNTER = 1
 N_TRAY = 1
-N_TEMP_IN_TEMPARRAY = 2
+N_TEMP_IN_TEMPARRAY = 6
 N_TEMP_IN_TEMPARRAY_SE = 5
 N_FAN_SE_MODULE = 4
 
 N_SINGLE_BYTE = 1
 N_BYTE_POS = 2
 N_BYTE_FLOAT = 4
-N_BYTE_READ_ALL = 114 # for all read-commands for evoflow telemetry, (SUM of all payload lengths)
+N_BYTE_READ_ALL = 130 # for all read-commands for evoflow telemetry, (SUM of all payload lengths)
 N_BYTE_READ_ALL_SE = 76 # for all read-commands for sample extraction telemetry, (SUM of all payload lengths)
 
 

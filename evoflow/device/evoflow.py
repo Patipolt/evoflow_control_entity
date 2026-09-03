@@ -87,7 +87,11 @@ class EvoFlowTelemetry:
         self.phtCount_lagoon_overlight  : bool = False
 
         self.nucleo_temperature         : float = 0.0
-        self.ntc1_ambient_temp           : float = 0.0
+        self.ntc1_ambient_temp          : float = 0.0
+        self.ntc2_pump1_temp            : float = 0.0
+        self.ntc3_pump2_temp            : float = 0.0
+        self.ntc4_pump3_temp            : float = 0.0
+        self.ntc5_pump4_temp            : float = 0.0
 
 
 class EvoFlowDevice:
@@ -221,7 +225,7 @@ class EvoFlowDevice:
                 if not packet:
                     continue
 
-                if verbose and t_first_byte is not None:
+                if True and t_first_byte is not None:
                     t_end = time.perf_counter()
                     print(tc(
                         f"read_serial latency: first byte after {(t_first_byte - t_start) * 1000:.2f} ms, "
@@ -951,6 +955,10 @@ class EvoFlowDevice:
                 # [105] photon count overlight status
                 # [106-109] nucleo temp
                 # [110-113] NTC1 (Ambient Temp)
+                # [114-117] NTC2 (Pump1)
+                # [118-121] NTC3 (Pump2)
+                # [122-125] NTC4 (Pump3)
+                # [126-129] NTC5 (Pump4)
                 self.evoflow_telemetry.pump_1_status = bool(payload[0])
                 self.evoflow_telemetry.pump_2_status = bool(payload[1])
                 self.evoflow_telemetry.pump_3_status = bool(payload[2])
@@ -990,6 +998,10 @@ class EvoFlowDevice:
                 self.evoflow_telemetry.phtCount_lagoon_overlight = bool(payload[105])
                 self.evoflow_telemetry.nucleo_temperature = read_f32(106)
                 self.evoflow_telemetry.ntc1_ambient_temp = read_f32(110)
+                self.evoflow_telemetry.ntc2_pump1_temp = read_f32(114)
+                self.evoflow_telemetry.ntc3_pump2_temp = read_f32(118)
+                self.evoflow_telemetry.ntc4_pump3_temp = read_f32(122)
+                self.evoflow_telemetry.ntc5_pump4_temp = read_f32(126)
 
                 if verbose:
                     print(tc(f"Received live feed telemetry: {payload.hex()}", "Green"))

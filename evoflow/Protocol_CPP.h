@@ -22,14 +22,14 @@
 #define N_MAG_MODULE                    2U
 #define N_PHOTON_COUNTER                1U
 #define N_TRAY                          1U
-#define N_TEMP_IN_TEMP_ARRAY            2U
+#define N_TEMP_IN_TEMP_ARRAY            6U
 #define N_TEMP_IN_TEMP_ARRAY_SE         5U
 #define N_FAN_SE_MODULE                 4U
 
 #define N_SINGLE_BYTE                   1U
 #define N_BYTE_POS                      2U
 #define N_BYTE_FLOAT                    4U
-#define N_BYTE_READ_ALL                 114U  // for all read-commands for evoflow telemetry, (SUM of all payload lengths)
+#define N_BYTE_READ_ALL                 130U  // for all read-commands for evoflow telemetry, (SUM of all payload lengths)
 #define N_BYTE_READ_ALL_SE              76U   // for all read-commands for sample extraction telemetry, (SUM of all payload lengths)
 
 // Addresses

@@ -496,7 +496,7 @@ class EvoFlowWidget(QWidget):
         self.pump_1_sp_edit.setText(str(self.default_pump_1))
         self.pump_1_sp_edit.setGeometry(116, 302, 45, 20)
         self.pump_1_sp_edit.setStyleSheet(edit_style)
-        self.pump_1_feedback = QLabel("FB: 0 rpm\n0 rpm, 0 ul/min", self)
+        self.pump_1_feedback = QLabel("0.0 \u2103, FB: 0 rpm\n0 rpm, 0 ul/min", self)
         self.pump_1_feedback.setGeometry(29, 322, 170, 30)
         self.pump_1_feedback.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
         self.pump_1_feedback.setStyleSheet(font_small_value)
@@ -505,7 +505,7 @@ class EvoFlowWidget(QWidget):
         self.pump_2_sp_edit.setText(str(self.default_pump_2))
         self.pump_2_sp_edit.setGeometry(676, 302, 45, 20)
         self.pump_2_sp_edit.setStyleSheet(edit_style)
-        self.pump_2_feedback = QLabel("FB: 0 rpm\n0 rpm, 0 ul/min", self)
+        self.pump_2_feedback = QLabel("0.0 \u2103, FB: 0 rpm\n0 rpm, 0 ul/min", self)
         self.pump_2_feedback.setGeometry(592, 322, 170, 30)
         self.pump_2_feedback.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
         self.pump_2_feedback.setStyleSheet(font_small_value)
@@ -523,7 +523,7 @@ class EvoFlowWidget(QWidget):
         self.pump_4_sp_edit.setText(str(self.default_pump_4))
         self.pump_4_sp_edit.setGeometry(1149, 157, 45, 20)
         self.pump_4_sp_edit.setStyleSheet(edit_style)
-        self.pump_4_feedback = QLabel("FB: 0 rpm\n0 rpm, 0 ul/min", self)
+        self.pump_4_feedback = QLabel("0.0 \u2103, FB: 0 rpm\n0 rpm, 0 ul/min", self)
         self.pump_4_feedback.setGeometry(1062, 177, 170, 30)
         self.pump_4_feedback.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
         self.pump_4_feedback.setStyleSheet(font_small_value)
@@ -937,25 +937,25 @@ class EvoFlowWidget(QWidget):
             self.led_pump_1.setText("🟢")
         else:
             self.led_pump_1.setText("🔴")
-        self.pump_1_feedback.setText(f"FB: {evoflow_telemetry.pump_1_sp:.2f} rpm\n{evoflow_telemetry.pump_1_speed:.2f} rpm, {(self.rpm_to_ul_per_min(1, evoflow_telemetry.pump_1_speed)):.0f} ul/min")
+        self.pump_1_feedback.setText(f"{evoflow_telemetry.ntc2_pump1_temp:.1f} \u2103, FB: {evoflow_telemetry.pump_1_sp:.2f} rpm\n{evoflow_telemetry.pump_1_speed:.2f} rpm, {(self.rpm_to_ul_per_min(1, evoflow_telemetry.pump_1_speed)):.0f} ul/min")
         # Update pump 2
         if evoflow_telemetry.pump_2_status:
             self.led_pump_2.setText("🟢")
         else:
             self.led_pump_2.setText("🔴")
-        self.pump_2_feedback.setText(f"FB: {evoflow_telemetry.pump_2_sp:.2f} rpm\n{evoflow_telemetry.pump_2_speed:.2f} rpm, {(self.rpm_to_ul_per_min(2, evoflow_telemetry.pump_2_speed)):.0f} ul/min")
+        self.pump_2_feedback.setText(f"{evoflow_telemetry.ntc3_pump2_temp:.1f} \u2103, FB: {evoflow_telemetry.pump_2_sp:.2f} rpm\n{evoflow_telemetry.pump_2_speed:.2f} rpm, {(self.rpm_to_ul_per_min(2, evoflow_telemetry.pump_2_speed)):.0f} ul/min")
         # Update pump 3
         if evoflow_telemetry.pump_3_status:
             self.led_pump_3.setText("🟢")
         else:
             self.led_pump_3.setText("🔴")
-        self.pump_3_feedback.setText(f"FB: {evoflow_telemetry.pump_3_sp:.2f} rpm\n{evoflow_telemetry.pump_3_speed:.2f} rpm, {(self.rpm_to_ul_per_min(3, evoflow_telemetry.pump_3_speed)):.0f} ul/min")
+        self.pump_3_feedback.setText(f"{evoflow_telemetry.ntc4_pump3_temp:.1f} \u2103, FB: {evoflow_telemetry.pump_3_sp:.2f} rpm\n{evoflow_telemetry.pump_3_speed:.2f} rpm, {(self.rpm_to_ul_per_min(3, evoflow_telemetry.pump_3_speed)):.0f} ul/min")
         # Update pump 4
         if evoflow_telemetry.pump_4_status:
             self.led_pump_4.setText("🟢")
         else:
             self.led_pump_4.setText("🔴")
-        self.pump_4_feedback.setText(f"FB: {evoflow_telemetry.pump_4_sp:.2f} rpm\n{evoflow_telemetry.pump_4_speed:.2f} rpm, {(self.rpm_to_ul_per_min(4, evoflow_telemetry.pump_4_speed)):.0f} ul/min")
+        self.pump_4_feedback.setText(f"{evoflow_telemetry.ntc5_pump4_temp:.1f} \u2103, FB: {evoflow_telemetry.pump_4_sp:.2f} rpm\n{evoflow_telemetry.pump_4_speed:.2f} rpm, {(self.rpm_to_ul_per_min(4, evoflow_telemetry.pump_4_speed)):.0f} ul/min")
 
         # Update magnetic stirrer bioreactor
         if evoflow_telemetry.magneticStirrer_bioreactor_status:
