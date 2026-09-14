@@ -169,15 +169,28 @@ class EvoFlowWorker(QObject):
         try:
             if self.evoflow.get_all_telemetry():
                 self.telemetry_updated.emit(self.evoflow.evoflow_telemetry)
+                self._check_safety_protection()
                 self.evoflow_comm_status_updated.emit(True)
             else:
                 self.evoflow_comm_status_updated.emit(False)
         except Exception as e:
             print(f"Failed to get telemetry from EvoFlow device: {e}")
 
-    # @Slot()
-    # def _safety_protection(self):
-
+    @Slot()
+    def _check_safety_protection(self):
+        """Check the safety status of the EvoFlow device and take appropriate action if necessary."""
+        try:
+            # Check if any pump is overheating
+            if (self.evoflow.evoflow_telemetry.ntc2_pump1_temp > 109 or
+                self.evoflow.evoflow_telemetry.ntc3_pump2_temp > 109 or
+                self.evoflow.evoflow_telemetry.ntc4_pump3_temp > 109 or
+                self.evoflow.evoflow_telemetry.ntc5_pump4_temp > 109 or
+                self.evoflow.evoflow_telemetry.level_sensor_bioreactor_status == 1 or
+                self.evoflow.evoflow_telemetry.level_sensor_lagoon_status == 1):
+                
+                self.safety_protection_requested.emit(True)
+        except Exception as e:
+            print(f"Failed to check safety status: {e}")
 
     @Slot()
     def _poll_status_and_temp(self):

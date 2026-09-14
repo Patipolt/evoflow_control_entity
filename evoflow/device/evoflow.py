@@ -962,6 +962,8 @@ class EvoFlowDevice:
                 # [118-121] NTC3 (Pump2)
                 # [122-125] NTC4 (Pump3)
                 # [126-129] NTC5 (Pump4)
+                # [130] level sensor bioreactor status
+                # [131] level sensor lagoon status
                 self.evoflow_telemetry.pump_1_status = bool(payload[0])
                 self.evoflow_telemetry.pump_2_status = bool(payload[1])
                 self.evoflow_telemetry.pump_3_status = bool(payload[2])
@@ -1005,6 +1007,8 @@ class EvoFlowDevice:
                 self.evoflow_telemetry.ntc3_pump2_temp = read_f32(118)
                 self.evoflow_telemetry.ntc4_pump3_temp = read_f32(122)
                 self.evoflow_telemetry.ntc5_pump4_temp = read_f32(126)
+                self.evoflow_telemetry.level_sensor_bioreactor_status = bool(payload[130])
+                self.evoflow_telemetry.level_sensor_lagoon_status = bool(payload[131])
 
                 if verbose:
                     print(tc(f"Received live feed telemetry: {payload.hex()}", "Green"))

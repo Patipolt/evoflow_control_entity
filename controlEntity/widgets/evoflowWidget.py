@@ -258,7 +258,7 @@ class EvoFlowWidget(QWidget):
 
 
         # Thermometer
-        self.thermo_ambient_temp = GlassVialThermometerWidget(min_value=0, max_value=50, value=25, parent=self)
+        self.thermo_ambient_temp = GlassVialThermometerWidget(min_value=0, max_value=70, value=25, parent=self)
         self.thermo_ambient_temp.setGeometry(68, 40, 40, 100)
 
 

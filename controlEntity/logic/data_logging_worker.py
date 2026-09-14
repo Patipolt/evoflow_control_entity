@@ -735,7 +735,7 @@ class DataLoggingWorker(QObject):
                         od_bioreactor_value,
                         od_lagoon_value,
                         phtCount_lagoon_value,
-                        tempCtrl_bioreactor_value,
+                        ntc1_ambient_temp,
                         tempCtrl_lagoon_value,
                         tempCtrl_bioreactor_sp,
                         tempCtrl_lagoon_sp,

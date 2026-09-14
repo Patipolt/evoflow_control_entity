@@ -79,6 +79,8 @@ class MainUI(QMainWindow):
         self.logic.evoflow_worker.rpi_temp_updated.connect(self.evoflow_widget.update_rpi_temp,Qt.ConnectionType.QueuedConnection,)
         self.logic.evoflow_worker.no_of_evoflow_reset.connect(self.evoflow_widget.update_no_of_evoflow_reset,Qt.ConnectionType.QueuedConnection,)
 
+        self.logic.evoflow_worker.safety_protection_requested.connect(self.evoflow_widget.handle_reset_all_slideswitches)
+
         # Switches
         self.evoflow_widget.pump_on_off_requested.connect(self.logic.evoflow_worker.set_on_off_pumps)
         self.evoflow_widget.magneticStirrer_on_off_requested.connect(self.logic.evoflow_worker.set_on_off_magnetic_stirrers)
