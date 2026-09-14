@@ -145,6 +145,9 @@ class DataLoggingWorker(QObject):
         # self.ntc4_pump3_temp             : float = 0.0
         # self.ntc5_pump4_temp             : float = 0.0
 
+        # self.level_sensor_bioreactor_status : bool = False
+        # self.level_sensor_lagoon_status     : bool = False
+
         self._latest_evoflow = {
             "pump_1_status": 1 if bool(getattr(telemetry, "pump_1_status", False)) else 0,
             "pump_1_sp": float(getattr(telemetry, "pump_1_sp", 0.0)),
@@ -189,6 +192,8 @@ class DataLoggingWorker(QObject):
             "ntc3_pump2_temp": float(getattr(telemetry, "ntc3_pump2_temp", 0.0)),
             "ntc4_pump3_temp": float(getattr(telemetry, "ntc4_pump3_temp", 0.0)),
             "ntc5_pump4_temp": float(getattr(telemetry, "ntc5_pump4_temp", 0.0)),
+            "level_sensor_bioreactor_status": 1 if bool(getattr(telemetry, "level_sensor_bioreactor_status", False)) else 0,
+            "level_sensor_lagoon_status": 1 if bool(getattr(telemetry, "level_sensor_lagoon_status", False)) else 0,
         }
 
     @Slot(SampleExtractionTelemetry)
@@ -431,6 +436,8 @@ class DataLoggingWorker(QObject):
             format(float(evoflow_snapshot.get("ntc3_pump2_temp", 0.0)), ".2f"),
             format(float(evoflow_snapshot.get("ntc4_pump3_temp", 0.0)), ".2f"),
             format(float(evoflow_snapshot.get("ntc5_pump4_temp", 0.0)), ".2f"),
+            int(evoflow_snapshot.get("level_sensor_bioreactor_status", 0)),
+            int(evoflow_snapshot.get("level_sensor_lagoon_status", 0)),
             format(float(flow_rate_1), ".2f"),
             format(float(flow_rate_2), ".2f"),
             format(float(flow_rate_3), ".2f"),
@@ -491,6 +498,8 @@ class DataLoggingWorker(QObject):
                 ntc3_pump2_temp,
                 ntc4_pump3_temp,
                 ntc5_pump4_temp,
+                level_sensor_bioreactor_status,
+                level_sensor_lagoon_status,
                 flow_rate_pump1,
                 flow_rate_pump2,
                 flow_rate_pump3,
@@ -505,7 +514,7 @@ class DataLoggingWorker(QObject):
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                ?, ?, ''
+                ?, ?, ?, ?, ''
             )
             """,
             row,
@@ -634,6 +643,8 @@ class DataLoggingWorker(QObject):
                 ntc3_pump2_temp REAL,
                 ntc4_pump3_temp REAL,
                 ntc5_pump4_temp REAL,
+                level_sensor_bioreactor_status INTEGER,
+                level_sensor_lagoon_status INTEGER,
                 flow_rate_pump1 REAL,
                 flow_rate_pump2 REAL,
                 flow_rate_pump3 REAL,

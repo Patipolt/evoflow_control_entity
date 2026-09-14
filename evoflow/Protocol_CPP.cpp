@@ -189,6 +189,12 @@ bool Protocol_CPP::get_command_spec(uint8_t sender, uint8_t id1, uint8_t id2, si
         default: return false;
         }
 
+    case COMPONENT_LEVEL_SENSOR:
+        switch (id2) {
+        case 0: payload_len = N_LEVEL_SENSOR * N_SINGLE_BYTE; allow_read = true; allow_write = false; return true;
+        default: return false;
+        }
+
     case COMPONENT_TELEMETRY:
         switch(sender) {
         case ADDR_EVOFLOW_NUCLEO:

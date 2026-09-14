@@ -93,6 +93,9 @@ class EvoFlowTelemetry:
         self.ntc4_pump3_temp            : float = 0.0
         self.ntc5_pump4_temp            : float = 0.0
 
+        self.level_sensor_bioreactor_status  : bool = False
+        self.level_sensor_lagoon_status      : bool = False
+
 
 class EvoFlowDevice:
     """Class representing the EvoFlow device, handling serial communication and telemetry"""

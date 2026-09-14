@@ -17,6 +17,8 @@ class EvoFlowWorker(QObject):
     evoflow_comm_status_updated = Signal(bool)
     rpi_temp_updated = Signal(int)
     no_of_evoflow_reset = Signal(int)
+
+    safety_protection_requested = Signal(bool) # This is for pump overheat and level sensor overflow protection
     
     def __init__(self, port: str, baudrate: int = 115200, 
                  timeout: float = 0.01, 
@@ -172,6 +174,10 @@ class EvoFlowWorker(QObject):
                 self.evoflow_comm_status_updated.emit(False)
         except Exception as e:
             print(f"Failed to get telemetry from EvoFlow device: {e}")
+
+    # @Slot()
+    # def _safety_protection(self):
+
 
     @Slot()
     def _poll_status_and_temp(self):

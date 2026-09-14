@@ -47,6 +47,7 @@ class EvoFlowWidget(QWidget):
     od_control_bioreactor_setpoint_od_update_requested = Signal(float)
     reset_evoflow_requested = Signal()
 
+    
     def __init__(self, width: int=1800, height: int=450):
         """"Initialize the EvoFlowWidget"""
         super().__init__()
@@ -244,6 +245,16 @@ class EvoFlowWidget(QWidget):
         info_ambient_temp.setGeometry(35, 135, 100, 25)
         info_ambient_temp.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
         info_ambient_temp.setStyleSheet(font_component)
+
+        info_overflow_bioreactor = QLabel("Spill!", self)
+        info_overflow_bioreactor.setGeometry(160, 90, 100, 25)
+        info_overflow_bioreactor.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
+        info_overflow_bioreactor.setStyleSheet(font_component)
+
+        info_overflow_lagoon = QLabel("Spill!", self)
+        info_overflow_lagoon.setGeometry(687, 90, 100, 25)
+        info_overflow_lagoon.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
+        info_overflow_lagoon.setStyleSheet(font_component)
 
 
         # Thermometer
@@ -473,8 +484,15 @@ class EvoFlowWidget(QWidget):
         self.led_overlight = QLabel("⚪",self) #🔴🟢
         self.led_overlight.setGeometry(915, 50, 22, 22)
         self.led_overlight.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
-        self.led_overlight.setStyleSheet("""font-size: 18px;""")
+        # self.led_overlight.setStyleSheet("""font-size: 18px;""")
 
+        self.led_level_sensor_bioreactor = QLabel("⚪",self) #🔴🟢
+        self.led_level_sensor_bioreactor.setGeometry(203, 75, 22, 22)
+        self.led_level_sensor_bioreactor.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
+
+        self.led_level_sensor_lagoon = QLabel("⚪",self) #🔴🟢
+        self.led_level_sensor_lagoon.setGeometry(730, 75, 22, 22)
+        self.led_level_sensor_lagoon.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
 
         # Component signals (dynamic values that can change during runtime)
         edit_style = """QLineEdit {
@@ -706,6 +724,7 @@ class EvoFlowWidget(QWidget):
         )
         self._sampling_rate_ms = config.getint("HMI", "sampling_rate_ms", fallback=50)
         self._evoflow_comm_led_hold_ms = self._sampling_rate_ms * 0.75
+        self.motor_cut_off_temp = config.getfloat("Evoflow", "motor_cut_off_temp", fallback=60.0)
 
     def handle_pump_toggle(self, checked):
         """Handle all 4 pump toggles"""
@@ -936,52 +955,68 @@ class EvoFlowWidget(QWidget):
         if evoflow_telemetry.pump_1_status:
             self.led_pump_1.setText("🟢")
         else:
-            self.led_pump_1.setText("🔴")
-        self.pump_1_feedback.setText(f"{evoflow_telemetry.ntc2_pump1_temp:.1f} \u2103, FB: {evoflow_telemetry.pump_1_sp:.2f} rpm\n{evoflow_telemetry.pump_1_speed:.2f} rpm, {(self.rpm_to_ul_per_min(1, evoflow_telemetry.pump_1_speed)):.0f} ul/min")
+            self.led_pump_1.setText("⚪")
+        ntc2_color = self._temp_warning_color(evoflow_telemetry.ntc2_pump1_temp, self.motor_cut_off_temp)
+        self.pump_1_feedback.setText(
+            f'<span style="color:{ntc2_color};">{evoflow_telemetry.ntc2_pump1_temp:.1f} \u2103</span>, FB: {evoflow_telemetry.pump_1_sp:.2f} rpm<br>'
+            f'{evoflow_telemetry.pump_1_speed:.2f} rpm, {(self.rpm_to_ul_per_min(1, evoflow_telemetry.pump_1_speed)):.0f} ul/min'
+        )
         # Update pump 2
         if evoflow_telemetry.pump_2_status:
             self.led_pump_2.setText("🟢")
         else:
-            self.led_pump_2.setText("🔴")
-        self.pump_2_feedback.setText(f"{evoflow_telemetry.ntc3_pump2_temp:.1f} \u2103, FB: {evoflow_telemetry.pump_2_sp:.2f} rpm\n{evoflow_telemetry.pump_2_speed:.2f} rpm, {(self.rpm_to_ul_per_min(2, evoflow_telemetry.pump_2_speed)):.0f} ul/min")
+            self.led_pump_2.setText("⚪")
+        ntc3_color = self._temp_warning_color(evoflow_telemetry.ntc3_pump2_temp, self.motor_cut_off_temp)
+        self.pump_2_feedback.setText(
+            f'<span style="color:{ntc3_color};">{evoflow_telemetry.ntc3_pump2_temp:.1f} \u2103</span>, FB: {evoflow_telemetry.pump_2_sp:.2f} rpm<br>'
+            f'{evoflow_telemetry.pump_2_speed:.2f} rpm, {(self.rpm_to_ul_per_min(2, evoflow_telemetry.pump_2_speed)):.0f} ul/min'
+        )
         # Update pump 3
         if evoflow_telemetry.pump_3_status:
             self.led_pump_3.setText("🟢")
         else:
-            self.led_pump_3.setText("🔴")
-        self.pump_3_feedback.setText(f"{evoflow_telemetry.ntc4_pump3_temp:.1f} \u2103, FB: {evoflow_telemetry.pump_3_sp:.2f} rpm\n{evoflow_telemetry.pump_3_speed:.2f} rpm, {(self.rpm_to_ul_per_min(3, evoflow_telemetry.pump_3_speed)):.0f} ul/min")
+            self.led_pump_3.setText("⚪")
+        ntc4_color = self._temp_warning_color(evoflow_telemetry.ntc4_pump3_temp, self.motor_cut_off_temp)
+        self.pump_3_feedback.setText(
+            f'<span style="color:{ntc4_color};">{evoflow_telemetry.ntc4_pump3_temp:.1f} \u2103</span>, FB: {evoflow_telemetry.pump_3_sp:.2f} rpm<br>'
+            f'{evoflow_telemetry.pump_3_speed:.2f} rpm, {(self.rpm_to_ul_per_min(3, evoflow_telemetry.pump_3_speed)):.0f} ul/min'
+        )
         # Update pump 4
         if evoflow_telemetry.pump_4_status:
             self.led_pump_4.setText("🟢")
         else:
-            self.led_pump_4.setText("🔴")
-        self.pump_4_feedback.setText(f"{evoflow_telemetry.ntc5_pump4_temp:.1f} \u2103, FB: {evoflow_telemetry.pump_4_sp:.2f} rpm\n{evoflow_telemetry.pump_4_speed:.2f} rpm, {(self.rpm_to_ul_per_min(4, evoflow_telemetry.pump_4_speed)):.0f} ul/min")
+            self.led_pump_4.setText("⚪")
+        ntc5_color = self._temp_warning_color(evoflow_telemetry.ntc5_pump4_temp, self.motor_cut_off_temp)
+        self.pump_4_feedback.setText(
+            f'<span style="color:{ntc5_color};">{evoflow_telemetry.ntc5_pump4_temp:.1f} \u2103</span>, FB: {evoflow_telemetry.pump_4_sp:.2f} rpm<br>'
+            f'{evoflow_telemetry.pump_4_speed:.2f} rpm, {(self.rpm_to_ul_per_min(4, evoflow_telemetry.pump_4_speed)):.0f} ul/min'
+        )
 
         # Update magnetic stirrer bioreactor
         if evoflow_telemetry.magneticStirrer_bioreactor_status:
             self.led_magneticStirrer_bioreactor.setText("🟢")
         else:
-            self.led_magneticStirrer_bioreactor.setText("🔴")
+            self.led_magneticStirrer_bioreactor.setText("⚪")
         self.magneticStirrer_bioreactor_feedback.setText(f"FB: {evoflow_telemetry.magneticStirrer_bioreactor_sp:.0f} rpm\n{evoflow_telemetry.magneticStirrer_bioreactor_speed:.0f} rpm, {evoflow_telemetry.magneticStirrer_bioreactor_fan_duty_cycle*100:.1f} %")
         # Update magnetic stirrer lagoon
         if evoflow_telemetry.magneticStirrer_lagoon_status:
             self.led_magneticStirrer_lagoon.setText("🟢")
         else:
-            self.led_magneticStirrer_lagoon.setText("🔴")
+            self.led_magneticStirrer_lagoon.setText("⚪")
         self.magneticStirrer_lagoon_feedback.setText(f"FB: {evoflow_telemetry.magneticStirrer_lagoon_sp:.0f} rpm\n{evoflow_telemetry.magneticStirrer_lagoon_speed:.0f} rpm, {evoflow_telemetry.magneticStirrer_lagoon_fan_duty_cycle*100:.1f} %")
 
         # Update temperature controller bioreactor
         if evoflow_telemetry.tempCtrl_bioreactor_status:
             self.led_tempCtrl_bioreactor.setText("🟢")
         else:
-            self.led_tempCtrl_bioreactor.setText("🔴")
+            self.led_tempCtrl_bioreactor.setText("⚪")
         self.tempCtrl_bioreactor_feedback.setText(f"{evoflow_telemetry.tempCtrl_bioreactor_value:.1f} °C")
         self.tempCtrl_bioreactor_feedback_sp_htr.setText(f"FB: {evoflow_telemetry.tempCtrl_bioreactor_sp:.1f} °C, Duty: {evoflow_telemetry.tempCtrl_bioreactor_heater_duty_cycle*100:.1f} %")
         # Update temperature controller lagoon
         if evoflow_telemetry.tempCtrl_lagoon_status:
             self.led_tempCtrl_lagoon.setText("🟢")
         else:
-            self.led_tempCtrl_lagoon.setText("🔴")
+            self.led_tempCtrl_lagoon.setText("⚪")
         self.tempCtrl_lagoon_feedback.setText(f"{evoflow_telemetry.tempCtrl_lagoon_value:.1f} °C")
         self.tempCtrl_lagoon_feedback_sp_htr.setText(f"FB: {evoflow_telemetry.tempCtrl_lagoon_sp:.1f} °C, Duty: {evoflow_telemetry.tempCtrl_lagoon_heater_duty_cycle*100:.1f} %")
 
@@ -989,20 +1024,20 @@ class EvoFlowWidget(QWidget):
         if evoflow_telemetry.od_bioreactor_status:
             self.led_od_bioreactor.setText("🟢")
         else:
-            self.led_od_bioreactor.setText("🔴")
+            self.led_od_bioreactor.setText("⚪")
         self.od_bioreactor_feedback.setText(f"{evoflow_telemetry.od_bioreactor_value:.2f}")
         # Update OD lagoon
         if evoflow_telemetry.od_lagoon_status:
             self.led_od_lagoon.setText("🟢")
         else:
-            self.led_od_lagoon.setText("🔴")
+            self.led_od_lagoon.setText("⚪")
         self.od_lagoon_feedback.setText(f"{evoflow_telemetry.od_lagoon_value:.2f}")
 
         # Update photon counter lagoon
         if evoflow_telemetry.phtCount_lagoon_status:
             self.led_phtCount_lagoon.setText("🟢")
         else:
-            self.led_phtCount_lagoon.setText("🔴")
+            self.led_phtCount_lagoon.setText("⚪")
         self.phtCount_feedback.setText(f"{evoflow_telemetry.phtCount_lagoon_value:.2f} MHz")
         if evoflow_telemetry.phtCount_lagoon_overlight:
             self.led_overlight.setText("🔴")
@@ -1013,18 +1048,24 @@ class EvoFlowWidget(QWidget):
         if evoflow_telemetry.valve_bio2lag_status:
             self.led_valve_bio2lag.setText("🟢")
         else:
-            self.led_valve_bio2lag.setText("🔴")
+            self.led_valve_bio2lag.setText("⚪")
         # Update valve sug2lag
         if evoflow_telemetry.valve_sug2lag_status:
             self.led_valve_sug2lag.setText("🟢")
         else:
-            self.led_valve_sug2lag.setText("🔴")
+            self.led_valve_sug2lag.setText("⚪")
 
         # Update nucleo temperature
         self.evoflow_temp_label.setText(f"{evoflow_telemetry.nucleo_temperature:.0f} °C")
 
         # Update NTC ambient temperature
         self.thermo_ambient_temp.setValue(evoflow_telemetry.ntc1_ambient_temp)
+
+        # Update level sensor bioreactor
+        self.led_level_sensor_bioreactor.setText("🔴" if evoflow_telemetry.level_sensor_bioreactor_status else "⚪")
+
+        # Update level sensor lagoon
+        self.led_level_sensor_lagoon.setText("🔴" if evoflow_telemetry.level_sensor_lagoon_status else "⚪")
 
     @Slot(bool)
     def update_evoflow_status(self, evoflow_status):
@@ -1131,6 +1172,20 @@ class EvoFlowWidget(QWidget):
 
         rpm_magnitude = float(valid_roots[np.argmin(np.abs(valid_roots))])
         return rpm_magnitude if ul_per_min > 0 else -rpm_magnitude
+
+    def _lerp_color(self, t: float, low_rgb: tuple[int, int, int] = (255, 255, 255), high_rgb: tuple[int, int, int] = (255, 0, 0)) -> str:
+        """Linearly interpolate between two RGB colors (t in [0, 1]) and return a hex color string"""
+        t = max(0.0, min(1.0, t))
+        r = round(low_rgb[0] + (high_rgb[0] - low_rgb[0]) * t)
+        g = round(low_rgb[1] + (high_rgb[1] - low_rgb[1]) * t)
+        b = round(low_rgb[2] + (high_rgb[2] - low_rgb[2]) * t)
+        return f"#{r:02x}{g:02x}{b:02x}"
+
+    def _temp_warning_color(self, value: float, cutoff: float, warn_range: float = 3.0) -> str:
+        """Smoothly transition text color from white to red as value approaches the cutoff temperature"""
+        warn_start = cutoff - warn_range
+        t = (value - warn_start) / (cutoff - warn_start) if cutoff != warn_start else 1.0
+        return self._lerp_color(t)
 
     def read_settings_file(self):
         """Load default configuration values from settings.ini"""

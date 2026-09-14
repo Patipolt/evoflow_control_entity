@@ -37,11 +37,12 @@ N_TRAY = 1
 N_TEMP_IN_TEMPARRAY = 6
 N_TEMP_IN_TEMPARRAY_SE = 5
 N_FAN_SE_MODULE = 4
+N_LEVEL_SENSOR = 2
 
 N_SINGLE_BYTE = 1
 N_BYTE_POS = 2
 N_BYTE_FLOAT = 4
-N_BYTE_READ_ALL = 130 # for all read-commands for evoflow telemetry, (SUM of all payload lengths)
+N_BYTE_READ_ALL = 132 # for all read-commands for evoflow telemetry, (SUM of all payload lengths)
 N_BYTE_READ_ALL_SE = 76 # for all read-commands for sample extraction telemetry, (SUM of all payload lengths)
 
 
@@ -68,6 +69,7 @@ class Component(IntEnum):
 	TRAY = 16
 	TEMP_ARRAY = 17
 	FAN_MODULE = 18
+	LEVEL_SENSOR = 19
 	TELEMETRY = 100
 
 
@@ -138,6 +140,8 @@ COMMAND_SPECS: Dict[Tuple[int, int, int], CommandSpec] = {
 	(Component.TEMP_ARRAY, 2, ADDR_SAMPLE_EXTRACTION_NUCLEO): CommandSpec(payload_len=N_TEMP_IN_TEMPARRAY_SE*N_BYTE_FLOAT, allow_read=True, allow_write=False),
 	# Fan module for sample extraction
 	(Component.FAN_MODULE, 3, ADDR_SAMPLE_EXTRACTION_NUCLEO): CommandSpec(payload_len=N_FAN_SE_MODULE*N_BYTE_FLOAT, allow_read=True, allow_write=False),
+	# Level sensor
+	(Component.LEVEL_SENSOR, 0, ADDR_EVOFLOW_NUCLEO): CommandSpec(payload_len=N_LEVEL_SENSOR*N_SINGLE_BYTE, allow_read=True, allow_write=False),
 	# Telemetry
 	(Component.TELEMETRY, 0, ADDR_EVOFLOW_NUCLEO): CommandSpec(payload_len=N_BYTE_READ_ALL, allow_read=True, allow_write=False),
 	(Component.TELEMETRY, 0, ADDR_SAMPLE_EXTRACTION_NUCLEO): CommandSpec(payload_len=N_BYTE_READ_ALL_SE, allow_read=True, allow_write=False),
