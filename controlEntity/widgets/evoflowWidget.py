@@ -835,7 +835,7 @@ class EvoFlowWidget(QWidget):
         self.slide_switch_tempCtrl_lagoon.setChecked(False)
         self.slide_switch_valve_bio2lag.setChecked(False)
         self.slide_switch_valve_sug2lag.setChecked(False)
-        self.slide_switch_phtCount_Lagoon.setChecked(False)
+        # self.slide_switch_phtCount_Lagoon.setChecked(False)
 
     def handle_magneticStirrer_bioreactor_swapping_mode_toggle(self, checked):
         """Handle magnetic stirrer bioreactor swapping mode toggle"""

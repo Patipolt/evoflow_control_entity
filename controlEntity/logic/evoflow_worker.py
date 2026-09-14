@@ -181,12 +181,13 @@ class EvoFlowWorker(QObject):
         """Check the safety status of the EvoFlow device and take appropriate action if necessary."""
         try:
             # Check if any pump is overheating
-            if (self.evoflow.evoflow_telemetry.ntc2_pump1_temp > 109 or
-                self.evoflow.evoflow_telemetry.ntc3_pump2_temp > 109 or
-                self.evoflow.evoflow_telemetry.ntc4_pump3_temp > 109 or
-                self.evoflow.evoflow_telemetry.ntc5_pump4_temp > 109 or
-                self.evoflow.evoflow_telemetry.level_sensor_bioreactor_status == 1 or
-                self.evoflow.evoflow_telemetry.level_sensor_lagoon_status == 1):
+            if (self.evoflow.evoflow_telemetry.ntc2_pump1_temp > 150 or
+                self.evoflow.evoflow_telemetry.ntc3_pump2_temp > 150 or
+                self.evoflow.evoflow_telemetry.ntc4_pump3_temp > 150 or
+                self.evoflow.evoflow_telemetry.ntc5_pump4_temp > 150 or
+                self.evoflow.evoflow_telemetry.ntc1_ambient_temp > 60 or
+                self.evoflow.evoflow_telemetry.level_sensor_bioreactor_status == 1):
+                # self.evoflow.evoflow_telemetry.level_sensor_lagoon_status == 1):
                 
                 self.safety_protection_requested.emit(True)
         except Exception as e:
