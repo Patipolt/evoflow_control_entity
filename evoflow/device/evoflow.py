@@ -225,7 +225,7 @@ class EvoFlowDevice:
                 if not packet:
                     continue
 
-                if True and t_first_byte is not None:
+                if verbose and t_first_byte is not None:
                     t_end = time.perf_counter()
                     print(tc(
                         f"read_serial latency: first byte after {(t_first_byte - t_start) * 1000:.2f} ms, "
