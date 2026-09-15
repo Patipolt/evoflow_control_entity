@@ -185,8 +185,8 @@ class EvoFlowWorker(QObject):
                 self.evoflow.evoflow_telemetry.ntc3_pump2_temp > 150 or
                 self.evoflow.evoflow_telemetry.ntc4_pump3_temp > 150 or
                 self.evoflow.evoflow_telemetry.ntc5_pump4_temp > 150 or
-                self.evoflow.evoflow_telemetry.ntc1_ambient_temp > 60 or
-                self.evoflow.evoflow_telemetry.level_sensor_bioreactor_status == 1):
+                self.evoflow.evoflow_telemetry.ntc1_ambient_temp > 60):
+                # self.evoflow.evoflow_telemetry.level_sensor_bioreactor_status == 1):
                 # self.evoflow.evoflow_telemetry.level_sensor_lagoon_status == 1):
                 
                 self.safety_protection_requested.emit(True)

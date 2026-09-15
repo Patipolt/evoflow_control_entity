@@ -11,6 +11,9 @@ Created: April 2026
 
 from PySide6.QtCore import QObject, QTimer, Signal, Slot
 from evoflow.device.odControl import ODControl
+from evoflow.device.evoflow import EvoFlowTelemetry
+
+test = False
 
 
 class ODControlWorker(QObject):
@@ -21,11 +24,14 @@ class ODControlWorker(QObject):
     q_waste_updated = Signal(float)
     q_lagoon_updated = Signal(float)
     estimated_od_updated = Signal(float)
+    update_telemetry_requested = Signal(EvoFlowTelemetry)
+    controller_command_updated =  Signal(float, float)
     
     def __init__(self, V0: float, A0: float, mu0: float, kp: float, ki: float, q_max: float, q_lagoon_max: float, Ts: float, A_setpoint: float, anti_windup_limit: float, back_calculation_gain: float):
         super().__init__()
         self.od_control = ODControl(V0, A0, mu0, kp, ki, q_max, q_lagoon_max, Ts, A_setpoint, anti_windup_limit, back_calculation_gain)
         self.estimated_od = 0
+        self.evoflow_telemetry = EvoFlowTelemetry()
         self.q_in = 0
         self.q_waste = 0
         self.q_lagoon = 0
@@ -52,6 +58,11 @@ class ODControlWorker(QObject):
         """Stop the OD control loop."""
         self._control_timer.stop()
         self.clear_control_state()
+
+    @Slot(EvoFlowTelemetry)
+    def update_telemetry(self, evoflow_telemetry: EvoFlowTelemetry):
+        """Update the telemetry data from the EvoFlow device."""
+        self.evoflow_telemetry = evoflow_telemetry
 
     @Slot(float)
     def calculate_dilution_flow(self, current_od: float, preferred_q_lagoon: float) -> tuple[float, float]:
@@ -98,13 +109,17 @@ class ODControlWorker(QObject):
 
     def run_control_loop(self):
         """Update the current OD measurement and compute the new inlet flow rate."""
-        if self.first_run == 0:
-            self.q_in, self.q_waste = self.calculate_dilution_flow(self.od_control.A0, self.q_lagoon)
-            self.estimated_od = self.estimate_od(self.od_control.A0)
+        if test:
+            if self.first_run == 0:
+                self.q_in, self.q_waste = self.calculate_dilution_flow(self.od_control.A0, self.q_lagoon)
+                self.estimated_od = self.estimate_od(self.od_control.A0)
+            else:
+                self.q_in, self.q_waste = self.calculate_dilution_flow(self.estimated_od, self.q_lagoon)
+                self.estimated_od = self.estimate_od(self.estimated_od)
+
+            self.first_run += 1
+            print(f"OD Control Loop: Setpoint={self.od_control.A_setpoint:.3f}, Estimated OD={self.estimated_od:.10f}, q_in={self.q_in:.10f}, q_waste={self.q_waste:.10f}, q_lagoon={self.q_lagoon:.6f}, error={self.od_control.error:.10f}, integral={self.od_control.integral:.10f}, mu_hat={self.od_control.mu_hat:.10f}, q_unsaturated={self.od_control.q_unsaturated:.10f}, actuator_mismatch={self.od_control.actuator_mismatch:.10f}")
         else:
-            self.q_in, self.q_waste = self.calculate_dilution_flow(self.estimated_od, self.q_lagoon)
-            self.estimated_od = self.estimate_od(self.estimated_od)
-
-        self.first_run += 1
-
-        print(f"OD Control Loop: Setpoint={self.od_control.A_setpoint:.3f}, Estimated OD={self.estimated_od:.10f}, q_in={self.q_in:.10f}, q_waste={self.q_waste:.10f}, q_lagoon={self.q_lagoon:.6f}, error={self.od_control.error:.10f}, integral={self.od_control.integral:.10f}, mu_hat={self.od_control.mu_hat:.10f}, q_unsaturated={self.od_control.q_unsaturated:.10f}, actuator_mismatch={self.od_control.actuator_mismatch:.10f}")
+            self.q_in, self.q_waste = self.calculate_dilution_flow(self.evoflow_telemetry.od_bioreactor_value, self.q_lagoon)
+            self.controller_command_updated.emit(self.q_in, self.q_waste)
+            print(f"OD Control Loop: Setpoint={self.od_control.A_setpoint:.3f}, Actual OD={self.evoflow_telemetry.od_bioreactor_value:.10f}, q_in={self.q_in:.10f}, q_waste={self.q_waste:.10f}, q_lagoon={self.q_lagoon:.6f}, error={self.od_control.error:.10f}, integral={self.od_control.integral:.10f}, mu_hat={self.od_control.mu_hat:.10f}, q_unsaturated={self.od_control.q_unsaturated:.10f}, actuator_mismatch={self.od_control.actuator_mismatch:.10f}")

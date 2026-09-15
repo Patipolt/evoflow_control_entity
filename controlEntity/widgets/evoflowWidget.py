@@ -345,6 +345,22 @@ class EvoFlowWidget(QWidget):
             }
         """
 
+        # Component signals (dynamic values that can change during runtime)
+        edit_style = """QLineEdit {
+                        background-color: #5c5c5c;
+                        color: White;
+                        border-radius: 4px; }
+                        QLineEdit:hover {
+                            background-color: #737373;
+                            color: White; }
+                        QLineEdit:focus {
+                            background-color: #d6d6d6;
+                            color: Black; }
+                        QLineEdit:disabled {
+                            background-color: #d9d9d9;
+                            color: #888888; }
+                        """
+
         evoflow_control_groupbox = QGroupBox("EvoFlow Control", self)
         evoflow_control_groupbox.setStyleSheet(groupbox_style)
         evoflow_control_groupbox.setGeometry(1245, 290, 250, 150)
@@ -355,11 +371,11 @@ class EvoFlowWidget(QWidget):
         od_control_bioreactor_initial_od_label = QLabel("Initial", evoflow_control_groupbox)
         od_control_bioreactor_initial_od_label.setStyleSheet(font_component)
         self.od_control_bioreactor_initial_od_edit = QLineEdit(evoflow_control_groupbox)
-        self.od_control_bioreactor_initial_od_edit.setStyleSheet(font_small_value)
+        self.od_control_bioreactor_initial_od_edit.setStyleSheet(edit_style)
         od_control_bioreactor_setpoint_od_label = QLabel("SetPoint", evoflow_control_groupbox)
         od_control_bioreactor_setpoint_od_label.setStyleSheet(font_component)
         self.od_control_bioreactor_setpoint_od_edit = QLineEdit(evoflow_control_groupbox)
-        self.od_control_bioreactor_setpoint_od_edit.setStyleSheet(font_small_value)
+        self.od_control_bioreactor_setpoint_od_edit.setStyleSheet(edit_style)
 
         od_control_bioreactor_H_layout.addWidget(self.od_control_bioreactor_customized_btn)
         od_control_bioreactor_H_layout.addWidget(od_control_bioreactor_initial_od_label)
@@ -494,21 +510,6 @@ class EvoFlowWidget(QWidget):
         self.led_level_sensor_lagoon.setGeometry(730, 75, 22, 22)
         self.led_level_sensor_lagoon.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
 
-        # Component signals (dynamic values that can change during runtime)
-        edit_style = """QLineEdit {
-                        background-color: #5c5c5c;
-                        color: White;
-                        border-radius: 4px; }
-                        QLineEdit:hover {
-                            background-color: #737373;
-                            color: White; }
-                        QLineEdit:focus {
-                            background-color: #d6d6d6;
-                            color: Black; }
-                        QLineEdit:disabled {
-                            background-color: #d9d9d9;
-                            color: #888888; }
-                        """
 
         self.pump_1_sp_edit = QLineEdit(self)
         self.pump_1_sp_edit.setText(str(self.default_pump_1))
@@ -878,6 +879,13 @@ class EvoFlowWidget(QWidget):
             on_duration = int(self.magneticStirrer_lagoon_on_edit.text())
             self.magneticStirrer_lagoon_swapping_mode_timer.start(on_duration * 1000)  # Convert seconds to milliseconds
         self.slide_switch_magneticStirrer_lagoon.setChecked(not magneticStirrer_lagoon_status)
+
+    @Slot(float, float)
+    def handle_update_controller_command_pumps(self, pump_1, pump_3):
+        """Handle update controller command for pumps"""
+        pump_2 = float(self.pump_2_sp_edit.text())
+        pump_4 = float(self.pump_4_sp_edit.text())
+        self.pump_sp_update_requested.emit(pump_1, pump_2, pump_3, pump_4)
 
     @Slot(EvoFlowTelemetry)
     def update_telemetry(self, evoflow_telemetry):
