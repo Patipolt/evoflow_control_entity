@@ -12,6 +12,7 @@ Created: April 2026
 from PySide6.QtCore import QObject, QTimer, Signal, Slot
 from evoflow.device.odControl import ODControl
 from evoflow.device.evoflow import EvoFlowTelemetry
+from controlEntity.logic.data_logging_worker import DataLoggingWorker
 
 test = False
 
@@ -38,6 +39,7 @@ class ODControlWorker(QObject):
         self.first_run = 0
         self._control_timer = QTimer(self)
         self._control_timer.timeout.connect(self.run_control_loop)
+        self.data_logging = DataLoggingWorker()
 
     @Slot(bool)
     def set_od_control_enabled(self, enabled: bool):
@@ -121,5 +123,7 @@ class ODControlWorker(QObject):
             print(f"OD Control Loop: Setpoint={self.od_control.A_setpoint:.3f}, Estimated OD={self.estimated_od:.10f}, q_in={self.q_in:.10f}, q_waste={self.q_waste:.10f}, q_lagoon={self.q_lagoon:.6f}, error={self.od_control.error:.10f}, integral={self.od_control.integral:.10f}, mu_hat={self.od_control.mu_hat:.10f}, q_unsaturated={self.od_control.q_unsaturated:.10f}, actuator_mismatch={self.od_control.actuator_mismatch:.10f}")
         else:
             self.q_in, self.q_waste = self.calculate_dilution_flow(self.evoflow_telemetry.od_bioreactor_value, self.q_lagoon)
-            self.controller_command_updated.emit(self.q_in*1000, self.q_waste*1000)
+            dilute = self.data_logging.ul_per_min_to_rpm(1, self.q_in*1000)
+            waste = self.data_logging.ul_per_min_to_rpm(3, self.q_waste*1000)
+            self.controller_command_updated.emit(dilute, waste)
             print(f"OD Control Loop: Setpoint={self.od_control.A_setpoint:.3f}, Actual OD={self.evoflow_telemetry.od_bioreactor_value:.10f}, q_in={self.q_in:.10f}, q_waste={self.q_waste:.10f}, q_lagoon={self.q_lagoon:.6f}, error={self.od_control.error:.10f}, integral={self.od_control.integral:.10f}, mu_hat={self.od_control.mu_hat:.10f}, q_unsaturated={self.od_control.q_unsaturated:.10f}, actuator_mismatch={self.od_control.actuator_mismatch:.10f}")
