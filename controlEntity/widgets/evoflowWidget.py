@@ -886,6 +886,12 @@ class EvoFlowWidget(QWidget):
         """Handle update controller command for pumps"""
         pump_2 = float(self.pump_2_sp_edit.text())
         pump_4 = float(self.pump_4_sp_edit.text())
+        if pump_1 == 0.0 and pump_3 == 0.0:
+            self.slide_switch_pump_1.setChecked(False)
+            self.slide_switch_pump_3.setChecked(False)
+        else:
+            self.slide_switch_pump_1.setChecked(True)
+            self.slide_switch_pump_3.setChecked(True)
         self.pump_sp_update_requested.emit(pump_1, pump_2, pump_3, pump_4)
 
     @Slot(EvoFlowTelemetry)

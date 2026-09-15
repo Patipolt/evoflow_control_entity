@@ -104,7 +104,8 @@ class ODControl:
 
         # --- Back-calculation anti-windup ---
         # 1) Compute the unsaturated control action first
-        self.q_unsaturated = self.V0 * (self.mu_hat + (self.kp * self.error) + (self.ki * self.integral))
+        # self.q_unsaturated = self.V0 * (self.mu_hat + (self.kp * self.error) + (self.ki * self.integral))
+        self.q_unsaturated = self.V0 * ((self.kp * self.error) + (self.ki * self.integral))
 
         # 2) Saturate the flow to the physical actuator limits.
         q_lagoon = 0
