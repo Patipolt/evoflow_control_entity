@@ -19,7 +19,7 @@ from PySide6.QtGui import QKeyEvent, QTextCharFormat, QStandardItemModel, QStand
 from controlEntity.widgets.TapSwitchWidget import TapSwitch
 from controlEntity.widgets.glassVialThermometerWidget import GlassVialThermometerWidget
 from controlEntity.widgets.customizedImageButton import CustomizedImageButton
-from controlEntity.utils import resource_path
+from controlEntity.utils import resource_path, Utils
 from evoflow.device.evoflow import EvoFlowTelemetry
 
 magneticStirrer_swapping_mode_enabled = True
@@ -57,6 +57,7 @@ class EvoFlowWidget(QWidget):
         self._evoflow_comm_led_reset_timer = QTimer(self)
         self._evoflow_comm_led_reset_timer.setSingleShot(True)
         self._evoflow_comm_led_reset_timer.timeout.connect(self._reset_evoflow_comm_led)
+        self.utils = Utils()
         self.setup_ui()
         self.connect_signals()
 
@@ -775,10 +776,10 @@ class EvoFlowWidget(QWidget):
             new_sp_2 = float(self.pump_2_sp_edit.text())
             new_sp_3 = float(self.pump_3_sp_edit.text())
             new_sp_4 = float(self.pump_4_sp_edit.text())
-            rpm_1 = self.ul_per_min_to_rpm(1, new_sp_1)
-            rpm_2 = self.ul_per_min_to_rpm(2, new_sp_2)
-            rpm_3 = self.ul_per_min_to_rpm(3, new_sp_3)
-            rpm_4 = self.ul_per_min_to_rpm(4, new_sp_4)
+            rpm_1 = self.utils.ul_per_min_to_rpm(1, new_sp_1)
+            rpm_2 = self.utils.ul_per_min_to_rpm(2, new_sp_2)
+            rpm_3 = self.utils.ul_per_min_to_rpm(3, new_sp_3)
+            rpm_4 = self.utils.ul_per_min_to_rpm(4, new_sp_4)
             self.pump_sp_update_requested.emit(rpm_1, rpm_2, rpm_3, rpm_4)
         except ValueError:
             pass  # Invalid input, ignore
@@ -967,7 +968,7 @@ class EvoFlowWidget(QWidget):
         ntc2_color = self._temp_warning_color(evoflow_telemetry.ntc2_pump1_temp, self.motor_cut_off_temp)
         self.pump_1_feedback.setText(
             f'<span style="color:{ntc2_color};">{evoflow_telemetry.ntc2_pump1_temp:.1f} \u2103</span>, FB: {evoflow_telemetry.pump_1_sp:.2f} rpm<br>'
-            f'{evoflow_telemetry.pump_1_speed:.2f} rpm, {(self.rpm_to_ul_per_min(1, evoflow_telemetry.pump_1_speed)):.0f} ul/min'
+            f'{evoflow_telemetry.pump_1_speed:.2f} rpm, {(self.utils.rpm_to_ul_per_min(1, evoflow_telemetry.pump_1_speed)):.0f} ul/min'
         )
         # Update pump 2
         if evoflow_telemetry.pump_2_status:
@@ -977,7 +978,7 @@ class EvoFlowWidget(QWidget):
         ntc3_color = self._temp_warning_color(evoflow_telemetry.ntc3_pump2_temp, self.motor_cut_off_temp)
         self.pump_2_feedback.setText(
             f'<span style="color:{ntc3_color};">{evoflow_telemetry.ntc3_pump2_temp:.1f} \u2103</span>, FB: {evoflow_telemetry.pump_2_sp:.2f} rpm<br>'
-            f'{evoflow_telemetry.pump_2_speed:.2f} rpm, {(self.rpm_to_ul_per_min(2, evoflow_telemetry.pump_2_speed)):.0f} ul/min'
+            f'{evoflow_telemetry.pump_2_speed:.2f} rpm, {(self.utils.rpm_to_ul_per_min(2, evoflow_telemetry.pump_2_speed)):.0f} ul/min'
         )
         # Update pump 3
         if evoflow_telemetry.pump_3_status:
@@ -987,7 +988,7 @@ class EvoFlowWidget(QWidget):
         ntc4_color = self._temp_warning_color(evoflow_telemetry.ntc4_pump3_temp, self.motor_cut_off_temp)
         self.pump_3_feedback.setText(
             f'<span style="color:{ntc4_color};">{evoflow_telemetry.ntc4_pump3_temp:.1f} \u2103</span>, FB: {evoflow_telemetry.pump_3_sp:.2f} rpm<br>'
-            f'{evoflow_telemetry.pump_3_speed:.2f} rpm, {(self.rpm_to_ul_per_min(3, evoflow_telemetry.pump_3_speed)):.0f} ul/min'
+            f'{evoflow_telemetry.pump_3_speed:.2f} rpm, {(self.utils.rpm_to_ul_per_min(3, evoflow_telemetry.pump_3_speed)):.0f} ul/min'
         )
         # Update pump 4
         if evoflow_telemetry.pump_4_status:
@@ -997,7 +998,7 @@ class EvoFlowWidget(QWidget):
         ntc5_color = self._temp_warning_color(evoflow_telemetry.ntc5_pump4_temp, self.motor_cut_off_temp)
         self.pump_4_feedback.setText(
             f'<span style="color:{ntc5_color};">{evoflow_telemetry.ntc5_pump4_temp:.1f} \u2103</span>, FB: {evoflow_telemetry.pump_4_sp:.2f} rpm<br>'
-            f'{evoflow_telemetry.pump_4_speed:.2f} rpm, {(self.rpm_to_ul_per_min(4, evoflow_telemetry.pump_4_speed)):.0f} ul/min'
+            f'{evoflow_telemetry.pump_4_speed:.2f} rpm, {(self.utils.rpm_to_ul_per_min(4, evoflow_telemetry.pump_4_speed)):.0f} ul/min'
         )
 
         # Update magnetic stirrer bioreactor
@@ -1117,69 +1118,6 @@ class EvoFlowWidget(QWidget):
         except ValueError as e:
             self.status_message.emit(f"Error parsing flow conversion factors: {e}")
             return [], [], [], []
-
-    def rpm_to_ul_per_min(self, pump_number: int, rpm: float) -> float:
-        """Convert RPM to ul/min using polynomial fit for the specified pump"""
-        if pump_number == 1:
-            # Use second order polynomial fit for pump 1
-            flow = self._flow_rate_pump_1_list[0]*rpm**2 + self._flow_rate_pump_1_list[1]*rpm + self._flow_rate_pump_1_list[2]
-            return flow
-        elif pump_number == 2:
-            # Use second order polynomial fit for pump 2
-            flow = self._flow_rate_pump_2_list[0]*rpm**2 + self._flow_rate_pump_2_list[1]*rpm + self._flow_rate_pump_2_list[2]
-            return flow
-        elif pump_number == 3:
-            # Use second order polynomial fit for pump 3
-            flow = self._flow_rate_pump_3_list[0]*rpm**2 + self._flow_rate_pump_3_list[1]*rpm + self._flow_rate_pump_3_list[2]
-            return flow
-        elif pump_number == 4:
-            # Use second order polynomial fit for pump 4
-            flow = self._flow_rate_pump_4_list[0]*rpm**2 + self._flow_rate_pump_4_list[1]*rpm + self._flow_rate_pump_4_list[2]
-            return flow
-        else:
-            raise ValueError("Invalid pump number. Must be 1, 2, 3, or 4.")
-
-    def ul_per_min_to_rpm(self, pump_number: int, ul_per_min: float) -> float:
-        """Convert uL/min to RPM using polynomial fit for the specified pump"""
-        if ul_per_min == 0:
-            return 0.0
-
-        flow_magnitude = abs(ul_per_min)
-
-        if pump_number == 1:
-            # Use second order polynomial fit for pump 1
-            a, b, c = self._flow_rate_pump_1_list
-        elif pump_number == 2:
-            # Use second order polynomial fit for pump 2
-            a, b, c = self._flow_rate_pump_2_list
-        elif pump_number == 3:
-            # Use second order polynomial fit for pump 3
-            a, b, c = self._flow_rate_pump_3_list
-        elif pump_number == 4:
-            # Use second order polynomial fit for pump 4
-            a, b, c = self._flow_rate_pump_4_list
-        else:
-            raise ValueError("Invalid pump number. Must be 1, 2, 3, or 4.")
-
-        # Use the fitted forward-direction curve to get RPM magnitude, then apply the requested flow sign.
-        coeffs = [a, b, c - flow_magnitude]
-        roots = np.roots(coeffs)
-        real_roots = roots[np.isreal(roots)].real
-
-        if len(real_roots) == 0:
-            raise ValueError("No real solution found for the given uL/min value.")
-
-        # Keep only physically valid positive RPM magnitudes; reverse direction is applied afterward.
-        rpm_abs_max = 600.0
-        valid_roots = real_roots[(real_roots >= 0.0) & (real_roots <= rpm_abs_max)]
-
-        if len(valid_roots) == 0:
-            raise ValueError(
-                f"No valid RPM magnitude solution in [0.0, {rpm_abs_max}] for pump {pump_number} and flow {ul_per_min} uL/min."
-            )
-
-        rpm_magnitude = float(valid_roots[np.argmin(np.abs(valid_roots))])
-        return rpm_magnitude if ul_per_min > 0 else -rpm_magnitude
 
     def _lerp_color(self, t: float, low_rgb: tuple[int, int, int] = (255, 255, 255), high_rgb: tuple[int, int, int] = (255, 0, 0)) -> str:
         """Linearly interpolate between two RGB colors (t in [0, 1]) and return a hex color string"""
