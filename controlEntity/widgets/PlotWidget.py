@@ -203,15 +203,16 @@ class PlotWidget(QWidget):
         self.flowRate_pump2 = style_line(self.ax0, "Flow Rate Pump 2", "cyan", style="-", linewidth=1, opacity=0.5)
         self.flowRate_pump3 = style_line(self.ax0, "Flow Rate Pump 3", "magenta", style="-", linewidth=1, opacity=0.5)
         self.flowRate_pump4 = style_line(self.ax0, "Flow Rate Pump 4", "yellow", style="-", linewidth=1, opacity=0.5)
-        self.flowRate_pump1_sp = style_line(self.ax0, "Flow Rate Pump 1 Setpoint", "lime", style="-", linewidth=0.5, opacity=0.7)
-        self.flowRate_pump2_sp = style_line(self.ax0, "Flow Rate Pump 2 Setpoint", "cyan", style="-", linewidth=0.5, opacity=0.7)
+        # self.flowRate_pump1_sp = style_line(self.ax0, "Flow Rate Pump 1 Setpoint", "lime", style="-", linewidth=0.5, opacity=0.7)
+        # self.flowRate_pump2_sp = style_line(self.ax0, "Flow Rate Pump 2 Setpoint", "cyan", style="-", linewidth=0.5, opacity=0.7)
+
         # phtCount on right y-axis
         self.ax0_r = self.ax0.twinx()
         self.ax0_r.set_ylabel("Photon Count\n(MHz)", color="white")
         self.ax0_r.yaxis.set_label_coords(1.045, 0.5)  # Move y-axis label to the right
         self.ax0_r.set_ylim(self.y_axis_phtCount_min, self.y_axis_phtCount_max)
         style_axis(self.ax0_r)
-        self.phtCount_lagoon = style_line(self.ax0_r, "phtCount", "red", style="-", linewidth=1, opacity=1.0)
+        self.phtCount_lagoon = style_line(self.ax0_r, "phtCount", "red", style="-", linewidth=2, opacity=0.5)
 
         # Second subplot: Temperature, OD
         self.ax1.set_xticklabels([])    # remove the x-axis ticks and labels
@@ -230,8 +231,8 @@ class PlotWidget(QWidget):
         self.ax1_r.yaxis.set_label_coords(1.045, 0.5)  # Move y-axis label to the right
         self.ax1_r.set_ylim(self.y_axis_od_min, self.y_axis_od_max)
         style_axis(self.ax1_r)
-        self.od_bioReactor = style_line(self.ax1_r, "OD", "tan", style="-", opacity=1.0)
-        self.od_lagoon = style_line(self.ax1_r, "OD Lagoon", "white", style="-", opacity=1.0)
+        self.od_bioReactor = style_line(self.ax1_r, "OD", "red", style="-", linewidth=2, opacity=0.5)
+        self.od_lagoon = style_line(self.ax1_r, "OD Lagoon", "tan", style="-", linewidth=2, opacity=0.5)
 
         # Third subplot: scatter plot for the event when sample extraction takes a sample
         self.ax2.set_ylabel("SE/Mark\nEvent")
@@ -242,8 +243,8 @@ class PlotWidget(QWidget):
         self.ax2.xaxis.set_major_formatter(FuncFormatter(self._format_unix_seconds_as_datetime))
         # self.ax2.set_xlabel("Date / Time")
         style_axis(self.ax2)
-        self.sample_extraction_events, = self.ax2.plot([], [], label="Sample Extraction", marker="o", linestyle="", color="magenta", markersize=10)
-        self.annotation_events, = self.ax2.plot([], [], label="Markdown", marker="*", linestyle="", color="Yellow", markersize=10)
+        self.sample_extraction_events, = self.ax2.plot([], [], label="Sample Extraction", marker="o", linestyle="", color="white", markersize=5)
+        self.annotation_events, = self.ax2.plot([], [], label="Markdown", marker="*", linestyle="", color="Yellow", markersize=5)
 
         # Remove Matplotlib's default horizontal data padding.
         self.ax0.margins(x=0)
