@@ -1045,13 +1045,13 @@ class EvoFlowWidget(QWidget):
             self.led_od_bioreactor.setText("🟢")
         else:
             self.led_od_bioreactor.setText("⚪")
-        self.od_bioreactor_feedback.setText(f"{evoflow_telemetry.od_bioreactor_value:.2f}")
+        self.od_bioreactor_feedback.setText(f"{evoflow_telemetry.od_bioreactor_value:.3f}")
         # Update OD lagoon
         if evoflow_telemetry.od_lagoon_status:
             self.led_od_lagoon.setText("🟢")
         else:
             self.led_od_lagoon.setText("⚪")
-        self.od_lagoon_feedback.setText(f"{evoflow_telemetry.od_lagoon_value:.2f}")
+        self.od_lagoon_feedback.setText(f"{evoflow_telemetry.od_lagoon_value:.3f}")
 
         # Update photon counter lagoon
         if evoflow_telemetry.phtCount_lagoon_status:

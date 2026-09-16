@@ -694,6 +694,8 @@ class DataLoggingWorker(QObject):
             "x_seconds": [],
             "flow_rate_pump1": [],
             "flow_rate_pump2": [],
+            "flow_rate_pump3": [],
+            "flow_rate_pump4": [],
             "pht_count_lagoon": [],
             "temp_bioreactor": [],
             "temp_lagoon": [],
@@ -736,6 +738,8 @@ class DataLoggingWorker(QObject):
                         tempCtrl_lagoon_sp,
                         flow_rate_pump1,
                         flow_rate_pump2,
+                        flow_rate_pump3,
+                        flow_rate_pump4,
                         sample_done_flag,
                         Annotations
                     FROM telemetry
@@ -765,8 +769,10 @@ class DataLoggingWorker(QObject):
             payload["temp_lagoon_sp"].append(float(item[7]))
             payload["flow_rate_pump1"].append(float(item[8]))
             payload["flow_rate_pump2"].append(float(item[9]))
-            payload["sample_event"].append(float(item[10]))
-            payload["annotation_event"].append(str(item[11]) if item[11] is not None else "")
+            payload["flow_rate_pump3"].append(float(item[10]))
+            payload["flow_rate_pump4"].append(float(item[11]))
+            payload["sample_event"].append(float(item[12]))
+            payload["annotation_event"].append(str(item[13]) if item[13] is not None else "")
 
         return payload
 

@@ -199,8 +199,10 @@ class PlotWidget(QWidget):
         self.ax0.set_ylim(self.y_axis_flowRate_min, self.y_axis_flowRate_max)
         # self.ax0.yaxis.set_major_formatter(FormatStrFormatter('%.1f'))  # Format y-axis ticks to 1 decimal place
         style_axis(self.ax0)
-        self.flowRate_pump1 = style_line(self.ax0, "Flow Rate", "lime", style="-.", opacity=1.0)
-        self.flowRate_pump2 = style_line(self.ax0, "Flow Rate Lagoon", "cyan", style="-.", opacity=1.0)
+        self.flowRate_pump1 = style_line(self.ax0, "Flow Rate Pump 1", "lime", style="-", linewidth=0.5, opacity=1.0)
+        self.flowRate_pump2 = style_line(self.ax0, "Flow Rate Pump 2", "cyan", style="-", linewidth=0.5, opacity=1.0)
+        self.flowRate_pump3 = style_line(self.ax0, "Flow Rate Pump 3", "magenta", style="-", linewidth=0.5, opacity=1.0)
+        self.flowRate_pump4 = style_line(self.ax0, "Flow Rate Pump 4", "yellow", style="-", linewidth=0.5, opacity=1.0)
         self.flowRate_pump1_sp = style_line(self.ax0, "Flow Rate Pump 1 Setpoint", "lime", style="-", linewidth=0.5, opacity=0.7)
         self.flowRate_pump2_sp = style_line(self.ax0, "Flow Rate Pump 2 Setpoint", "cyan", style="-", linewidth=0.5, opacity=0.7)
         # phtCount on right y-axis
@@ -685,6 +687,8 @@ class PlotWidget(QWidget):
 
         self.flowRate_pump1.set_data(x_values, payload.get("flow_rate_pump1", []))
         self.flowRate_pump2.set_data(x_values, payload.get("flow_rate_pump2", []))
+        self.flowRate_pump3.set_data(x_values, payload.get("flow_rate_pump3", []))
+        self.flowRate_pump4.set_data(x_values, payload.get("flow_rate_pump4", []))
         self.phtCount_lagoon.set_data(x_values, payload.get("pht_count_lagoon", []))
         self.temp_bioReactor.set_data(x_values, payload.get("temp_bioreactor", []))
         self.temp_lagoon.set_data(x_values, payload.get("temp_lagoon", []))
