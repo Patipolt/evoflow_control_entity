@@ -83,7 +83,7 @@ class MainUI(QMainWindow):
         self.logic.evoflow_worker.safety_protection_requested.connect(self.evoflow_widget.handle_reset_all_slideswitches)
 
         # Controller
-        self.logic.ODController_bioreactor_worker.controller_command_updated.connect(self.logic.evoflow_worker.set_setpoint_pumps)
+        self.logic.ODController_bioreactor_worker.controller_command_updated.connect(self.logic.evoflow_worker.handle_controller_command)
         self.logic.ODController_bioreactor_worker.od_running_updated.connect(self.evoflow_widget.handle_od_running_state_changed)
 
         # Switches
