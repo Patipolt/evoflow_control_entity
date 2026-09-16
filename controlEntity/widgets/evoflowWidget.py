@@ -595,11 +595,11 @@ class EvoFlowWidget(QWidget):
         self.tempCtrl_lagoon_feedback_sp_htr.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         self.tempCtrl_lagoon_feedback_sp_htr.setStyleSheet(font_small_value)
 
-        self.od_bioreactor_feedback = QLabel("0.00", self)
+        self.od_bioreactor_feedback = QLabel("0.0000", self)
         self.od_bioreactor_feedback.setGeometry(237, 228, 100, 25)
         self.od_bioreactor_feedback.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
         self.od_bioreactor_feedback.setStyleSheet(font_value_2)
-        self.od_lagoon_feedback = QLabel("0.00", self)
+        self.od_lagoon_feedback = QLabel("0.0000", self)
         self.od_lagoon_feedback.setGeometry(764, 228, 100, 25)
         self.od_lagoon_feedback.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
         self.od_lagoon_feedback.setStyleSheet(font_value_2)
