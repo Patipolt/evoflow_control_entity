@@ -27,7 +27,8 @@ class ODControlWorker(QObject):
     q_lagoon_updated = Signal(float)
     estimated_od_updated = Signal(float)
     update_telemetry_requested = Signal(EvoFlowTelemetry)
-    controller_command_updated =  Signal(float, float)
+    controller_command_updated =  Signal(float, float, float, float)
+    od_running_updated = Signal(bool)
     
     def __init__(self, V0: float, A0: float, mu0: float, kp: float, ki: float, q_max: float, q_lagoon_max: float, Ts: float, A_setpoint: float, anti_windup_limit: float, back_calculation_gain: float):
         super().__init__()
@@ -41,14 +42,19 @@ class ODControlWorker(QObject):
         self._control_timer = QTimer(self)
         self._control_timer.timeout.connect(self.run_control_loop)
         self.utils = Utils()
+        self.od_running = False
 
     @Slot(bool)
     def set_od_control_enabled(self, enabled: bool):
         """Enable or disable the OD control loop."""
         if enabled:
+            self.od_running = True
+            self.od_running_updated.emit(self.od_running)
             self.run_control_loop()
             self.start()
         else:
+            self.od_running = False
+            self.od_running_updated.emit(self.od_running)
             self.stop()
 
     @Slot()
@@ -66,6 +72,7 @@ class ODControlWorker(QObject):
     def update_telemetry(self, evoflow_telemetry: EvoFlowTelemetry):
         """Update the telemetry data from the EvoFlow device."""
         self.evoflow_telemetry = evoflow_telemetry
+        self.q_lagoon = self.utils.rpm_to_ml_per_sec(2, self.evoflow_telemetry.pump_2_sp)
 
     @Slot(float)
     def calculate_dilution_flow(self, current_od: float, preferred_q_lagoon: float) -> tuple[float, float]:
@@ -124,7 +131,8 @@ class ODControlWorker(QObject):
             print(f"OD Control Loop: Setpoint={self.od_control.A_setpoint:.3f}, Estimated OD={self.estimated_od:.10f}, q_in={self.q_in:.10f}, q_waste={self.q_waste:.10f}, q_lagoon={self.q_lagoon:.6f}, error={self.od_control.error:.10f}, integral={self.od_control.integral:.10f}, mu_hat={self.od_control.mu_hat:.10f}, q_unsaturated={self.od_control.q_unsaturated:.10f}, actuator_mismatch={self.od_control.actuator_mismatch:.10f}")
         else:
             self.q_in, self.q_waste = self.calculate_dilution_flow(self.evoflow_telemetry.od_bioreactor_value, self.q_lagoon)
-            dilute = self.utils.ul_per_min_to_rpm(1, self.q_in*1000)
-            waste = self.utils.ul_per_min_to_rpm(3, self.q_waste*1000)
-            self.controller_command_updated.emit(dilute, waste)
-            print(f"OD Control Loop: Setpoint={self.od_control.A_setpoint:.3f}, Actual OD={self.evoflow_telemetry.od_bioreactor_value:.10f}, q_in={self.q_in:.10f}, q_waste={self.q_waste:.10f}, q_lagoon={self.q_lagoon:.6f}, error={self.od_control.error:.10f}, integral={self.od_control.integral:.10f}, mu_hat={self.od_control.mu_hat:.10f}, q_unsaturated={self.od_control.q_unsaturated:.10f}, actuator_mismatch={self.od_control.actuator_mismatch:.10f}")
+            dilute = self.utils.ml_per_sec_to_rpm(1, self.q_in)
+            waste = self.utils.ml_per_sec_to_rpm(3, self.q_waste)
+            self.controller_command_updated.emit(dilute, self.evoflow_telemetry.pump_2_sp, waste, self.evoflow_telemetry.pump_4_sp)
+            # print(f"OD Control Loop: Setpoint={self.od_control.A_setpoint:.3f}, Actual OD={self.evoflow_telemetry.od_bioreactor_value:.10f}, q_in={self.q_in:.10f}, q_waste={self.q_waste:.10f}, q_lagoon={self.q_lagoon:.6f}, error={self.od_control.error:.10f}, integral={self.od_control.integral:.10f}, mu_hat={self.od_control.mu_hat:.10f}, q_unsaturated={self.od_control.q_unsaturated:.10f}, actuator_mismatch={self.od_control.actuator_mismatch:.10f}")
+            print(f"OD Control Loop: Setpoint={self.od_control.A_setpoint:.3f}, Actual OD={self.evoflow_telemetry.od_bioreactor_value:.6f}, q_in={self.q_in:.6f}, q_waste={self.q_waste:.6f}, q_lagoon={self.q_lagoon:.6f}, error={self.od_control.error:.6f}, integral={self.od_control.integral:.6f}, q_unsaturated={self.od_control.q_unsaturated:.6f}, actuator_mismatch={self.od_control.actuator_mismatch:.6f}")

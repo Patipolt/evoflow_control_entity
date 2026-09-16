@@ -183,3 +183,23 @@ class Utils:
 
         rpm_magnitude = float(valid_roots[np.argmin(np.abs(valid_roots))])
         return rpm_magnitude if ul_per_min > 0 else -rpm_magnitude
+
+    def rpm_to_ul_per_sec(self, pump_number: int, rpm: float) -> float:
+            """Convert RPM to ul/sec using polynomial fit for the specified pump"""
+            ul_per_min = self.rpm_to_ul_per_min(pump_number, rpm)
+            return ul_per_min / 60.0
+
+    def ul_per_sec_to_rpm(self, pump_number: int, ul_per_sec: float) -> float:
+                """Convert ul/sec to RPM using polynomial fit for the specified pump"""
+                ul_per_min = ul_per_sec * 60.0
+                return self.ul_per_min_to_rpm(pump_number, ul_per_min)
+
+    def rpm_to_ml_per_sec(self, pump_number: int, rpm: float) -> float:
+            """Convert RPM to ml/sec using polynomial fit for the specified pump"""
+            ul_per_min = self.rpm_to_ul_per_min(pump_number, rpm)
+            return ul_per_min / 1000.0 / 60.0
+
+    def ml_per_sec_to_rpm(self, pump_number: int, ml_per_sec: float) -> float:
+            """Convert ml/sec to RPM using polynomial fit for the specified pump"""
+            ul_per_min = ml_per_sec * 1000.0 * 60.0
+            return self.ul_per_min_to_rpm(pump_number, ul_per_min)

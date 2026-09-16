@@ -194,7 +194,7 @@ class PlotWidget(QWidget):
         # First subplot: flow rate, phtCount
         self.ax0.set_xticklabels([])    # remove the x-axis ticks and labels
         # Flow Rate on left y-axis
-        self.ax0.set_ylabel("Flow Rate\n(mL/min)", color="white")
+        self.ax0.set_ylabel("Flow Rate\n(uL/min)", color="white")
         self.ax0.yaxis.set_label_coords(-0.045, 0.5)  # Move y-axis label to the left
         self.ax0.set_ylim(self.y_axis_flowRate_min, self.y_axis_flowRate_max)
         # self.ax0.yaxis.set_major_formatter(FormatStrFormatter('%.1f'))  # Format y-axis ticks to 1 decimal place

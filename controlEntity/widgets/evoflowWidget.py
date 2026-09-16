@@ -65,6 +65,9 @@ class EvoFlowWidget(QWidget):
         """Set up the UI components"""
         self.setFixedSize(self._width, self._height)
 
+        # Variables
+        self.od_bioreactor_running = False
+
         # Background
         self.background = QLabel(self)
         self.background.setFixedSize(self._width, self._height)
@@ -881,18 +884,20 @@ class EvoFlowWidget(QWidget):
             self.magneticStirrer_lagoon_swapping_mode_timer.start(on_duration * 1000)  # Convert seconds to milliseconds
         self.slide_switch_magneticStirrer_lagoon.setChecked(not magneticStirrer_lagoon_status)
 
-    @Slot(float, float)
-    def handle_update_controller_command_pumps(self, pump_1, pump_3):
-        """Handle update controller command for pumps"""
-        pump_2 = float(self.pump_2_sp_edit.text())
-        pump_4 = float(self.pump_4_sp_edit.text())
-        if pump_1 == 0.0 and pump_3 == 0.0:
-            self.slide_switch_pump_1.setChecked(False)
-            self.slide_switch_pump_3.setChecked(False)
+    @Slot(bool)
+    def handle_od_running_state_changed(self, is_running):
+        """Handle OD running state change"""
+        self.od_bioreactor_running = is_running
+        if self.od_bioreactor_running:
+            # turn on temp control, magnetic stirrer, and od measurement
+            self.slide_switch_tempCtrl_bioreactor.setChecked(True)
+            self.slide_switch_magneticStirrer_bioreactor.setChecked(True)
+            self.slide_switch_od_bioreactor.setChecked(True)
         else:
-            self.slide_switch_pump_1.setChecked(True)
-            self.slide_switch_pump_3.setChecked(True)
-        self.pump_sp_update_requested.emit(pump_1, pump_2, pump_3, pump_4)
+            # turn off temp control, magnetic stirrer, and od measurement
+            self.slide_switch_tempCtrl_bioreactor.setChecked(False)
+            self.slide_switch_magneticStirrer_bioreactor.setChecked(False)
+            self.slide_switch_od_bioreactor.setChecked(False)
 
     @Slot(EvoFlowTelemetry)
     def update_telemetry(self, evoflow_telemetry):
@@ -908,28 +913,28 @@ class EvoFlowWidget(QWidget):
             or evoflow_telemetry.pump_3_status != self.slide_switch_pump_3.isChecked()
             or evoflow_telemetry.pump_4_status != self.slide_switch_pump_4.isChecked()
         )
-        if pump_status_mismatch:
+        if pump_status_mismatch and not self.od_bioreactor_running:
             self.handle_pump_toggle(False)
 
         magnetic_stirrer_status_mismatch = (
             evoflow_telemetry.magneticStirrer_bioreactor_status != self.slide_switch_magneticStirrer_bioreactor.isChecked()
             or evoflow_telemetry.magneticStirrer_lagoon_status != self.slide_switch_magneticStirrer_lagoon.isChecked()
         )
-        if magnetic_stirrer_status_mismatch:
+        if magnetic_stirrer_status_mismatch and not self.od_bioreactor_running:
             self.handle_magneticStirrer_toggle(False)
 
         temp_ctrl_status_mismatch = (
             evoflow_telemetry.tempCtrl_bioreactor_status != self.slide_switch_tempCtrl_bioreactor.isChecked()
             or evoflow_telemetry.tempCtrl_lagoon_status != self.slide_switch_tempCtrl_lagoon.isChecked()
         )
-        if temp_ctrl_status_mismatch:
+        if temp_ctrl_status_mismatch and not self.od_bioreactor_running:
             self.handle_tempCtrl_toggle(False)
 
         od_status_mismatch = (
             evoflow_telemetry.od_bioreactor_status != self.slide_switch_od_bioreactor.isChecked()
             or evoflow_telemetry.od_lagoon_status != self.slide_switch_od_lagoon.isChecked()
         )
-        if od_status_mismatch:
+        if od_status_mismatch and not self.od_bioreactor_running:
             self.handle_od_toggle(False)
 
         if evoflow_telemetry.phtCount_lagoon_status != self.slide_switch_phtCount_Lagoon.isChecked():

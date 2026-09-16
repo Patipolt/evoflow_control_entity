@@ -152,6 +152,18 @@ class EvoFlowWorker(QObject):
         except Exception as e:
             print(f"Failed to set magnetic stirrer setpoints: {e}")
 
+    @Slot(float, float, float, float)
+    def handle_controller_command(self, dilute: float, pump_2_sp: float, waste: float, pump_4_sp: float):
+        """Handle controller command to set pump speeds based on OD control calculations."""
+        try:
+            self.set_on_off_pumps(0 if dilute == 0 else 1,
+                                  0 if pump_2_sp == 0 else 1,
+                                  0 if waste == 0 else 1,
+                                  0 if pump_4_sp == 0 else 1)
+            self.set_setpoint_pumps(dilute, pump_2_sp, waste, pump_4_sp)
+        except Exception as e:
+            print(f"Failed to handle controller command: {e}")
+
     @Slot(bool)
     def set_on_off_pht_count(self, phtCount_lagoon_status: bool):
         """Set the on/off status of the photon counter"""
@@ -185,7 +197,7 @@ class EvoFlowWorker(QObject):
                 self.evoflow.evoflow_telemetry.ntc3_pump2_temp > 150 or
                 self.evoflow.evoflow_telemetry.ntc4_pump3_temp > 150 or
                 self.evoflow.evoflow_telemetry.ntc5_pump4_temp > 150 or
-                self.evoflow.evoflow_telemetry.ntc1_ambient_temp > 60):
+                self.evoflow.evoflow_telemetry.ntc1_ambient_temp > 80):
                 # self.evoflow.evoflow_telemetry.level_sensor_bioreactor_status == 1):
                 # self.evoflow.evoflow_telemetry.level_sensor_lagoon_status == 1):
                 
