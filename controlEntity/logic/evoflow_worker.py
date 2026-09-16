@@ -43,6 +43,8 @@ class EvoFlowWorker(QObject):
         self._no_of_evoflow_reset = 0
         self._telemetry_timer = None
         self._status_timer = None
+        self.old_rpi_temp = 0.0
+        self.rpi_temp = 0.0
 
     @Slot()
     def start(self):
@@ -214,9 +216,11 @@ class EvoFlowWorker(QObject):
 
         try:
             evoflow_ok = self.evoflow.is_evoflow_ok()
-            rpi_temp = self.get_rpi_temp()
+            self.rpi_temp = self.get_rpi_temp()
+            self.rpi_temp = self.low_pass_filter(self.rpi_temp, self.old_rpi_temp, alpha=0.3)
+            self.old_rpi_temp = self.rpi_temp
             self.evoflow_status_updated.emit(evoflow_ok)
-            self.rpi_temp_updated.emit(rpi_temp)
+            self.rpi_temp_updated.emit(self.rpi_temp)
 
             if not evoflow_ok:
                 self._consecutive_not_ok_count += 1
@@ -251,4 +255,7 @@ class EvoFlowWorker(QObject):
         
     def low_pass_filter(self, current_value: float, previous_value: float, alpha: float = 0.1) -> float:
         """Apply a simple low-pass filter to smoothen"""
+        if previous_value == 0.0:
+            previous_value = current_value  # Initialize previous value if it's zero
+        return ((alpha * current_value) + ((1 - alpha) * previous_value))
         
