@@ -156,10 +156,11 @@ class EvoFlowWorker(QObject):
     def handle_controller_command(self, dilute: float, pump_2_sp: float, waste: float, pump_4_sp: float):
         """Handle controller command to set pump speeds based on OD control calculations."""
         try:
-            self.set_on_off_pumps(0 if dilute == 0 else 1,
-                                  0 if pump_2_sp == 0 else 1,
-                                  0 if waste == 0 else 1,
-                                  0 if pump_4_sp == 0 else 1)
+            pump_1_status = 0 if dilute == 0.0 else 1
+            pump_2_status = 0 if pump_2_sp == 0.0 else 1
+            pump_3_status = 0 if waste == 0.0 else 1
+            pump_4_status = 0 if pump_4_sp == 0.0 else 1
+            self.set_on_off_pumps(pump_1_status, pump_2_status, pump_3_status, pump_4_status)
             self.set_setpoint_pumps(dilute, pump_2_sp, waste, pump_4_sp)
         except Exception as e:
             print(f"Failed to handle controller command: {e}")
