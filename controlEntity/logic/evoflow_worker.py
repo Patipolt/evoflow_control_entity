@@ -18,7 +18,7 @@ class EvoFlowWorker(QObject):
     rpi_temp_updated = Signal(int)
     no_of_evoflow_reset = Signal(int)
 
-    safety_protection_requested = Signal(bool) # This is for pump overheat and level sensor overflow protection
+    safety_guard_requested = Signal(bool) # This is for pump overheat and level sensor overflow protection
 
     def __init__(self, port: str, baudrate: int = 115200,
                  timeout: float = 0.01,
@@ -184,7 +184,7 @@ class EvoFlowWorker(QObject):
         try:
             if self.evoflow.get_all_telemetry():
                 self.telemetry_updated.emit(self.evoflow.evoflow_telemetry)
-                self._check_safety_protection()
+                self._check_safety_guard()
                 self.evoflow_comm_status_updated.emit(True)
             else:
                 self.evoflow_comm_status_updated.emit(False)
@@ -192,7 +192,7 @@ class EvoFlowWorker(QObject):
             print(f"Failed to get telemetry from EvoFlow device: {e}")
 
     @Slot()
-    def _check_safety_protection(self):
+    def _check_safety_guard(self):
         """Check the safety status of the EvoFlow device and take appropriate action if necessary."""
         try:
             # Check if any pump is overheating
@@ -204,7 +204,7 @@ class EvoFlowWorker(QObject):
                 self.evoflow.evoflow_telemetry.level_sensor_bioreactor_status == 1):
                 # self.evoflow.evoflow_telemetry.level_sensor_lagoon_status == 1):
 
-                self.safety_protection_requested.emit(True)
+                self.safety_guard_requested.emit(True)
         except Exception as e:
             print(f"Failed to check safety status: {e}")
 

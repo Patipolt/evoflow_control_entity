@@ -58,7 +58,7 @@ class ODControlWorker(QObject):
             self.stop()
 
     @Slot(bool)
-    def handle_od_control_enabled_from_safety_protection(self, enabled: bool):
+    def handle_od_control_enabled_from_safety_guard(self, enabled: bool):
         """Handle OD control enable/disable requests from safety protection."""
         if enabled:
             self.set_od_control_enabled(False)
