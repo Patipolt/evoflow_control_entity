@@ -20,7 +20,7 @@ test = False
 
 class ODControlWorker(QObject):
     """Worker class to manage OD control logic in a separate thread."""
-    
+
     # Signal to emit the computed inlet flow rate (q_in) for the bioreactor
     q_in_updated = Signal(float)
     q_waste_updated = Signal(float)
@@ -29,7 +29,7 @@ class ODControlWorker(QObject):
     update_telemetry_requested = Signal(EvoFlowTelemetry)
     controller_command_updated =  Signal(float, float, float, float)
     od_running_updated = Signal(bool)
-    
+
     def __init__(self, V0: float, A0: float, mu0: float, kp: float, ki: float, q_max: float, q_lagoon_max: float, Ts: float, A_setpoint: float, anti_windup_limit: float, back_calculation_gain: float):
         super().__init__()
         self.od_control = ODControl(V0, A0, mu0, kp, ki, q_max, q_lagoon_max, Ts, A_setpoint, anti_windup_limit, back_calculation_gain)
@@ -56,6 +56,12 @@ class ODControlWorker(QObject):
             self.od_running = False
             self.od_running_updated.emit(self.od_running)
             self.stop()
+
+    @Slot(bool)
+    def handle_od_control_enabled_from_safety_protection(self, enabled: bool):
+        """Handle OD control enable/disable requests from safety protection."""
+        if enabled:
+            self.set_od_control_enabled(False)
 
     @Slot()
     def start(self):

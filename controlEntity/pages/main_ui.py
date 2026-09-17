@@ -27,7 +27,7 @@ prog_size_height = 900
 
 class MainUI(QMainWindow):
     """Main UI class for the EvoFlow control entity application"""
-    
+
     def __init__(self):
         super().__init__()
 
@@ -70,7 +70,7 @@ class MainUI(QMainWindow):
         # =====================================
         # Evoflow signals
         # =====================================
-        
+
         # Telemetry
         self.logic.evoflow_worker.telemetry_updated.connect(self.evoflow_widget.update_telemetry,Qt.ConnectionType.QueuedConnection,)
         self.logic.evoflow_worker.telemetry_updated.connect(self.logic.data_logging_worker.update_evoflow_telemetry)
@@ -81,6 +81,7 @@ class MainUI(QMainWindow):
         self.logic.evoflow_worker.no_of_evoflow_reset.connect(self.evoflow_widget.update_no_of_evoflow_reset,Qt.ConnectionType.QueuedConnection,)
 
         self.logic.evoflow_worker.safety_protection_requested.connect(self.evoflow_widget.handle_reset_all_slideswitches)
+        self.logic.evoflow_worker.safety_protection_requested.connect(self.logic.ODController_bioreactor_worker.handle_od_control_enabled_from_safety_protection)
 
         # Controller
         self.logic.ODController_bioreactor_worker.controller_command_updated.connect(self.logic.evoflow_worker.handle_controller_command)

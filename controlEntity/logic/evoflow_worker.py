@@ -11,7 +11,7 @@ from evoflow.device.evoflow import EvoFlowDevice, EvoFlowTelemetry
 
 class EvoFlowWorker(QObject):
     """Worker class to handle EvoFlow device communication in a separate thread"""
-    
+
     telemetry_updated = Signal(EvoFlowTelemetry)
     evoflow_status_updated = Signal(bool)
     evoflow_comm_status_updated = Signal(bool)
@@ -19,22 +19,22 @@ class EvoFlowWorker(QObject):
     no_of_evoflow_reset = Signal(int)
 
     safety_protection_requested = Signal(bool) # This is for pump overheat and level sensor overflow protection
-    
-    def __init__(self, port: str, baudrate: int = 115200, 
-                 timeout: float = 0.01, 
-                 sender_addr: int = 0x01, 
-                 receiver_addr: int = 0xC9, 
-                 sampling_rate_ms: int = 200, 
-                 auto_reset_after_seconds: int = 5, 
-                 evoflow_status_gpio_pin: int = 27, 
+
+    def __init__(self, port: str, baudrate: int = 115200,
+                 timeout: float = 0.01,
+                 sender_addr: int = 0x01,
+                 receiver_addr: int = 0xC9,
+                 sampling_rate_ms: int = 200,
+                 auto_reset_after_seconds: int = 5,
+                 evoflow_status_gpio_pin: int = 27,
                  evoflow_reset_gpio_pin: int = 17):
         super().__init__()
-        self.evoflow = EvoFlowDevice(port, 
-                                     baudrate, 
-                                     timeout, 
-                                     sender_addr, 
-                                     receiver_addr, 
-                                     evoflow_status_gpio_pin, 
+        self.evoflow = EvoFlowDevice(port,
+                                     baudrate,
+                                     timeout,
+                                     sender_addr,
+                                     receiver_addr,
+                                     evoflow_status_gpio_pin,
                                      evoflow_reset_gpio_pin)
         self.sampling_rate_ms = sampling_rate_ms
         self.auto_reset_after_seconds = auto_reset_after_seconds
@@ -70,7 +70,7 @@ class EvoFlowWorker(QObject):
             # print(f"Failed to connect to EvoFlow device: {e}")
             self._running = False
             return
-    
+
     @Slot()
     def stop(self):
         """Stop polling timers and disconnect device."""
@@ -121,7 +121,7 @@ class EvoFlowWorker(QObject):
             self.evoflow.set_on_off_temp_ctrls(tempCtrl_bioreactor_status, tempCtrl_lagoon_status)
         except Exception as e:
             print(f"Failed to set temperature controller status: {e}")
-        
+
     @Slot(float, float)
     def set_setpoint_temp_ctrls(self, tempCtrl_bioreactor_sp: float, tempCtrl_lagoon_sp: float):
         """Set the temperature setpoints for the temperature controllers"""
@@ -200,10 +200,10 @@ class EvoFlowWorker(QObject):
                 self.evoflow.evoflow_telemetry.ntc3_pump2_temp > 150 or
                 self.evoflow.evoflow_telemetry.ntc4_pump3_temp > 150 or
                 self.evoflow.evoflow_telemetry.ntc5_pump4_temp > 150 or
-                self.evoflow.evoflow_telemetry.ntc1_ambient_temp > 80):
-                # self.evoflow.evoflow_telemetry.level_sensor_bioreactor_status == 1):
+                self.evoflow.evoflow_telemetry.ntc1_ambient_temp > 80 or
+                self.evoflow.evoflow_telemetry.level_sensor_bioreactor_status == 1):
                 # self.evoflow.evoflow_telemetry.level_sensor_lagoon_status == 1):
-                
+
                 self.safety_protection_requested.emit(True)
         except Exception as e:
             print(f"Failed to check safety status: {e}")
@@ -217,7 +217,7 @@ class EvoFlowWorker(QObject):
         try:
             evoflow_ok = self.evoflow.is_evoflow_ok()
             self.rpi_temp = self.get_rpi_temp()
-            self.rpi_temp = self.low_pass_filter(self.rpi_temp, self.old_rpi_temp, alpha=0.3)
+            self.rpi_temp = self.low_pass_filter(self.rpi_temp, self.old_rpi_temp, alpha=0.1)
             self.old_rpi_temp = self.rpi_temp
             self.evoflow_status_updated.emit(evoflow_ok)
             self.rpi_temp_updated.emit(self.rpi_temp)
@@ -236,7 +236,7 @@ class EvoFlowWorker(QObject):
                 self._consecutive_not_ok_count = 0
         except Exception as e:
             print(f"Failed to check EvoFlow status / RPi temp: {e}")
-    
+
     @Slot()
     def reset_evoflow(self):
         """Reset the EvoFlow device"""
@@ -252,10 +252,9 @@ class EvoFlowWorker(QObject):
         except Exception as e:
             # print(f"Failed to read Raspberry Pi CPU temperature: {e}")
             return -1
-        
+
     def low_pass_filter(self, current_value: float, previous_value: float, alpha: float = 0.1) -> float:
         """Apply a simple low-pass filter to smoothen"""
         if previous_value == 0.0:
             previous_value = current_value  # Initialize previous value if it's zero
         return ((alpha * current_value) + ((1 - alpha) * previous_value))
-        
