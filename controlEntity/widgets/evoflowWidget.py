@@ -810,6 +810,11 @@ class EvoFlowWidget(QWidget):
         od_controller_bioreactor_customized_btn_status = self.od_control_bioreactor_customized_btn.isChecked()
         self.od_control_bioreactor_customized_btn_requested.emit(od_controller_bioreactor_customized_btn_status)
 
+    def handle_od_control_bioreactor_toggle_from_safety_guard(self):
+            """Handle OD controller bioreactor toggle"""
+            self.od_control_bioreactor_customized_btn_requested.emit(False)
+            self.od_control_bioreactor_customized_btn.setChecked(False)
+
     def handle_od_control_bioreactor_initial_od_update(self):
         """Handle OD controller bioreactor initial OD update"""
         try:

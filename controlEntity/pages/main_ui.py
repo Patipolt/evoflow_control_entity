@@ -80,8 +80,8 @@ class MainUI(QMainWindow):
         self.logic.evoflow_worker.rpi_temp_updated.connect(self.evoflow_widget.update_rpi_temp,Qt.ConnectionType.QueuedConnection,)
         self.logic.evoflow_worker.no_of_evoflow_reset.connect(self.evoflow_widget.update_no_of_evoflow_reset,Qt.ConnectionType.QueuedConnection,)
 
-        self.logic.evoflow_worker.safety_protection_requested.connect(self.evoflow_widget.handle_reset_all_slideswitches)
-        self.logic.evoflow_worker.safety_protection_requested.connect(self.logic.ODController_bioreactor_worker.handle_od_control_enabled_from_safety_protection)
+        self.logic.evoflow_worker.safety_guard_requested.connect(self.evoflow_widget.handle_reset_all_slideswitches)
+        self.logic.evoflow_worker.safety_guard_requested.connect(self.evoflow_widget.handle_od_control_bioreactor_toggle_from_safety_guard)
 
         # Controller
         self.logic.ODController_bioreactor_worker.controller_command_updated.connect(self.logic.evoflow_worker.handle_controller_command)
