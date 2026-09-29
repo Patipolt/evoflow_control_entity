@@ -260,6 +260,10 @@ class EvoFlowWidget(QWidget):
         info_overflow_lagoon.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
         info_overflow_lagoon.setStyleSheet(font_component)
 
+        info_medium_consumption = QLabel("Medium Cons.", self)
+        info_medium_consumption.setGeometry(35, 170, 100, 25)
+        info_medium_consumption.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
+        info_medium_consumption.setStyleSheet(font_component)
 
         # Thermometer
         self.thermo_ambient_temp = GlassVialThermometerWidget(min_value=0, max_value=70, value=25, parent=self)
@@ -396,6 +400,7 @@ class EvoFlowWidget(QWidget):
         # self.magneticStirrers_sp_update_btn = QPushButton("Update Magnetic Stirrer Set Points", evoflow_control_groupbox)
         # self.magneticStirrers_sp_update_btn.setStyleSheet(button_style)
         # self.magneticStirrers_sp_update_btn.setMinimumHeight(24)
+
 
         lagoon_activity_control_and_level_sensor_H_layout = QHBoxLayout()
         self.lagoon_activity_control_customized_btn = CustomizedImageButton(60, 32, False, "Lagoon_off.png", "Lagoon_on.png", "Lagoon_pressed.png", evoflow_control_groupbox)
@@ -617,6 +622,11 @@ class EvoFlowWidget(QWidget):
         self.phtCount_feedback.setGeometry(764, 128, 100, 25)
         self.phtCount_feedback.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
         self.phtCount_feedback.setStyleSheet(font_value_2)
+
+        self.medium_consumption_label = QLabel("0.0000 ml", self)
+        self.medium_consumption_label.setGeometry(35, 185, 100, 25)
+        self.medium_consumption_label.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
+        self.medium_consumption_label.setStyleSheet(font_small_value)
 
 
         # Testing
@@ -1106,6 +1116,11 @@ class EvoFlowWidget(QWidget):
 
         # Update level sensor lagoon
         self.led_level_sensor_lagoon.setText("🔴" if evoflow_telemetry.level_sensor_lagoon_status else "⚪")
+
+    @Slot()
+    def update_medium_consumption(self):
+        """Update medium consumption label"""
+        self.medium_consumption_label.setText(f"{self.utils.medium_consumption:.4f} ml")
 
     @Slot(bool)
     def update_evoflow_status(self, evoflow_status):
