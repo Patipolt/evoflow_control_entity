@@ -372,18 +372,18 @@ class EvoFlowWidget(QWidget):
 
         od_control_bioreactor_H_layout = QHBoxLayout()
         self.od_control_bioreactor_customized_btn = CustomizedImageButton(60, 32, False, "OD_ctrl_off.png", "OD_ctrl_on.png", "OD_ctrl_pressed.png", evoflow_control_groupbox)
-        od_control_bioreactor_initial_od_label = QLabel("Initial", evoflow_control_groupbox)
-        od_control_bioreactor_initial_od_label.setStyleSheet(font_component)
-        self.od_control_bioreactor_initial_od_edit = QLineEdit(evoflow_control_groupbox)
-        self.od_control_bioreactor_initial_od_edit.setStyleSheet(edit_style)
+        # od_control_bioreactor_initial_od_label = QLabel("Initial", evoflow_control_groupbox)
+        # od_control_bioreactor_initial_od_label.setStyleSheet(font_component)
+        # self.od_control_bioreactor_initial_od_edit = QLineEdit(evoflow_control_groupbox)
+        # self.od_control_bioreactor_initial_od_edit.setStyleSheet(edit_style)
         od_control_bioreactor_setpoint_od_label = QLabel("SetPoint", evoflow_control_groupbox)
         od_control_bioreactor_setpoint_od_label.setStyleSheet(font_component)
         self.od_control_bioreactor_setpoint_od_edit = QLineEdit(evoflow_control_groupbox)
         self.od_control_bioreactor_setpoint_od_edit.setStyleSheet(edit_style)
 
         od_control_bioreactor_H_layout.addWidget(self.od_control_bioreactor_customized_btn)
-        od_control_bioreactor_H_layout.addWidget(od_control_bioreactor_initial_od_label)
-        od_control_bioreactor_H_layout.addWidget(self.od_control_bioreactor_initial_od_edit)
+        # od_control_bioreactor_H_layout.addWidget(od_control_bioreactor_initial_od_label)
+        # od_control_bioreactor_H_layout.addWidget(self.od_control_bioreactor_initial_od_edit)
         od_control_bioreactor_H_layout.addWidget(od_control_bioreactor_setpoint_od_label)
         od_control_bioreactor_H_layout.addWidget(self.od_control_bioreactor_setpoint_od_edit)
 
@@ -396,6 +396,15 @@ class EvoFlowWidget(QWidget):
         # self.magneticStirrers_sp_update_btn = QPushButton("Update Magnetic Stirrer Set Points", evoflow_control_groupbox)
         # self.magneticStirrers_sp_update_btn.setStyleSheet(button_style)
         # self.magneticStirrers_sp_update_btn.setMinimumHeight(24)
+
+        lagoon_activity_control_and_level_sensor_H_layout = QHBoxLayout()
+        self.lagoon_activity_control_customized_btn = CustomizedImageButton(60, 32, False, "Lagoon_off.png", "Lagoon_on.png", "Lagoon_pressed.png", evoflow_control_groupbox)
+        self.level_sensor_customized_btn = CustomizedImageButton(60, 32, False, "Level_off.png", "Level_on.png", "Level_pressed.png", evoflow_control_groupbox)
+        lagoon_activity_control_and_level_sensor_H_layout.addWidget(self.lagoon_activity_control_customized_btn)
+        lagoon_activity_control_and_level_sensor_H_layout.addWidget(self.level_sensor_customized_btn)
+        lagoon_activity_control_and_level_sensor_H_layout.addStretch()
+
+
         self.reset_all_slideswitches_btn = QPushButton("Reset All Slide Switches", evoflow_control_groupbox)
         self.reset_all_slideswitches_btn.setStyleSheet(button_style)
         self.reset_all_slideswitches_btn.setMinimumHeight(24)
@@ -404,7 +413,7 @@ class EvoFlowWidget(QWidget):
         # evoflow_control_V_layout.addWidget(self.tempCtrls_sp_update_btn)
         # evoflow_control_V_layout.addWidget(self.magneticStirrers_sp_update_btn)
         evoflow_control_V_layout.addLayout(od_control_bioreactor_H_layout)
-        evoflow_control_V_layout.addStretch()
+        evoflow_control_V_layout.addLayout(lagoon_activity_control_and_level_sensor_H_layout)
         evoflow_control_V_layout.addWidget(self.reset_all_slideswitches_btn)
 
 
@@ -689,7 +698,7 @@ class EvoFlowWidget(QWidget):
         # self.magneticStirrers_sp_update_btn.clicked.connect(self.handle_magneticStirrer_sp_update)
         # self.tempCtrls_sp_update_btn.clicked.connect(self.handle_tempCtrl_sp_update)
         self.od_control_bioreactor_customized_btn.clicked.connect(self.handle_od_control_bioreactor_toggle)
-        self.od_control_bioreactor_initial_od_edit.returnPressed.connect(self.handle_od_control_bioreactor_initial_od_update)
+        # self.od_control_bioreactor_initial_od_edit.returnPressed.connect(self.handle_od_control_bioreactor_initial_od_update)
         self.od_control_bioreactor_setpoint_od_edit.returnPressed.connect(self.handle_od_control_bioreactor_setpoint_od_update)
         self.reset_all_slideswitches_btn.clicked.connect(self.handle_reset_all_slideswitches)
 

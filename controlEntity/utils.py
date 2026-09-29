@@ -173,7 +173,7 @@ class Utils:
             raise ValueError("No real solution found for the given uL/min value.")
 
         # Keep only physically valid positive RPM magnitudes; reverse direction is applied afterward.
-        rpm_abs_max = 300.0
+        rpm_abs_max = 120.0
         valid_roots = real_roots[(real_roots >= 0.0) & (real_roots <= rpm_abs_max)]
 
         if len(valid_roots) == 0:
