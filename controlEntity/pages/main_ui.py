@@ -105,6 +105,7 @@ class MainUI(QMainWindow):
         self.evoflow_widget.od_control_bioreactor_setpoint_od_update_requested.connect(self.logic.ODController_bioreactor_worker.set_A_setpoint)
 
         self.evoflow_widget.reset_evoflow_requested.connect(self.logic.evoflow_worker.reset_evoflow)
+        self.evoflow_widget.level_sensor_customized_btn_status_updated.connect(self.logic.evoflow_worker.update_level_sensor_status)
 
         # =====================================
         # Sample Extraction signals

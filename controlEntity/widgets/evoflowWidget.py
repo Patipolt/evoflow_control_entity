@@ -46,6 +46,7 @@ class EvoFlowWidget(QWidget):
     od_control_bioreactor_initial_od_update_requested = Signal(float)
     od_control_bioreactor_setpoint_od_update_requested = Signal(float)
     reset_evoflow_requested = Signal()
+    level_sensor_customized_btn_status_updated = Signal(bool)
 
     
     def __init__(self, width: int=1800, height: int=450):
@@ -712,6 +713,8 @@ class EvoFlowWidget(QWidget):
         self.od_control_bioreactor_setpoint_od_edit.returnPressed.connect(self.handle_od_control_bioreactor_setpoint_od_update)
         self.reset_all_slideswitches_btn.clicked.connect(self.handle_reset_all_slideswitches)
 
+        self.level_sensor_customized_btn.clicked.connect(self.handle_level_sensor_toggle)
+
         self.reset_evoflow_btn.clicked.connect(self.reset_evoflow_requested)
 
         # Pressing enter in the setpoint edits should also trigger the update
@@ -749,7 +752,7 @@ class EvoFlowWidget(QWidget):
         self.q_lagoon_max_ml_per_sec = config.getfloat("ODController", "q_lagoon_max", fallback=0.00778)
         self._sampling_rate_ms = config.getint("HMI", "sampling_rate_ms", fallback=50)
         self._evoflow_comm_led_hold_ms = self._sampling_rate_ms * 0.75
-        self.motor_cut_off_temp = config.getfloat("Evoflow", "motor_cut_off_temp", fallback=60.0)
+        self.motor_cut_off_temp = config.getfloat("Evoflow", "motor_cut_off_temp", fallback=50.0)
 
     def handle_pump_toggle(self, checked):
         """Handle all 4 pump toggles"""
@@ -834,6 +837,15 @@ class EvoFlowWidget(QWidget):
         """Handle OD controller bioreactor toggle"""
         od_controller_bioreactor_customized_btn_status = self.od_control_bioreactor_customized_btn.isChecked()
         self.od_control_bioreactor_customized_btn_requested.emit(od_controller_bioreactor_customized_btn_status)
+        # by default, when the OD controller is on, it should also turn on the level sensor
+        if od_controller_bioreactor_customized_btn_status:
+            self.level_sensor_customized_btn.setChecked(True)
+            self.handle_level_sensor_toggle()
+
+    def handle_level_sensor_toggle(self):
+        """Handle level sensor toggle"""
+        level_sensor_customized_btn_status = self.level_sensor_customized_btn.isChecked()
+        self.level_sensor_customized_btn_status_updated.emit(level_sensor_customized_btn_status)
 
     def handle_od_control_bioreactor_toggle_from_safety_guard(self):
             """Handle OD controller bioreactor toggle"""
@@ -1173,7 +1185,7 @@ class EvoFlowWidget(QWidget):
         b = round(low_rgb[2] + (high_rgb[2] - low_rgb[2]) * t)
         return f"#{r:02x}{g:02x}{b:02x}"
 
-    def _temp_warning_color(self, value: float, cutoff: float, warn_range: float = 3.0) -> str:
+    def _temp_warning_color(self, value: float, cutoff: float, warn_range: float = 10.0) -> str:
         """Smoothly transition text color from white to red as value approaches the cutoff temperature"""
         warn_start = cutoff - warn_range
         t = (value - warn_start) / (cutoff - warn_start) if cutoff != warn_start else 1.0

@@ -7,6 +7,7 @@ Created: April 2026
 """
 
 from PySide6.QtCore import QObject, QTimer, Signal, Slot
+from controlEntity.utils import Utils
 from evoflow.device.evoflow import EvoFlowDevice, EvoFlowTelemetry
 
 class EvoFlowWorker(QObject):
@@ -45,6 +46,8 @@ class EvoFlowWorker(QObject):
         self._status_timer = None
         self.old_rpi_temp = 0.0
         self.rpi_temp = 0.0
+        self.utils = Utils()
+        self._level_sensor_active = False
 
     @Slot()
     def start(self):
@@ -195,15 +198,23 @@ class EvoFlowWorker(QObject):
     def _check_safety_guard(self):
         """Check the safety status of the EvoFlow device and take appropriate action if necessary."""
         try:
-            # Check if any pump is overheating and if any level sensor is triggered
-            if (self.evoflow.evoflow_telemetry.ntc2_pump1_temp > 60 or
-                self.evoflow.evoflow_telemetry.ntc3_pump2_temp > 60 or
-                self.evoflow.evoflow_telemetry.ntc4_pump3_temp > 60 or
-                self.evoflow.evoflow_telemetry.ntc5_pump4_temp > 60 or
-                self.evoflow.evoflow_telemetry.level_sensor_bioreactor_status == 1 or
-                self.evoflow.evoflow_telemetry.level_sensor_lagoon_status == 1):
+            # Check if the level sensor is active and if any of the safety conditions are met
+            if self._level_sensor_active:
+                if (self.evoflow.evoflow_telemetry.ntc2_pump1_temp > self.utils.config.getfloat("Evoflow", "motor_cut_off_temp", fallback=50.0) or
+                    self.evoflow.evoflow_telemetry.ntc3_pump2_temp > self.utils.config.getfloat("Evoflow", "motor_cut_off_temp", fallback=50.0) or
+                    self.evoflow.evoflow_telemetry.ntc4_pump3_temp > self.utils.config.getfloat("Evoflow", "motor_cut_off_temp", fallback=50.0) or
+                    self.evoflow.evoflow_telemetry.ntc5_pump4_temp > self.utils.config.getfloat("Evoflow", "motor_cut_off_temp", fallback=50.0) or
+                    self.evoflow.evoflow_telemetry.level_sensor_bioreactor_status == 1 or
+                    self.evoflow.evoflow_telemetry.level_sensor_lagoon_status == 1):
 
-                self.safety_guard_requested.emit(True)
+                    self.safety_guard_requested.emit(True)
+            else:
+                if (self.evoflow.evoflow_telemetry.ntc2_pump1_temp > self.utils.config.getfloat("Evoflow", "motor_cut_off_temp", fallback=50.0) or
+                    self.evoflow.evoflow_telemetry.ntc3_pump2_temp > self.utils.config.getfloat("Evoflow", "motor_cut_off_temp", fallback=50.0) or
+                    self.evoflow.evoflow_telemetry.ntc4_pump3_temp > self.utils.config.getfloat("Evoflow", "motor_cut_off_temp", fallback=50.0) or
+                    self.evoflow.evoflow_telemetry.ntc5_pump4_temp > self.utils.config.getfloat("Evoflow", "motor_cut_off_temp", fallback=50.0)):
+
+                    self.safety_guard_requested.emit(True)
         except Exception as e:
             print(f"Failed to check safety status: {e}")
 
@@ -257,3 +268,7 @@ class EvoFlowWorker(QObject):
         if previous_value == 0.0:
             previous_value = current_value  # Initialize previous value if it's zero
         return ((alpha * current_value) + ((1 - alpha) * previous_value))
+
+    def update_level_sensor_status(self, status: bool):
+        """Update the level sensor status"""
+        self._level_sensor_active = status

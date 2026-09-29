@@ -84,12 +84,12 @@ HEX_COLOR_LIST = ["0072BD",
 class Utils:
     """Utility class for the EvoFlow control entity"""
     def __init__(self):
-        config = self._read_settings_file()
+        self.config = self._read_settings_file()
         self._flow_rate_pump_1_list, self._flow_rate_pump_2_list, self._flow_rate_pump_3_list, self._flow_rate_pump_4_list = self.extract_flow_conversion_factors(
-                    config.get("flowRateConversionFactors", "pump_1"),
-                    config.get("flowRateConversionFactors", "pump_2"),
-                    config.get("flowRateConversionFactors", "pump_3"),
-                    config.get("flowRateConversionFactors", "pump_4"),
+                    self.config.get("flowRateConversionFactors", "pump_1"),
+                    self.config.get("flowRateConversionFactors", "pump_2"),
+                    self.config.get("flowRateConversionFactors", "pump_3"),
+                    self.config.get("flowRateConversionFactors", "pump_4"),
                 )
         
     def extract_flow_conversion_factors(self, pump1_str_list: str, pump2_str_list: str, pump3_str_list: str, pump4_str_list: str) -> tuple[list[float], list[float], list[float], list[float]]:
