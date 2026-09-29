@@ -114,34 +114,49 @@ class Utils:
         return config
 
     def rpm_to_ul_per_min(self, pump_number: int, rpm: float) -> float:
-        """Convert RPM to ul/min using polynomial fit for the specified pump"""
+        """Convert RPM to uL/min by inverting the configured RPM(flow) fit."""
         if pump_number == 1:
-            # Use second order polynomial fit for pump 1
-            flow = self._flow_rate_pump_1_list[0]*rpm**2 + self._flow_rate_pump_1_list[1]*rpm + self._flow_rate_pump_1_list[2]
-            if flow <= self._flow_rate_pump_1_list[2]*1.1:  # Allow a small tolerance above the minimum flow
-                return 0.0
+            a, b, c = self._flow_rate_pump_1_list
         elif pump_number == 2:
-            # Use second order polynomial fit for pump 2
-            flow = self._flow_rate_pump_2_list[0]*rpm**2 + self._flow_rate_pump_2_list[1]*rpm + self._flow_rate_pump_2_list[2]
-            if flow <= self._flow_rate_pump_2_list[2]*1.1:  # Allow a small tolerance above the minimum flow
-                return 0.0
+            a, b, c = self._flow_rate_pump_2_list
         elif pump_number == 3:
-            # Use second order polynomial fit for pump 3
-            flow = self._flow_rate_pump_3_list[0]*rpm**2 + self._flow_rate_pump_3_list[1]*rpm + self._flow_rate_pump_3_list[2]
-            if flow <= self._flow_rate_pump_3_list[2]*1.1:  # Allow a small tolerance above the minimum flow
-                return 0.0
+            a, b, c = self._flow_rate_pump_3_list
         elif pump_number == 4:
-            # Use second order polynomial fit for pump 4
-            flow = self._flow_rate_pump_4_list[0]*rpm**2 + self._flow_rate_pump_4_list[1]*rpm + self._flow_rate_pump_4_list[2]
-            if flow <= self._flow_rate_pump_4_list[2]*1.1:  # Allow a small tolerance above the minimum flow
-                return 0.0
+            a, b, c = self._flow_rate_pump_4_list
         else:
             raise ValueError("Invalid pump number. Must be 1, 2, 3, or 4.")
 
-        return flow
+        rpm_magnitude = abs(rpm)
+        if rpm_magnitude == 0.0:
+            return 0.0
+
+        roots = np.roots([a, b, c - rpm_magnitude])
+        real_roots = roots[np.isreal(roots)].real
+        valid_roots = real_roots[real_roots >= 0.0]
+        if len(valid_roots) == 0:
+            raise ValueError(f"No non-negative flow solution for pump {pump_number} at {rpm} RPM.")
+
+        flow_magnitude = float(valid_roots[np.argmin(valid_roots)])
+        return flow_magnitude if rpm > 0.0 else -flow_magnitude
+
+    # Legacy calibration implementation, for coefficients fitted as Flow = f(RPM):
+    # def rpm_to_ul_per_min(self, pump_number: int, rpm: float) -> float:
+    #     """Convert RPM to uL/min using the former Flow(RPM) polynomial fit."""
+    #     if pump_number == 1:
+    #         coefficients = self._flow_rate_pump_1_list
+    #     elif pump_number == 2:
+    #         coefficients = self._flow_rate_pump_2_list
+    #     elif pump_number == 3:
+    #         coefficients = self._flow_rate_pump_3_list
+    #     elif pump_number == 4:
+    #         coefficients = self._flow_rate_pump_4_list
+    #     else:
+    #         raise ValueError("Invalid pump number. Must be 1, 2, 3, or 4.")
+    #     flow = coefficients[0] * rpm**2 + coefficients[1] * rpm + coefficients[2]
+    #     return 0.0 if flow <= coefficients[2] * 1.1 else flow
 
     def ul_per_min_to_rpm(self, pump_number: int, ul_per_min: float) -> float:
-        """Convert uL/min to RPM using polynomial fit for the specified pump"""
+        """Convert uL/min to RPM using the configured RPM(flow) polynomial fit."""
         flow_magnitude = abs(ul_per_min)
 
         if pump_number == 1:
@@ -159,30 +174,32 @@ class Utils:
         else:
             raise ValueError("Invalid pump number. Must be 1, 2, 3, or 4.")
 
-        # check for the dead band of the pump, if the flow magnitude is less than the minimum flow, return 0 RPM
-        min_flow = c  # The constant term represents the minimum flow at 0 RPM
-        if flow_magnitude <= min_flow*1.1:  # Allow a small tolerance above the minimum flow
-            return 0.0
-
-        # Use the fitted forward-direction curve to get RPM magnitude, then apply the requested flow sign.
-        coeffs = [a, b, c - flow_magnitude]
-        roots = np.roots(coeffs)
-        real_roots = roots[np.isreal(roots)].real
-
-        if len(real_roots) == 0:
-            raise ValueError("No real solution found for the given uL/min value.")
-
-        # Keep only physically valid positive RPM magnitudes; reverse direction is applied afterward.
-        rpm_abs_max = 120.0
-        valid_roots = real_roots[(real_roots >= 0.0) & (real_roots <= rpm_abs_max)]
-
-        if len(valid_roots) == 0:
-            raise ValueError(
-                f"No valid RPM magnitude solution in [0.0, {rpm_abs_max}] for pump {pump_number} and flow {ul_per_min} uL/min."
-            )
-
-        rpm_magnitude = float(valid_roots[np.argmin(np.abs(valid_roots))])
+        rpm_magnitude = max(0.0, a * flow_magnitude**2 + b * flow_magnitude + c)
         return rpm_magnitude if ul_per_min > 0 else -rpm_magnitude
+
+    # Legacy inverse implementation, for coefficients fitted as Flow = f(RPM):
+    # def ul_per_min_to_rpm(self, pump_number: int, ul_per_min: float) -> float:
+    #     """Convert uL/min to RPM by solving the former Flow(RPM) polynomial."""
+    #     flow_magnitude = abs(ul_per_min)
+    #     if pump_number == 1:
+    #         a, b, c = self._flow_rate_pump_1_list
+    #     elif pump_number == 2:
+    #         a, b, c = self._flow_rate_pump_2_list
+    #     elif pump_number == 3:
+    #         a, b, c = self._flow_rate_pump_3_list
+    #     elif pump_number == 4:
+    #         a, b, c = self._flow_rate_pump_4_list
+    #     else:
+    #         raise ValueError("Invalid pump number. Must be 1, 2, 3, or 4.")
+    #     if flow_magnitude <= c * 1.1:
+    #         return 0.0
+    #     roots = np.roots([a, b, c - flow_magnitude])
+    #     real_roots = roots[np.isreal(roots)].real
+    #     valid_roots = real_roots[(real_roots >= 0.0) & (real_roots <= 120.0)]
+    #     if len(valid_roots) == 0:
+    #         raise ValueError("No valid RPM solution for the requested flow.")
+    #     rpm_magnitude = float(valid_roots[np.argmin(np.abs(valid_roots))])
+    #     return rpm_magnitude if ul_per_min > 0 else -rpm_magnitude
 
     def rpm_to_ul_per_sec(self, pump_number: int, rpm: float) -> float:
             """Convert RPM to ul/sec using polynomial fit for the specified pump"""
