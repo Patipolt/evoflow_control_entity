@@ -36,7 +36,6 @@ class DataLoggingWorker(QObject):
     x_axis_selection_mapped = Signal(object)  # Emits the mapped x-axis value in unix timestamp milliseconds that corresponds to the user's selection on the plot
     annotation_for_selected_x_axis = Signal(str)  # Emits the existing annotation text for the currently selected x-axis point, if it has an annotation, for display in the annotation editor
     update_configuration_requested = Signal()  # Signal to trigger re-reading of configuration file and applying new settings
-    medium_consumption_updated = Signal(float)  # Signal to emit the updated medium consumption value in ml
 
     def __init__(self):
         super().__init__()
@@ -234,9 +233,6 @@ class DataLoggingWorker(QObject):
             self._log_timer.start(self._sampling_time_seconds * 1000)
             self._on_log_timer()  # Write first sample immediately if telemetry exists.
 
-            self.mudium_consumption = 0.0  # Reset medium consumption when starting logging
-            self.medium_consumption_updated.emit(self.medium_consumption)  # Emit initial medium consumption value
-
             self.logging_state_changed.emit(True)
             self.status_message.emit(f"Data logging started: {self._session_dir}")
         except Exception as exc:
@@ -384,10 +380,6 @@ class DataLoggingWorker(QObject):
         flow_rate_2 = self.utils.rpm_to_ul_per_min(2, float(evoflow_snapshot.get("pump_2_speed", 0.0)))
         flow_rate_3 = self.utils.rpm_to_ul_per_min(3, float(evoflow_snapshot.get("pump_3_speed", 0.0)))
         flow_rate_4 = self.utils.rpm_to_ul_per_min(4, float(evoflow_snapshot.get("pump_4_speed", 0.0)))
-
-        # medium consumption is just the integrated flow from pump_1
-        self.medium_consumption += (flow_rate_1) * (self._sampling_time_seconds / 60.0)  # Convert seconds to minutes for ml
-        self.medium_consumption_updated.emit(self.medium_consumption)  # Emit updated medium consumption value
 
         # Keep derived flow rates in the full telemetry snapshot for later analysis.
         evoflow_snapshot["flow_rate_pump1"] = float(flow_rate_1)

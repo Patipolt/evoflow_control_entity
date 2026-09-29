@@ -133,7 +133,6 @@ class MainUI(QMainWindow):
         self.logic.data_logging_worker.x_axis_selection_mapped.connect(self.plot_widget.handle_mapped_x_axis_selection)
         self.logic.data_logging_worker.annotation_for_selected_x_axis.connect(self.plot_widget.display_annotation_for_selected_x_axis)
         self.logic.data_logging_worker.update_configuration_requested.connect(self.plot_widget._on_update_configuration_clicked)
-        self.logic.data_logging_worker.medium_consumption_updated.connect(self.evoflow_widget.update_medium_consumption, Qt.ConnectionType.QueuedConnection,)
 
 
     def closeEvent(self, event: QCloseEvent):
