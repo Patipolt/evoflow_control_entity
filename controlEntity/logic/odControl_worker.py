@@ -144,4 +144,5 @@ class ODControlWorker(QObject):
             waste = self.utils.ml_per_sec_to_rpm(3, self.q_waste)
             self.controller_command_updated.emit(dilute, self.evoflow_telemetry.pump_2_sp, waste, self.evoflow_telemetry.pump_4_sp)
             self.medium_consumption += (self.q_in) * (self.od_control.Ts)  # Integrate q_in over time to estimate medium consumption
+            self.medium_consumption_updated.emit(self.medium_consumption)  # Emit updated medium consumption value
             # print(f"OD Control Loop: Setpoint={self.od_control.A_setpoint:.3f}, Actual OD={self.evoflow_telemetry.od_bioreactor_value:.6f}, q_in={self.q_in:.6f}, q_waste={self.q_waste:.6f}, q_lagoon={self.q_lagoon:.6f}, error={self.od_control.error:.6f}, integral={self.od_control.integral:.6f}, q_unsaturated={self.od_control.q_unsaturated:.6f}, actuator_mismatch={self.od_control.actuator_mismatch:.6f}")

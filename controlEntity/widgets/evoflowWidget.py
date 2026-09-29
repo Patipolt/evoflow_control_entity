@@ -1118,9 +1118,9 @@ class EvoFlowWidget(QWidget):
         self.led_level_sensor_lagoon.setText("🔴" if evoflow_telemetry.level_sensor_lagoon_status else "⚪")
 
     @Slot(float)
-    def update_medium_consumption(self):
+    def update_medium_consumption(self, medium_consumption: float):
         """Update medium consumption label"""
-        self.medium_consumption_label.setText(f"{self.utils.medium_consumption:.4f} ml")
+        self.medium_consumption_label.setText(f"{medium_consumption:.4f} ml")
 
     @Slot(bool)
     def update_evoflow_status(self, evoflow_status):
