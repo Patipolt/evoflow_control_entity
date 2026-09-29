@@ -736,6 +736,7 @@ class EvoFlowWidget(QWidget):
             config.get("flowRateConversionFactors", "pump_3"),
             config.get("flowRateConversionFactors", "pump_4"),
         )
+        self.q_lagoon_max_ml_per_sec = config.getfloat("ODController", "q_lagoon_max", fallback=0.00778)
         self._sampling_rate_ms = config.getint("HMI", "sampling_rate_ms", fallback=50)
         self._evoflow_comm_led_hold_ms = self._sampling_rate_ms * 0.75
         self.motor_cut_off_temp = config.getfloat("Evoflow", "motor_cut_off_temp", fallback=60.0)
@@ -788,6 +789,11 @@ class EvoFlowWidget(QWidget):
             new_sp_2 = float(self.pump_2_sp_edit.text())
             new_sp_3 = float(self.pump_3_sp_edit.text())
             new_sp_4 = float(self.pump_4_sp_edit.text())
+
+            if new_sp_2 > self.q_lagoon_max_ml_per_sec*60*1000:
+                new_sp_2 = self.q_lagoon_max_ml_per_sec*60*1000
+                self.pump_2_sp_edit.setText(str(new_sp_2))
+
             rpm_1 = self.utils.ul_per_min_to_rpm(1, new_sp_1)
             rpm_2 = self.utils.ul_per_min_to_rpm(2, new_sp_2)
             rpm_3 = self.utils.ul_per_min_to_rpm(3, new_sp_3)
