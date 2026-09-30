@@ -204,35 +204,35 @@ class EvoFlowWorker(QObject):
             if self._level_sensor_active:
                 if self.evoflow.evoflow_telemetry.ntc2_pump1_temp > self.pump_cut_off_temp:
                     self.safety_guard_requested.emit(True)
-                    self.ntfy_notification_requested.emit("Safety Guard Activated", f"Pump 1 temperature exceeded cut-off limit({self.evoflow.evoflow_telemetry.ntc2_pump1_temp}°C).", 1)
+                    self.ntfy_notification_requested.emit("Evoflow Safety Guard Activated", f"Pump 1 temperature exceeded cut-off limit({self.evoflow.evoflow_telemetry.ntc2_pump1_temp}°C).", 1)
                 elif self.evoflow.evoflow_telemetry.ntc3_pump2_temp > self.pump_cut_off_temp:
                     self.safety_guard_requested.emit(True)
-                    self.ntfy_notification_requested.emit("Safety Guard Activated", f"Pump 2 temperature exceeded cut-off limit({self.evoflow.evoflow_telemetry.ntc3_pump2_temp}°C).", 1)
+                    self.ntfy_notification_requested.emit("Evoflow Safety Guard Activated", f"Pump 2 temperature exceeded cut-off limit({self.evoflow.evoflow_telemetry.ntc3_pump2_temp}°C).", 1)
                 elif self.evoflow.evoflow_telemetry.ntc4_pump3_temp > self.pump_cut_off_temp:
                     self.safety_guard_requested.emit(True)
-                    self.ntfy_notification_requested.emit("Safety Guard Activated", f"Pump 3 temperature exceeded cut-off limit({self.evoflow.evoflow_telemetry.ntc4_pump3_temp}°C).", 1)
+                    self.ntfy_notification_requested.emit("Evoflow Safety Guard Activated", f"Pump 3 temperature exceeded cut-off limit({self.evoflow.evoflow_telemetry.ntc4_pump3_temp}°C).", 1)
                 elif self.evoflow.evoflow_telemetry.ntc5_pump4_temp > self.pump_cut_off_temp:
                     self.safety_guard_requested.emit(True)
-                    self.ntfy_notification_requested.emit("Safety Guard Activated", f"Pump 4 temperature exceeded cut-off limit({self.evoflow.evoflow_telemetry.ntc5_pump4_temp}°C).", 1)
+                    self.ntfy_notification_requested.emit("Evoflow Safety Guard Activated", f"Pump 4 temperature exceeded cut-off limit({self.evoflow.evoflow_telemetry.ntc5_pump4_temp}°C).", 1)
                 elif self.evoflow.evoflow_telemetry.level_sensor_bioreactor_status == 1:
                     self.safety_guard_requested.emit(True)
-                    self.ntfy_notification_requested.emit("Safety Guard Activated", f"Level sensor in bioreactor is active. Watch out for potential overflow!", 1)
+                    self.ntfy_notification_requested.emit("Evoflow Safety Guard Activated", f"Level sensor in bioreactor is active. Watch out for potential overflow!", 1)
                 elif self.evoflow.evoflow_telemetry.level_sensor_lagoon_status == 1:
                     self.safety_guard_requested.emit(True)
-                    self.ntfy_notification_requested.emit("Safety Guard Activated", f"Level sensor in lagoon is active. Watch out for potential overflow!", 1)
+                    self.ntfy_notification_requested.emit("Evoflow Safety Guard Activated", f"Level sensor in lagoon is active. Watch out for potential overflow!", 1)
             else:
                 if self.evoflow.evoflow_telemetry.ntc2_pump1_temp > self.pump_cut_off_temp:
                     self.safety_guard_requested.emit(True)
-                    self.ntfy_notification_requested.emit("Safety Guard Activated", f"Pump 1 temperature exceeded cut-off limit({self.evoflow.evoflow_telemetry.ntc2_pump1_temp}°C).", 1)
+                    self.ntfy_notification_requested.emit("Evoflow Safety Guard Activated", f"Pump 1 temperature exceeded cut-off limit({self.evoflow.evoflow_telemetry.ntc2_pump1_temp}°C).", 1)
                 elif self.evoflow.evoflow_telemetry.ntc3_pump2_temp > self.pump_cut_off_temp:
                     self.safety_guard_requested.emit(True)
-                    self.ntfy_notification_requested.emit("Safety Guard Activated", f"Pump 2 temperature exceeded cut-off limit({self.evoflow.evoflow_telemetry.ntc3_pump2_temp}°C).", 1)
+                    self.ntfy_notification_requested.emit("Evoflow Safety Guard Activated", f"Pump 2 temperature exceeded cut-off limit({self.evoflow.evoflow_telemetry.ntc3_pump2_temp}°C).", 1)
                 elif self.evoflow.evoflow_telemetry.ntc4_pump3_temp > self.pump_cut_off_temp:
                     self.safety_guard_requested.emit(True)
-                    self.ntfy_notification_requested.emit("Safety Guard Activated", f"Pump 3 temperature exceeded cut-off limit({self.evoflow.evoflow_telemetry.ntc4_pump3_temp}°C).", 1)
+                    self.ntfy_notification_requested.emit("Evoflow Safety Guard Activated", f"Pump 3 temperature exceeded cut-off limit({self.evoflow.evoflow_telemetry.ntc4_pump3_temp}°C).", 1)
                 elif self.evoflow.evoflow_telemetry.ntc5_pump4_temp > self.pump_cut_off_temp:
                     self.safety_guard_requested.emit(True)
-                    self.ntfy_notification_requested.emit("Safety Guard Activated", f"Pump 4 temperature exceeded cut-off limit({self.evoflow.evoflow_telemetry.ntc5_pump4_temp}°C).", 1)
+                    self.ntfy_notification_requested.emit("Evoflow Safety Guard Activated", f"Pump 4 temperature exceeded cut-off limit({self.evoflow.evoflow_telemetry.ntc5_pump4_temp}°C).", 1)
         except Exception as e:
             print(f"Failed to check safety status: {e}")
 
