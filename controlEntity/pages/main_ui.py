@@ -18,6 +18,7 @@ from PySide6.QtGui import QKeyEvent, QTextCharFormat, QStandardItemModel, QStand
 from controlEntity.widgets.evoflowWidget import EvoFlowWidget
 from controlEntity.widgets.sampleExtractionWidget import SampleExtractionWidget
 from controlEntity.widgets.PlotWidget import PlotWidget
+from controlEntity.logic.ntfy_worker import NtfyWorker
 
 from controlEntity.logic.logic import Logic
 
@@ -87,6 +88,9 @@ class MainUI(QMainWindow):
         self.logic.ODController_bioreactor_worker.controller_command_updated.connect(self.logic.evoflow_worker.handle_controller_command)
         self.logic.ODController_bioreactor_worker.od_running_updated.connect(self.evoflow_widget.handle_od_running_state_changed)
         self.logic.ODController_bioreactor_worker.medium_consumption_updated.connect(self.evoflow_widget.update_medium_consumption,Qt.ConnectionType.QueuedConnection,)
+
+        # Notifications
+        self.logic.evoflow_worker.notification_requested.connect(self.logic.ntfy_worker.send_notification)
 
         # Switches
         self.evoflow_widget.pump_on_off_requested.connect(self.logic.evoflow_worker.set_on_off_pumps)

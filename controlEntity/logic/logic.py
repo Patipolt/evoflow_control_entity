@@ -24,6 +24,7 @@ from controlEntity.logic.evoflow_worker import EvoFlowWorker, EvoFlowTelemetry
 from controlEntity.logic.sample_extraction_worker import SampleExtractionWorker, SampleExtractionTelemetry
 from controlEntity.logic.data_logging_worker import DataLoggingWorker
 from controlEntity.logic.odControl_worker import ODControlWorker
+from controlEntity.logic.ntfy_worker import NtfyWorker
 from evoflow.protocol import ProtocolPacket, Component, CMD, build_packet, cobs_decode, parse_packet
 
 
@@ -112,6 +113,15 @@ class Logic(QObject):
         self.ODController_bioreactor_worker.moveToThread(self.ODController_bioreactor_thread)
         self.ODController_bioreactor_thread.start()
 
+        # ===============================
+        # Notification Worker Setup
+        # ===============================
+        self.ntfy_worker_thread = QThread()
+        self.ntfy_worker = NtfyWorker(topic=config.get("EvoFlow", "notification_topic", fallback="evoflow_notifications"))
+        self.ntfy_worker.moveToThread(self.ntfy_worker_thread)
+        self.ntfy_worker_thread.start()
+
+
     def read_settings_file(self):
         """Load automation step defaults from config/settings.ini"""
         # config_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'config', 'settings.ini')      # for development
@@ -153,6 +163,8 @@ class Logic(QObject):
         except Exception as e:
             print(f"Failed to stop OD Control worker cleanly: {e}")
 
+        # No need to stop the NtfyWorker since it doesn't have a long-running thread or child threads.
+
         try:
             if self.evoflow_thread.isRunning():
                 self.evoflow_thread.quit()
@@ -174,5 +186,10 @@ class Logic(QObject):
                 if not self.ODController_bioreactor_thread.wait(2000):
                     self.ODController_bioreactor_thread.terminate()
                     self.ODController_bioreactor_thread.wait(1000)
+            if self.ntfy_worker_thread.isRunning():
+                self.ntfy_worker_thread.quit()
+                if not self.ntfy_worker_thread.wait(2000):
+                    self.ntfy_worker_thread.terminate()
+                    self.ntfy_worker_thread.wait(1000)
         except Exception as e:
             print(f"Failed to stop EvoFlow thread cleanly: {e}")
