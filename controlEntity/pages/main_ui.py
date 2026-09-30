@@ -90,7 +90,7 @@ class MainUI(QMainWindow):
         self.logic.ODController_bioreactor_worker.medium_consumption_updated.connect(self.evoflow_widget.update_medium_consumption,Qt.ConnectionType.QueuedConnection,)
 
         # Notifications
-        self.logic.evoflow_worker.notification_requested.connect(self.logic.ntfy_worker.send_notification)
+        self.logic.evoflow_worker.ntfy_notification_requested.connect(self.logic.ntfy_worker.send_notification)
 
         # Switches
         self.evoflow_widget.pump_on_off_requested.connect(self.logic.evoflow_worker.set_on_off_pumps)
