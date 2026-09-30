@@ -110,6 +110,7 @@ class MainUI(QMainWindow):
 
         self.evoflow_widget.reset_evoflow_requested.connect(self.logic.evoflow_worker.reset_evoflow)
         self.evoflow_widget.level_sensor_customized_btn_status_updated.connect(self.logic.evoflow_worker.update_level_sensor_status)
+        self.evoflow_widget.reset_ntfy_requested.connect(self.logic.ntfy_worker.clear_hold_status)
 
         # =====================================
         # Sample Extraction signals

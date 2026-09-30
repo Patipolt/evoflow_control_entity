@@ -7,17 +7,17 @@ Created: September 2026
 """
 
 import requests
-import json
-import logging
 
-class NtfyWorker:
+from PySide6.QtCore import QObject, QTimer, Signal, Slot
+
+class NtfyWorker(QObject):
     """Worker class for sending notifications via ntfy.sh"""
 
     def __init__(self, topic: str):
+        super().__init__()
         self.topic = topic
         self.base_url = f"https://ntfy.sh/{self.topic}"
         self.hold_status = False
-        logging.info(f"NtfyWorker initialized for topic: {self.topic}")
 
     @Slot(str, str, int)
     def send_notification(self, title: str, message: str, priority: int = 3):
@@ -32,13 +32,14 @@ class NtfyWorker:
                 response = requests.post(self.base_url, json=payload)
                 if response.status_code == 200:
                     self.hold_status = True
-                    logging.info(f"Notification sent successfully: {title} - {message}")
+                    print(f"Notification sent: {title} - {message}")
                 else:
-                    logging.error(f"Failed to send notification: {response.status_code} - {response.text}")
+                    print(f"Failed to send notification: {response.status_code} - {response.text}")
             except Exception as e:
-                logging.error(f"Exception occurred while sending notification: {e}")
+                print(f"Error sending notification: {e}")
 
+    @Slot()
     def clear_hold_status(self):
         """Clear the hold status."""
         self.hold_status = False
-        logging.info("Hold status cleared.")
+        print("Hold status cleared.")

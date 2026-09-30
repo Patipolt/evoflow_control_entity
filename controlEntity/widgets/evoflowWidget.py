@@ -47,6 +47,7 @@ class EvoFlowWidget(QWidget):
     od_control_bioreactor_setpoint_od_update_requested = Signal(float)
     reset_evoflow_requested = Signal()
     level_sensor_customized_btn_status_updated = Signal(bool)
+    reset_ntfy_requested = Signal()
 
     
     def __init__(self, width: int=1800, height: int=450):
@@ -406,9 +407,11 @@ class EvoFlowWidget(QWidget):
         lagoon_activity_control_and_level_sensor_H_layout = QHBoxLayout()
         self.lagoon_activity_control_customized_btn = CustomizedImageButton(60, 32, False, "Lagoon_off.png", "Lagoon_on.png", "Lagoon_pressed.png", evoflow_control_groupbox)
         self.level_sensor_customized_btn = CustomizedImageButton(60, 32, False, "Level_off.png", "Level_on.png", "Level_pressed.png", evoflow_control_groupbox)
+        self.reset_ntfy_btn = QPushButton("Reset Ntfy", evoflow_control_groupbox)
+        self.reset_ntfy_btn.setStyleSheet(button_style)
         lagoon_activity_control_and_level_sensor_H_layout.addWidget(self.lagoon_activity_control_customized_btn)
         lagoon_activity_control_and_level_sensor_H_layout.addWidget(self.level_sensor_customized_btn)
-        lagoon_activity_control_and_level_sensor_H_layout.addStretch()
+        lagoon_activity_control_and_level_sensor_H_layout.addWidget(self.reset_ntfy_btn)
 
 
         self.reset_all_slideswitches_btn = QPushButton("Reset All Slide Switches", evoflow_control_groupbox)
@@ -714,6 +717,7 @@ class EvoFlowWidget(QWidget):
         self.reset_all_slideswitches_btn.clicked.connect(self.handle_reset_all_slideswitches)
 
         self.level_sensor_customized_btn.clicked.connect(self.handle_level_sensor_toggle)
+        self.reset_ntfy_btn.clicked.connect(self.handle_reset_ntfy)
 
         self.reset_evoflow_btn.clicked.connect(self.reset_evoflow_requested)
 
@@ -846,6 +850,10 @@ class EvoFlowWidget(QWidget):
         """Handle level sensor toggle"""
         level_sensor_customized_btn_status = self.level_sensor_customized_btn.isChecked()
         self.level_sensor_customized_btn_status_updated.emit(level_sensor_customized_btn_status)
+
+    def handle_reset_ntfy(self):
+        """Handle reset notification button click"""
+        self.reset_ntfy_requested.emit()
 
     def handle_od_control_bioreactor_toggle_from_safety_guard(self):
             """Handle OD controller bioreactor toggle"""
