@@ -25,11 +25,7 @@ class NtfyWorker(QObject):
     def send_notification(self, title: str, message: str, priority: int = 3):
         """Send a notification with the given title and message."""
         if not self.hold_status:
-            payload = {
-                "title": title,
-                "message": message,
-                "priority": priority
-            }
+            payload = f"{title} - {message}"
             try:
                 response = requests.post(self.base_url, json=payload)
                 if response.status_code == 200:
