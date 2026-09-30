@@ -324,7 +324,7 @@ class EvoFlowWidget(QWidget):
 
 
         # Buttons
-        button_style = """QPushButton {
+        self.button_style = """QPushButton {
                             background-color: LightBlue;
                             color: black;
                             border: 1px solid #5aa9c9;
@@ -337,9 +337,23 @@ class EvoFlowWidget(QWidget):
                                 background-color: #d9d9d9;
                                 color: #888888; }
                             """
+        self.button_style_2 = """QPushButton {
+                            background-color: #ffb765;
+                            color: black;
+                            border: 1px solid #ff8800;
+                            border-radius: 4px; }
+                            QPushButton:hover {
+                                background-color: #fd9621; }
+                            QPushButton:pressed {
+                                background-color: #ce6e00; }
+                            QPushButton:disabled {
+                                background-color: #d9d9d9;
+                                color: #888888; 
+                                border: 1px solid #cccccc;} 
+                            """
 
         # Combined button design
-        groupbox_style = """
+        self.groupbox_style = """
             QGroupBox {
                 font-weight: bold;
                 font-size: 14px;
@@ -356,7 +370,7 @@ class EvoFlowWidget(QWidget):
         """
 
         # Component signals (dynamic values that can change during runtime)
-        edit_style = """QLineEdit {
+        self.edit_style = """QLineEdit {
                         background-color: #5c5c5c;
                         color: White;
                         border-radius: 4px; }
@@ -372,7 +386,7 @@ class EvoFlowWidget(QWidget):
                         """
 
         evoflow_control_groupbox = QGroupBox("EvoFlow Control", self)
-        evoflow_control_groupbox.setStyleSheet(groupbox_style)
+        evoflow_control_groupbox.setStyleSheet(self.groupbox_style)
         evoflow_control_groupbox.setGeometry(1245, 290, 250, 150)
         evoflow_control_V_layout = QVBoxLayout(evoflow_control_groupbox)
 
@@ -385,7 +399,7 @@ class EvoFlowWidget(QWidget):
         od_control_bioreactor_setpoint_od_label = QLabel("SetPoint", evoflow_control_groupbox)
         od_control_bioreactor_setpoint_od_label.setStyleSheet(font_component)
         self.od_control_bioreactor_setpoint_od_edit = QLineEdit(evoflow_control_groupbox)
-        self.od_control_bioreactor_setpoint_od_edit.setStyleSheet(edit_style)
+        self.od_control_bioreactor_setpoint_od_edit.setStyleSheet(self.edit_style)
 
         od_control_bioreactor_H_layout.addWidget(self.od_control_bioreactor_customized_btn)
         # od_control_bioreactor_H_layout.addWidget(od_control_bioreactor_initial_od_label)
@@ -408,14 +422,15 @@ class EvoFlowWidget(QWidget):
         self.lagoon_activity_control_customized_btn = CustomizedImageButton(60, 32, False, "Lagoon_off.png", "Lagoon_on.png", "Lagoon_pressed.png", evoflow_control_groupbox)
         self.level_sensor_customized_btn = CustomizedImageButton(60, 32, False, "Level_off.png", "Level_on.png", "Level_pressed.png", evoflow_control_groupbox)
         self.reset_ntfy_btn = QPushButton("Reset Ntfy", evoflow_control_groupbox)
-        self.reset_ntfy_btn.setStyleSheet(button_style)
+        self.reset_ntfy_btn.setStyleSheet(self.button_style)
+        self.reset_ntfy_btn.setMinimumHeight(30)
         lagoon_activity_control_and_level_sensor_H_layout.addWidget(self.lagoon_activity_control_customized_btn)
         lagoon_activity_control_and_level_sensor_H_layout.addWidget(self.level_sensor_customized_btn)
         lagoon_activity_control_and_level_sensor_H_layout.addWidget(self.reset_ntfy_btn)
 
 
         self.reset_all_slideswitches_btn = QPushButton("Reset All Slide Switches", evoflow_control_groupbox)
-        self.reset_all_slideswitches_btn.setStyleSheet(button_style)
+        self.reset_all_slideswitches_btn.setStyleSheet(self.button_style)
         self.reset_all_slideswitches_btn.setMinimumHeight(24)
 
         # evoflow_control_V_layout.addWidget(self.pumps_sp_update_btn)
@@ -427,7 +442,7 @@ class EvoFlowWidget(QWidget):
 
 
         controller_status_groupbox = QGroupBox("Controllers Status", self)
-        controller_status_groupbox.setStyleSheet(groupbox_style)
+        controller_status_groupbox.setStyleSheet(self.groupbox_style)
         controller_status_groupbox.setGeometry(1505, 290, 250, 150)
         controller_status_V_layout = QVBoxLayout(controller_status_groupbox)
 
@@ -447,9 +462,9 @@ class EvoFlowWidget(QWidget):
         evoflow_comm_label.setStyleSheet(font_small_value)
         self.led_evoflow_comm = QLabel("⚪", controller_status_groupbox)  #🔴🟢
         self.reset_evoflow_btn = QPushButton("Reset Evoflow", controller_status_groupbox)
-        self.reset_evoflow_btn.setStyleSheet(button_style)
+        self.reset_evoflow_btn.setStyleSheet(self.button_style)
         self.reset_se_btn = QPushButton("Reset SE", controller_status_groupbox)
-        self.reset_se_btn.setStyleSheet(button_style)
+        self.reset_se_btn.setStyleSheet(self.button_style)
         rpi_temp_label = QLabel("RPI Temp: ", controller_status_groupbox)
         rpi_temp_label.setStyleSheet(font_small_value)
         self.rpi_temp_label = QLabel("0 °C", controller_status_groupbox)
@@ -536,7 +551,7 @@ class EvoFlowWidget(QWidget):
         self.pump_1_sp_edit = QLineEdit(self)
         self.pump_1_sp_edit.setText(str(self.default_pump_1))
         self.pump_1_sp_edit.setGeometry(116, 302, 45, 20)
-        self.pump_1_sp_edit.setStyleSheet(edit_style)
+        self.pump_1_sp_edit.setStyleSheet(self.edit_style)
         self.pump_1_feedback = QLabel("0.0 \u2103, FB: 0 rpm\n0 rpm, 0 ul/min", self)
         self.pump_1_feedback.setGeometry(29, 322, 170, 30)
         self.pump_1_feedback.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
@@ -545,7 +560,7 @@ class EvoFlowWidget(QWidget):
         self.pump_2_sp_edit = QLineEdit(self)
         self.pump_2_sp_edit.setText(str(self.default_pump_2))
         self.pump_2_sp_edit.setGeometry(676, 302, 45, 20)
-        self.pump_2_sp_edit.setStyleSheet(edit_style)
+        self.pump_2_sp_edit.setStyleSheet(self.edit_style)
         self.pump_2_feedback = QLabel("0.0 \u2103, FB: 0 rpm\n0 rpm, 0 ul/min", self)
         self.pump_2_feedback.setGeometry(592, 322, 170, 30)
         self.pump_2_feedback.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
@@ -554,7 +569,7 @@ class EvoFlowWidget(QWidget):
         self.pump_3_sp_edit = QLineEdit(self)
         self.pump_3_sp_edit.setText(str(self.default_pump_3))
         self.pump_3_sp_edit.setGeometry(1149, 323, 45, 20)
-        self.pump_3_sp_edit.setStyleSheet(edit_style)
+        self.pump_3_sp_edit.setStyleSheet(self.edit_style)
         self.pump_3_feedback = QLabel("FB: 0 rpm\n0 rpm, 0 ul/min", self)
         self.pump_3_feedback.setGeometry(1062, 343, 170, 30)
         self.pump_3_feedback.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
@@ -563,7 +578,7 @@ class EvoFlowWidget(QWidget):
         self.pump_4_sp_edit = QLineEdit(self)
         self.pump_4_sp_edit.setText(str(self.default_pump_4))
         self.pump_4_sp_edit.setGeometry(1149, 157, 45, 20)
-        self.pump_4_sp_edit.setStyleSheet(edit_style)
+        self.pump_4_sp_edit.setStyleSheet(self.edit_style)
         self.pump_4_feedback = QLabel("0.0 \u2103, FB: 0 rpm\n0 rpm, 0 ul/min", self)
         self.pump_4_feedback.setGeometry(1062, 177, 170, 30)
         self.pump_4_feedback.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
@@ -572,7 +587,7 @@ class EvoFlowWidget(QWidget):
         self.magneticStirrer_bioreactor_sp_edit = QLineEdit(self)
         self.magneticStirrer_bioreactor_sp_edit.setText(str(self.default_magneticStirrer_bioreactor))
         self.magneticStirrer_bioreactor_sp_edit.setGeometry(290, 326, 50, 20)
-        self.magneticStirrer_bioreactor_sp_edit.setStyleSheet(edit_style)
+        self.magneticStirrer_bioreactor_sp_edit.setStyleSheet(self.edit_style)
         self.magneticStirrer_bioreactor_feedback = QLabel("FB: 0 rpm\n0 rpm, 0.0 %", self)
         self.magneticStirrer_bioreactor_feedback.setGeometry(203, 347, 170, 30)
         self.magneticStirrer_bioreactor_feedback.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
@@ -581,7 +596,7 @@ class EvoFlowWidget(QWidget):
         self.magneticStirrer_lagoon_sp_edit = QLineEdit(self)
         self.magneticStirrer_lagoon_sp_edit.setText(str(self.default_magneticStirrer_lagoon))
         self.magneticStirrer_lagoon_sp_edit.setGeometry(817, 326, 50, 20)
-        self.magneticStirrer_lagoon_sp_edit.setStyleSheet(edit_style)
+        self.magneticStirrer_lagoon_sp_edit.setStyleSheet(self.edit_style)
         self.magneticStirrer_lagoon_feedback = QLabel("FB: 0 rpm\n0 rpm, 0.0 %", self)
         self.magneticStirrer_lagoon_feedback.setGeometry(730, 347, 170, 30)
         self.magneticStirrer_lagoon_feedback.setAlignment(Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter)
@@ -594,7 +609,7 @@ class EvoFlowWidget(QWidget):
         self.tempCtrl_bioreactor_sp_edit = QLineEdit(self)
         self.tempCtrl_bioreactor_sp_edit.setText(str(self.default_temp_ctrl_bioreactor))
         self.tempCtrl_bioreactor_sp_edit.setGeometry(401, 196, 50, 20)
-        self.tempCtrl_bioreactor_sp_edit.setStyleSheet(edit_style)
+        self.tempCtrl_bioreactor_sp_edit.setStyleSheet(self.edit_style)
         self.tempCtrl_bioreactor_feedback_sp_htr = QLabel("FB: 0.0 °C, Duty: 0.0 %", self)
         self.tempCtrl_bioreactor_feedback_sp_htr.setGeometry(354, 215, 170, 20)
         self.tempCtrl_bioreactor_feedback_sp_htr.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
@@ -607,7 +622,7 @@ class EvoFlowWidget(QWidget):
         self.tempCtrl_lagoon_sp_edit = QLineEdit(self)
         self.tempCtrl_lagoon_sp_edit.setText(str(self.default_temp_ctrl_lagoon))
         self.tempCtrl_lagoon_sp_edit.setGeometry(928, 196, 50, 20)
-        self.tempCtrl_lagoon_sp_edit.setStyleSheet(edit_style)
+        self.tempCtrl_lagoon_sp_edit.setStyleSheet(self.edit_style)
         self.tempCtrl_lagoon_feedback_sp_htr = QLabel("FB: 0.0 °C, Duty: 0.0 %", self)
         self.tempCtrl_lagoon_feedback_sp_htr.setGeometry(881, 215, 170, 20)
         self.tempCtrl_lagoon_feedback_sp_htr.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
@@ -653,14 +668,14 @@ class EvoFlowWidget(QWidget):
             self.magneticStirrer_bioreactor_on_edit = QLineEdit(self)
             self.magneticStirrer_bioreactor_on_edit.setText("3600")
             self.magneticStirrer_bioreactor_on_edit.setGeometry(415, 325, 50, 20)
-            self.magneticStirrer_bioreactor_on_edit.setStyleSheet(edit_style)
+            self.magneticStirrer_bioreactor_on_edit.setStyleSheet(self.edit_style)
             magneticStirrer_lagoon_on_label = QLabel("On(s):", self)
             magneticStirrer_lagoon_on_label.setGeometry(902, 325, 100, 20)
             magneticStirrer_lagoon_on_label.setStyleSheet(font_small_value)
             self.magneticStirrer_lagoon_on_edit = QLineEdit(self)
             self.magneticStirrer_lagoon_on_edit.setText("3600")
             self.magneticStirrer_lagoon_on_edit.setGeometry(942, 325, 50, 20)
-            self.magneticStirrer_lagoon_on_edit.setStyleSheet(edit_style)
+            self.magneticStirrer_lagoon_on_edit.setStyleSheet(self.edit_style)
 
             magneticStirrer_bioreactor_off_label = QLabel("Off(s):", self)
             magneticStirrer_bioreactor_off_label.setGeometry(375, 350, 100, 20)
@@ -668,14 +683,14 @@ class EvoFlowWidget(QWidget):
             self.magneticStirrer_bioreactor_off_edit = QLineEdit(self)
             self.magneticStirrer_bioreactor_off_edit.setText("3600")
             self.magneticStirrer_bioreactor_off_edit.setGeometry(415, 350, 50, 20)
-            self.magneticStirrer_bioreactor_off_edit.setStyleSheet(edit_style)
+            self.magneticStirrer_bioreactor_off_edit.setStyleSheet(self.edit_style)
             magneticStirrer_lagoon_off_label = QLabel("Off(s):", self)
             magneticStirrer_lagoon_off_label.setGeometry(902, 350, 100, 20)
             magneticStirrer_lagoon_off_label.setStyleSheet(font_small_value)
             self.magneticStirrer_lagoon_off_edit = QLineEdit(self)
             self.magneticStirrer_lagoon_off_edit.setText("3600")
             self.magneticStirrer_lagoon_off_edit.setGeometry(942, 350, 50, 20)
-            self.magneticStirrer_lagoon_off_edit.setStyleSheet(edit_style)
+            self.magneticStirrer_lagoon_off_edit.setStyleSheet(self.edit_style)
 
             self.magneticStirrer_bioreactor_duration_on = 0
             self.magneticStirrer_lagoon_duration_on = 0
@@ -1171,6 +1186,14 @@ class EvoFlowWidget(QWidget):
     def update_no_of_evoflow_reset(self, no_of_evoflow_reset):
         """Update the number of Evoflow resets label"""
         self.no_of_evoflow_reset_label.setText(f"{no_of_evoflow_reset}")
+
+    @Slot(bool)
+    def handle_reset_ntfy_btn_state(self, state):
+        if state:
+            self.reset_ntfy_btn.setStyleSheet(self.button_style_2)
+        else:
+            self.reset_ntfy_btn.setStyleSheet(self.button_style)
+
 
     def extract_flow_conversion_factors(self, pump1_str_list: str, pump2_str_list: str, pump3_str_list: str, pump4_str_list: str) -> tuple[list[float], list[float], list[float], list[float]]:
         """Extract flow conversion factors from string lists and store them as floats"""

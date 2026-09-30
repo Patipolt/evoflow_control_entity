@@ -13,6 +13,8 @@ from PySide6.QtCore import QObject, QTimer, Signal, Slot
 class NtfyWorker(QObject):
     """Worker class for sending notifications via ntfy.sh"""
 
+    ntfy_hold_status_updated = Signal(bool)
+
     def __init__(self, topic: str):
         super().__init__()
         self.topic = topic
@@ -32,6 +34,7 @@ class NtfyWorker(QObject):
                 response = requests.post(self.base_url, json=payload)
                 if response.status_code == 200:
                     self.hold_status = True
+                    self.ntfy_hold_status_updated.emit(self.hold_status)
                     print(f"Notification sent: {title} - {message}")
                 else:
                     print(f"Failed to send notification: {response.status_code} - {response.text}")
@@ -42,4 +45,4 @@ class NtfyWorker(QObject):
     def clear_hold_status(self):
         """Clear the hold status."""
         self.hold_status = False
-        print("Hold status cleared.")
+        self.ntfy_hold_status_updated.emit(self.hold_status)

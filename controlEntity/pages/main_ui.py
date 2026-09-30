@@ -91,6 +91,7 @@ class MainUI(QMainWindow):
 
         # Notifications
         self.logic.evoflow_worker.ntfy_notification_requested.connect(self.logic.ntfy_worker.send_notification)
+        self.logic.ntfy_worker.ntfy_hold_status_updated.connect(self.evoflow_widget.handle_reset_ntfy_btn_state,Qt.ConnectionType.QueuedConnection,)
 
         # Switches
         self.evoflow_widget.pump_on_off_requested.connect(self.logic.evoflow_worker.set_on_off_pumps)
