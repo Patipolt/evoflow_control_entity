@@ -791,6 +791,10 @@ class EvoFlowWidget(QWidget):
         """Handle all OD toggles"""
         od_bioreactor_status = self.slide_switch_od_bioreactor.isChecked()
         od_lagoon_status = self.slide_switch_od_lagoon.isChecked()
+        # turn off the photon counter when the od measurement for lagoon is on, to avoid interference
+        if od_lagoon_status:
+            self.slide_switch_phtCount_Lagoon.setChecked(False)
+            self.handle_phtCount_toggle(False)
         self.od_on_off_requested.emit(od_bioreactor_status, od_lagoon_status)
 
     def handle_tempCtrl_toggle(self, checked):
@@ -812,6 +816,10 @@ class EvoFlowWidget(QWidget):
     def handle_phtCount_toggle(self, checked):
         """Handle photon counter toggle"""
         phtCount_lagoon_status = self.slide_switch_phtCount_Lagoon.isChecked()
+        # turn off the od measurement for lagoon when the photon counter is on, to avoid interference
+        if phtCount_lagoon_status:
+            self.slide_switch_od_lagoon.setChecked(False)
+            self.handle_od_toggle(False)
         self.phtCount_on_off_requested.emit(phtCount_lagoon_status)
 
     def handle_pump_sp_update(self):
