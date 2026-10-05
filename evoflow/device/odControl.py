@@ -137,9 +137,9 @@ class ODControl:
         # ensure that the waste always pumps out more than the inlet as it is set by the height of the needle in the bioreactor.
         # Overpumping to the waste will not affect the OD control as the inlet flow is the only control variable for the OD.
         # This is not the actualy flow to the waste, but it is a safety measure to ensure that the waste is always pumped out more than the inlet.
-        q_waste = q_in - q_lagoon
-        q_waste = 1.1 * q_waste  # Overpump to waste by 10%
-        
+        # Floor at q_lagoon so pump 3 keeps running when q_in == q_lagoon; total outlet is always >= 1.2 * q_in.
+        q_waste = max(1.2 * q_in - q_lagoon, q_lagoon)
+
         return q_in, q_waste
 
     def estimate_growth_rate(self, current_od: float) -> float:
