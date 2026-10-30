@@ -47,6 +47,7 @@ class DataLoggingWorker(QObject):
 
         self._latest_evoflow: dict[str, Any] = {}
         self._latest_sample_extraction: dict[str, Any] = {}
+        self._latest_internal_variables: dict[str, Any] = {}
 
         self._is_logging = False
         self._sampling_time_seconds = 0
@@ -77,14 +78,95 @@ class DataLoggingWorker(QObject):
 
         self._x_axis_mapped_selection: int | None = None  # Store the already mapped x-axis selection
 
-        # For testing without actual telemetry from sample extraction device, initialize with dummy data.
-        self._latest_sample_extraction = {
-            "sample_row": int(0),
-            "sample_col": int(0),
-            "sample_done_flag": 1,
+        self.medium_consumption = 0.0  # Initialize medium consumption variable
+        self.sample_extraction_event_to_be_logged = False  # Flag to indicate if a sample extraction event needs to be logged
+        self.sample_extraction_event_list: list[tuple[int, int, str]] = []  # List to store sample extraction events (row, col) for logging
+
+        # for testing if the the GUI is not connected to evoflow or sample extraction,
+        # we need to give the data logging worker some dummy data to log, otherwise it will not log anything and the plot will be empty.
+        self._latest_evoflow = {
+            "pump_1_status": 0,
+            "pump_1_sp": 0.0,
+            "pump_1_speed": 0.0,
+            "pump_2_status": 0,
+            "pump_2_sp": 0.0,
+            "pump_2_speed": 0.0,
+            "pump_3_status": 0,
+            "pump_3_sp": 0.0,
+            "pump_3_speed": 0.0,
+            "pump_4_status": 0,
+            "pump_4_sp": 0.0,
+            "pump_4_speed": 0.0,
+            "magneticStirrer_bioreactor_status": 0,
+            "magneticStirrer_bioreactor_sp": 0.0,
+            "magneticStirrer_bioreactor_speed": 0.0,
+            "magneticStirrer_bioreactor_fan_duty_cycle": 0.0,
+            "magneticStirrer_lagoon_status": 0,
+            "magneticStirrer_lagoon_sp": 0.0,
+            "magneticStirrer_lagoon_speed": 0.0,
+            "magneticStirrer_lagoon_fan_duty_cycle": 0.0,
+            "valve_bio2lag_status": 0,
+            "valve_sug2lag_status": 0,
+            "od_bioreactor_status": 0,
+            "od_bioreactor_value": 0.0,
+            "od_lagoon_status": 0,
+            "od_lagoon_value": 0.0,
+            "tempCtrl_bioreactor_status": 0,
+            "tempCtrl_bioreactor_sp":   0.0,
+            "tempCtrl_bioreactor_value": 0.0,
+            "tempCtrl_bioreactor_heater_duty_cycle": 0.0,
+            "tempCtrl_lagoon_status": 0,
+            "tempCtrl_lagoon_sp": 0.0,
+            "tempCtrl_lagoon_value": 0.0,
+            "tempCtrl_lagoon_heater_duty_cycle": 0.0,
+            "phtCount_lagoon_status": 0,
+            "phtCount_lagoon_value": 0.0,
+            "phtCount_lagoon_overlight": 0,
+            "nucleo_temperature": 0.0,
+            "ntc1_ambient_temp": 0.0,
+            "ntc2_pump1_temp": 0.0,
+            "ntc3_pump2_temp": 0.0,
+            "ntc4_pump3_temp": 0.0,
+            "ntc5_pump4_temp": 0.0,
+            "level_sensor_bioreactor_status": 0,
+            "level_sensor_lagoon_status": 0,
         }
 
-        self.medium_consumption = 0.0  # Initialize medium consumption variable
+        self._latest_sample_extraction = {
+            "sample_row": 0,
+            "sample_col": 0,
+            "sample_done_flag": 0,
+            "nucleo_temp": 0.0,
+            "x_axis_motor_temp": 0.0,
+            "y_axis_motor_temp": 0.0,
+            "z_axis_motor_temp": 0.0,
+            "ambient_temp": 0.0,
+            "fan1_status": 0,
+            "fan1_sp": 0.0,
+            "fan1_speed": 0.0,
+            "fan1_speed_duty_cycle": 0.0,
+            "fan2_status": 0,
+            "fan2_sp": 0.0,
+            "fan2_speed": 0.0,
+            "fan2_speed_duty_cycle": 0.0,
+            "fan3_status": 0,
+            "fan3_sp": 0.0,
+            "fan3_speed": 0.0,
+            "fan3_speed_duty_cycle": 0.0,
+            "fan4_status": 0,
+            "fan4_sp": 0.0,
+            "fan4_speed": 0.0,
+            "fan4_speed_duty_cycle": 0.0,
+        }
+
+        self._latest_internal_variables = {
+            "odCtrl_bioreactor_status": 0,
+            "odCtrl_bioreactor_sp": 0.0,
+            "medium_consumption": 0.0,
+            "evoflow_status": 0,
+            "number_of_evoflow_resets": 0,
+            "raspberry_pi_temperature": 0.0,
+        }
 
     @Slot(EvoFlowTelemetry)
     def update_evoflow_telemetry(self, telemetry: EvoFlowTelemetry):
@@ -197,13 +279,78 @@ class DataLoggingWorker(QObject):
     def update_sample_extraction_telemetry(self, telemetry: SampleExtractionTelemetry):
         """Cache the latest sample extraction telemetry snapshot for periodic logging."""
         # This is SampleExtractionTelemetry
-        # self.position = [0, 0]  # Row, Col
-        # self.done_flag = False
+        # self.position               : list = [0, 0]  # Row, Col
+        # self.start_flag             : bool = False
+        # self.done_flag              : bool = False
+        # self.nucleo_temp            : float = 0.0
+        # self.x_axis_motor_temp      : float = 0.0
+        # self.y_axis_motor_temp      : float = 0.0
+        # self.z_axis_motor_temp      : float = 0.0
+        # self.ambient_temp           : float = 0.0
+        # self.fan1_status            : bool = False
+        # self.fan1_sp                : float = 0.0
+        # self.fan1_speed             : float = 0.0
+        # self.fan1_speed_duty_cycle  : float = 0.0
+        # self.fan2_status            : bool = False
+        # self.fan2_sp                : float = 0.0
+        # self.fan2_speed             : float = 0.0
+        # self.fan2_speed_duty_cycle  : float = 0.0
+        # self.fan3_status            : bool = False
+        # self.fan3_sp                : float = 0.0
+        # self.fan3_speed             : float = 0.0
+        # self.fan3_speed_duty_cycle  : float = 0.0
+        # self.fan4_status            : bool = False
+        # self.fan4_sp                : float = 0.0
+        # self.fan4_speed             : float = 0.0
+        # self.fan4_speed_duty_cycle  : float = 0.0
         self._latest_sample_extraction = {
             "sample_row": int(getattr(telemetry, "position", [252, 252])[0]),
             "sample_col": int(getattr(telemetry, "position", [252, 252])[1]),
             "sample_done_flag": 1 if bool(getattr(telemetry, "done_flag", False)) else 0,
+            "nucleo_temp": float(getattr(telemetry, "nucleo_temp", 0.0)),
+            "x_axis_motor_temp": float(getattr(telemetry, "x_axis_motor_temp", 0.0)),
+            "y_axis_motor_temp": float(getattr(telemetry, "y_axis_motor_temp", 0.0)),
+            "z_axis_motor_temp": float(getattr(telemetry, "z_axis_motor_temp", 0.0)),
+            "ambient_temp": float(getattr(telemetry, "ambient_temp", 0.0)),
+            "fan1_status": 1 if bool(getattr(telemetry, "fan1_status", False)) else 0,
+            "fan1_sp": float(getattr(telemetry, "fan1_sp", 0.0)),
+            "fan1_speed": float(getattr(telemetry, "fan1_speed", 0.0)),
+            "fan1_speed_duty_cycle": float(getattr(telemetry, "fan1_speed_duty_cycle", 0.0)),
+            "fan2_status": 1 if bool(getattr(telemetry, "fan2_status", False)) else 0,
+            "fan2_sp": float(getattr(telemetry, "fan2_sp", 0.0)),
+            "fan2_speed": float(getattr(telemetry, "fan2_speed", 0.0)),
+            "fan2_speed_duty_cycle": float(getattr(telemetry, "fan2_speed_duty_cycle", 0.0)),
+            "fan3_status": 1 if bool(getattr(telemetry, "fan3_status", False)) else 0,
+            "fan3_sp": float(getattr(telemetry, "fan3_sp", 0.0)),
+            "fan3_speed": float(getattr(telemetry, "fan3_speed", 0.0)),
+            "fan3_speed_duty_cycle": float(getattr(telemetry, "fan3_speed_duty_cycle", 0.0)),
+            "fan4_status": 1 if bool(getattr(telemetry, "fan4_status", False)) else 0,
+            "fan4_sp": float(getattr(telemetry, "fan4_sp", 0.0)),
+            "fan4_speed": float(getattr(telemetry, "fan4_speed", 0.0)),
+            "fan4_speed_duty_cycle": float(getattr(telemetry, "fan4_speed_duty_cycle", 0.0)),
         }
+
+    @Slot(object)
+    def update_internal_variables(self, internal_vars: object):
+        """Cache the latest internal variables snapshot for periodic logging."""
+
+        # "odCtrl_bioreactor_status": 0,  # int
+        # "odCtrl_bioreactor_sp": 0.0,    # float
+        # "medium_consumption": 0.0,      # float
+        # "evoflow_status": 0,            # int
+        # "number_of_evoflow_resets": 0,  # int
+        # "raspberry_pi_temperature": 0.0,# float
+
+        # use .get because this is a dict object, not a class, and we want to avoid KeyError if the key is missing
+        self._latest_internal_variables = {
+            "odCtrl_bioreactor_status": 1 if bool(internal_vars.get("odCtrl_bioreactor_status", False)) else 0,
+            "odCtrl_bioreactor_sp": float(internal_vars.get("odCtrl_bioreactor_sp", 0.0)),
+            "medium_consumption": float(internal_vars.get("medium_consumption", 0.0)),
+            "evoflow_status": 1 if bool(internal_vars.get("evoflow_status", False)) else 0,
+            "number_of_evoflow_resets": int(internal_vars.get("number_of_evoflow_resets", 0)),
+            "raspberry_pi_temperature": float(internal_vars.get("raspberry_pi_temperature", 0.0)),
+        }
+
 
     @Slot(str, str, int)
     def start_logging(self, log_name: str, log_directory: str, sampling_time_seconds: int):
@@ -375,6 +522,7 @@ class DataLoggingWorker(QObject):
 
         evoflow_snapshot = copy.deepcopy(self._latest_evoflow)
         sample_snapshot = copy.deepcopy(self._latest_sample_extraction)
+        internal_vars_snapshot = copy.deepcopy(self._latest_internal_variables)
 
         flow_rate_1 = self.utils.rpm_to_ul_per_min(1, float(evoflow_snapshot.get("pump_1_speed", 0.0)))
         flow_rate_2 = self.utils.rpm_to_ul_per_min(2, float(evoflow_snapshot.get("pump_2_speed", 0.0)))
@@ -405,11 +553,11 @@ class DataLoggingWorker(QObject):
             int(evoflow_snapshot.get("magneticStirrer_bioreactor_status", 0)),
             format(float(evoflow_snapshot.get("magneticStirrer_bioreactor_sp", 0.0)), ".2f"),
             format(float(evoflow_snapshot.get("magneticStirrer_bioreactor_speed", 0.0)), ".2f"),
-            format(float(evoflow_snapshot.get("magneticStirrer_bioreactor_fan_duty_cycle", 0.0)), ".2f"),
+            format(float(evoflow_snapshot.get("magneticStirrer_bioreactor_fan_duty_cycle", 0.0)) * 100.0, ".2f"),
             int(evoflow_snapshot.get("magneticStirrer_lagoon_status", 0)),
             format(float(evoflow_snapshot.get("magneticStirrer_lagoon_sp", 0.0)), ".2f"),
             format(float(evoflow_snapshot.get("magneticStirrer_lagoon_speed", 0.0)), ".2f"),
-            format(float(evoflow_snapshot.get("magneticStirrer_lagoon_fan_duty_cycle", 0.0)), ".2f"),
+            format(float(evoflow_snapshot.get("magneticStirrer_lagoon_fan_duty_cycle", 0.0)) * 100.0, ".2f"),
             int(evoflow_snapshot.get("valve_bio2lag_status", 0)),
             int(evoflow_snapshot.get("valve_sug2lag_status", 0)),
             int(evoflow_snapshot.get("od_bioreactor_status", 0)),
@@ -419,11 +567,11 @@ class DataLoggingWorker(QObject):
             int(evoflow_snapshot.get("tempCtrl_bioreactor_status", 0)),
             format(float(evoflow_snapshot.get("tempCtrl_bioreactor_sp", 0.0)), ".2f"),
             format(float(evoflow_snapshot.get("tempCtrl_bioreactor_value", 0.0)), ".2f"),
-            format(float(evoflow_snapshot.get("tempCtrl_bioreactor_heater_duty_cycle", 0.0)), ".2f"),
+            format(float(evoflow_snapshot.get("tempCtrl_bioreactor_heater_duty_cycle", 0.0)) * 100.0, ".2f"),
             int(evoflow_snapshot.get("tempCtrl_lagoon_status", 0)),
             format(float(evoflow_snapshot.get("tempCtrl_lagoon_sp", 0.0)), ".2f"),
             format(float(evoflow_snapshot.get("tempCtrl_lagoon_value", 0.0)), ".2f"),
-            format(float(evoflow_snapshot.get("tempCtrl_lagoon_heater_duty_cycle", 0.0)), ".2f"),
+            format(float(evoflow_snapshot.get("tempCtrl_lagoon_heater_duty_cycle", 0.0)) * 100.0, ".2f"),
             int(evoflow_snapshot.get("phtCount_lagoon_status", 0)),
             format(float(evoflow_snapshot.get("phtCount_lagoon_value", 0.0)), ".4f"),
             int(evoflow_snapshot.get("phtCount_lagoon_overlight", 0)),
@@ -442,6 +590,34 @@ class DataLoggingWorker(QObject):
             int(sample_snapshot.get("sample_row", 0)),
             int(sample_snapshot.get("sample_col", 0)),
             int(sample_snapshot.get("sample_done_flag", 0)),
+            format(float(sample_snapshot.get("nucleo_temp", 0.0)), ".2f"),
+            format(float(sample_snapshot.get("x_axis_motor_temp", 0.0)), ".2f"),
+            format(float(sample_snapshot.get("y_axis_motor_temp", 0.0)), ".2f"),
+            format(float(sample_snapshot.get("z_axis_motor_temp", 0.0)), ".2f"),
+            format(float(sample_snapshot.get("ambient_temp", 0.0)), ".2f"),
+            int(sample_snapshot.get("fan1_status", 0)),
+            format(float(sample_snapshot.get("fan1_sp", 0.0)), ".2f"),
+            format(float(sample_snapshot.get("fan1_speed", 0.0)), ".2f"),
+            format(float(sample_snapshot.get("fan1_speed_duty_cycle", 0.0)), ".2f"),
+            int(sample_snapshot.get("fan2_status", 0)),
+            format(float(sample_snapshot.get("fan2_sp", 0.0)), ".2f"),
+            format(float(sample_snapshot.get("fan2_speed", 0.0)), ".2f"),
+            format(float(sample_snapshot.get("fan2_speed_duty_cycle", 0.0)), ".2f"),
+            int(sample_snapshot.get("fan3_status", 0)),
+            format(float(sample_snapshot.get("fan3_sp", 0.0)), ".2f"),
+            format(float(sample_snapshot.get("fan3_speed", 0.0)), ".2f"),
+            format(float(sample_snapshot.get("fan3_speed_duty_cycle", 0.0)), ".2f"),
+            int(sample_snapshot.get("fan4_status", 0)),
+            format(float(sample_snapshot.get("fan4_sp", 0.0)), ".2f"),
+            format(float(sample_snapshot.get("fan4_speed", 0.0)), ".2f"),
+            format(float(sample_snapshot.get("fan4_speed_duty_cycle", 0.0)), ".2f"),
+            int(self.sample_extraction_event_to_be_logged),
+            int(self._latest_internal_variables.get("odCtrl_bioreactor_status", 0)),
+            float(self._latest_internal_variables.get("odCtrl_bioreactor_sp", 0.0)),
+            float(self._latest_internal_variables.get("medium_consumption", 0.0)),
+            int(self._latest_internal_variables.get("evoflow_status", 0)),
+            int(self._latest_internal_variables.get("number_of_evoflow_resets", 0)),
+            float(self._latest_internal_variables.get("raspberry_pi_temperature", 0.0)),
         )
 
         if not self._cursor or not self._conn:
@@ -489,7 +665,7 @@ class DataLoggingWorker(QObject):
                 phtCount_lagoon_status,
                 phtCount_lagoon_value,
                 phtCount_lagoon_overlight,
-                nucleo_temperature,
+                nucleo_temperature_evoflow,
                 ntc1_ambient_temp,
                 ntc2_pump1_temp,
                 ntc3_pump2_temp,
@@ -504,14 +680,46 @@ class DataLoggingWorker(QObject):
                 sample_row,
                 sample_col,
                 sample_done_flag,
+                nucleo_temperature_sample_extraction,
+                x_axis_motor_temp,
+                y_axis_motor_temp,
+                z_axis_motor_temp,
+                ambient_temp,
+                fan1_status,
+                fan1_sp,
+                fan1_speed,
+                fan1_speed_duty_cycle,
+                fan2_status,
+                fan2_sp,
+                fan2_speed,
+                fan2_speed_duty_cycle,
+                fan3_status,
+                fan3_sp,
+                fan3_speed,
+                fan3_speed_duty_cycle,
+                fan4_status,
+                fan4_sp,
+                fan4_speed,
+                fan4_speed_duty_cycle,
+                sample_extraction_event_to_be_logged,
+                odCtrl_bioreactor_status,
+                odCtrl_bioreactor_sp,
+                medium_consumption,
+                evoflow_status,
+                number_of_evoflow_resets,
+                raspberry_pi_temperature,
                 Annotations
+
             ) VALUES (
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                ?, ?, ?, ?, ''
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                ?, ?, ''
             )
             """,
             row,
@@ -529,6 +737,21 @@ class DataLoggingWorker(QObject):
 
         # Queue a plot refresh outside the timer callback so logging stays responsive.
         self._queue_plot_request(self._timespan_minutes, self._history_offset_points, debounce_ms=0)
+
+        # If a sample extraction event was detected, log it and reset the flag.
+        if self.sample_extraction_event_to_be_logged:
+            # select the current time for x-axis mapping (like I click on the latest point in the plot)
+            latest_time = dt.datetime.now(dt.timezone.utc)
+            latest_time_ms = int(latest_time.timestamp() * 1000)
+            self.map_selected_x_axis_to_closest_data_point(latest_time_ms)
+
+            str_for_logging = "Sample Extraction Events:\n"
+            for row, col, type in self.sample_extraction_event_list:
+                pos = self.utils.return_pos_sample_extraction(row, col)
+                str_for_logging += f"Position: {pos}, Type of action: {type}\n"
+            self.add_annotation_to_selected_x_axis_from_sample_extraction(str_for_logging)
+            self.sample_extraction_event_to_be_logged = False
+            self.sample_extraction_event_list.clear()
 
     def _queue_plot_request(self, timespan_minutes: int, history_offset_points: int, debounce_ms: int | None = None):
         """Coalesce plot updates and process them when logging timer is not near deadline."""
@@ -634,7 +857,7 @@ class DataLoggingWorker(QObject):
                 phtCount_lagoon_status INTEGER,
                 phtCount_lagoon_value REAL,
                 phtCount_lagoon_overlight INTEGER,
-                nucleo_temperature REAL,
+                nucleo_temperature_evoflow REAL,
                 ntc1_ambient_temp REAL,
                 ntc2_pump1_temp REAL,
                 ntc3_pump2_temp REAL,
@@ -649,6 +872,34 @@ class DataLoggingWorker(QObject):
                 sample_row INTEGER,
                 sample_col INTEGER,
                 sample_done_flag INTEGER,
+                nucleo_temperature_sample_extraction REAL,
+                x_axis_motor_temp REAL,
+                y_axis_motor_temp REAL,
+                z_axis_motor_temp REAL,
+                ambient_temp REAL,
+                fan1_status INTEGER,
+                fan1_sp REAL,
+                fan1_speed REAL,
+                fan1_speed_duty_cycle REAL,
+                fan2_status INTEGER,
+                fan2_sp REAL,
+                fan2_speed REAL,
+                fan2_speed_duty_cycle REAL,
+                fan3_status INTEGER,
+                fan3_sp REAL,
+                fan3_speed REAL,
+                fan3_speed_duty_cycle REAL,
+                fan4_status INTEGER,
+                fan4_sp REAL,
+                fan4_speed REAL,
+                fan4_speed_duty_cycle REAL,
+                sample_extraction_event_to_be_logged INTEGER,
+                odCtrl_bioreactor_status INTEGER,
+                odCtrl_bioreactor_sp REAL,
+                medium_consumption REAL,
+                evoflow_status INTEGER,
+                number_of_evoflow_resets INTEGER,
+                raspberry_pi_temperature REAL,
                 Annotations TEXT
             )
             """
@@ -705,7 +956,7 @@ class DataLoggingWorker(QObject):
             "temp_lagoon_sp": [],
             "od_bioreactor": [],
             "od_lagoon": [],
-            "sample_event": [],
+            "sample_extraction_event_to_be_logged": [],
             "annotation_event": [],
         }
 
@@ -742,7 +993,7 @@ class DataLoggingWorker(QObject):
                         flow_rate_pump2,
                         flow_rate_pump3,
                         flow_rate_pump4,
-                        sample_done_flag,
+                        sample_extraction_event_to_be_logged,
                         Annotations
                     FROM telemetry
                     WHERE ts_unix_ms >= ? AND ts_unix_ms <= ?
@@ -773,7 +1024,7 @@ class DataLoggingWorker(QObject):
             payload["flow_rate_pump2"].append(float(item[9]))
             payload["flow_rate_pump3"].append(float(item[10]))
             payload["flow_rate_pump4"].append(float(item[11]))
-            payload["sample_event"].append(float(item[12]))
+            payload["sample_extraction_event_to_be_logged"].append(int(item[12]))
             payload["annotation_event"].append(str(item[13]) if item[13] is not None else "")
 
         return payload
@@ -1004,6 +1255,33 @@ class DataLoggingWorker(QObject):
             self.status_message.emit(f"No telemetry row found for timestamp {converted_ts}. Annotation not deleted.")
             self.message_box_requested.emit("Deletion Failed", f"No telemetry row found for timestamp {converted_ts}. Annotation not deleted.", QMessageBox.Icon.Warning, False)
 
+    def add_annotation_to_selected_x_axis_from_sample_extraction(self, annotation_text: str):
+            """Add an annotation to the currently mapped x-axis timestamp without emitting a message box, used for sample extraction events"""    
+            ts_ms = self._x_axis_mapped_selection
+            note = annotation_text.strip()
+            updated = False
+    
+            for db_path in reversed(self._db_paths):
+                conn = sqlite3.connect(db_path)
+                try:
+                    cursor = conn.cursor()
+                    cursor.execute(
+                        """
+                        UPDATE telemetry
+                        SET Annotations = ?
+                        WHERE ts_unix_ms = ?
+                        """,
+                        (note, ts_ms),
+                    )
+                    conn.commit()
+                    if cursor.rowcount > 0:
+                        updated = True
+                        break
+                finally:
+                    conn.close()
+    
+            converted_ts = self.convert_timestamp_ms_to_local_iso(ts_ms)
+
     def convert_timestamp_ms_to_local_iso(self, ts_ms: int) -> str:
         """Convert a timestamp in milliseconds to a local ISO 8601 string"""
         try:
@@ -1025,6 +1303,12 @@ class DataLoggingWorker(QObject):
         except ValueError as e:
             self.status_message.emit(f"Error parsing flow conversion factors: {e}")
             return [], [], [], []
+
+    @Slot(tuple, str)
+    def handle_sample_extraction_event(self, sample_data: tuple, event_type: str):
+        """Handle sample extraction events and update the latest sample extraction data"""
+        self.sample_extraction_event_list.append((sample_data[0], sample_data[1], event_type))
+        self.sample_extraction_event_to_be_logged = True
 
     @staticmethod
     def _is_valid_telemetry_db(db_path: Path) -> bool:

@@ -22,6 +22,7 @@ from PySide6.QtGui import QKeyEvent, QTextCharFormat, QStandardItemModel, QStand
 from controlEntity.utils import resource_path
 from controlEntity.logic.evoflow_worker import EvoFlowWorker, EvoFlowTelemetry
 from controlEntity.logic.sample_extraction_worker import SampleExtractionWorker, SampleExtractionTelemetry
+from controlEntity.logic.sampling_policy_worker import SamplingPolicy
 from controlEntity.logic.data_logging_worker import DataLoggingWorker
 from controlEntity.logic.odControl_worker import ODControlWorker
 from controlEntity.logic.ntfy_worker import NtfyWorker
@@ -30,22 +31,22 @@ from evoflow.protocol import ProtocolPacket, Component, CMD, build_packet, cobs_
 
 class Logic(QObject):
     """Coordinate device workers, wire Qt signals, and forward results to the UI"""
-    
-    # ===============================
-    # EvoFlow Signals
-    # ===============================
 
-    
-    # ===============================
-    # Sample Extraction Signals
-    # ===============================
-    
+    internal_variables_updated = Signal(object)  # Signal to emit the latest internal variables snapshot
     
     def __init__(self):
         super().__init__()
         
         self.current_os = platform.system().lower()
         config = self.read_settings_file()
+        self.internal_variables: dict = {
+            "odCtrl_bioreactor_status": 0,  # int
+            "odCtrl_bioreactor_sp": 0.0,    # float
+            "medium_consumption": 0.0,      # float
+            "evoflow_status": 0,            # int
+            "number_of_evoflow_resets": 0,  # int
+            "raspberry_pi_temperature": 0.0,# float
+        }
 
         # ===============================
         # EvoFlow Worker Setup
@@ -73,10 +74,19 @@ class Logic(QObject):
                                                               timeout= config.getfloat("SampleExtraction", "serial_timeout"),
                                                               sender_addr= config.getint("HMI", "address"),
                                                               receiver_addr= config.getint("SampleExtraction", "address"),
-                                                              sampling_rate_ms= config.getint("HMI", "sampling_rate_ms", fallback=200))
+                                                              sampling_rate_ms= config.getint("SampleExtraction", "sampling_rate_ms", fallback=200))
         self.sample_extraction_worker.moveToThread(self.sample_extraction_thread)
         self.sample_extraction_thread.started.connect(self.sample_extraction_worker.start)
         self.sample_extraction_thread.start()
+
+        #===============================
+        # Sampling Policy Setup
+        #===============================
+        self.sampling_policy_thread = QThread()
+        self.sampling_policy_worker = SamplingPolicy()
+        self.sampling_policy_worker.moveToThread(self.sampling_policy_thread)
+        self.sampling_policy_thread.started.connect(self.sampling_policy_worker.start)
+        self.sampling_policy_thread.start()
 
         # ===============================
         # Data Logging Worker Setup
@@ -121,6 +131,32 @@ class Logic(QObject):
         self.ntfy_worker.moveToThread(self.ntfy_worker_thread)
         self.ntfy_worker_thread.start()
 
+        # ===============================
+        # Timer for updating internal variables and logging
+        # ===============================
+        self.internal_variables_timer = QTimer()
+        self.internal_variables_timer.timeout.connect(self.update_internal_variables)
+        self.internal_variables_timer.start(500)  # Update every 500 ms
+        self.internal_variables_updated.connect(self.data_logging_worker.update_internal_variables)
+
+    def update_internal_variables(self):
+        """Update internal variables from the latest telemetry and worker states."""
+        # Update odCtrl_bioreactor_status and odCtrl_bioreactor_sp from ODControlWorker
+        self.internal_variables["odCtrl_bioreactor_status"] = 1 if self.ODController_bioreactor_worker.od_running else 0
+        self.internal_variables["odCtrl_bioreactor_sp"] = self.ODController_bioreactor_worker.od_control.A_setpoint
+
+        # Update medium_consumption from ODControlWorker
+        self.internal_variables["medium_consumption"] = self.ODController_bioreactor_worker.medium_consumption
+
+        # Update evoflow_status and number_of_evoflow_resets from EvoFlowWorker
+        self.internal_variables["evoflow_status"] = 1 if self.evoflow_worker._evoflow_ok else 0
+        self.internal_variables["number_of_evoflow_resets"] = self.evoflow_worker._no_of_evoflow_reset
+
+        # Update raspberry_pi_temperature from the Raspberry Pi
+        self.internal_variables["raspberry_pi_temperature"] = self.evoflow_worker.rpi_temp
+
+        # Emit the updated internal variables
+        self.internal_variables_updated.emit(self.internal_variables)
 
     def read_settings_file(self):
         """Load automation step defaults from config/settings.ini"""
@@ -163,6 +199,11 @@ class Logic(QObject):
         except Exception as e:
             print(f"Failed to stop OD Control worker cleanly: {e}")
 
+        try:
+            QMetaObject.invokeMethod(self.sampling_policy_worker, "stop", Qt.BlockingQueuedConnection)
+        except Exception as e:
+            print(f"Failed to stop Sampling Policy worker cleanly: {e}")
+
         # No need to stop the NtfyWorker since it doesn't have a long-running thread or child threads.
 
         try:
@@ -191,5 +232,10 @@ class Logic(QObject):
                 if not self.ntfy_worker_thread.wait(2000):
                     self.ntfy_worker_thread.terminate()
                     self.ntfy_worker_thread.wait(1000)
+            if self.sampling_policy_thread.isRunning():
+                self.sampling_policy_thread.quit()
+                if not self.sampling_policy_thread.wait(2000):
+                    self.sampling_policy_thread.terminate()
+                    self.sampling_policy_thread.wait(1000)
         except Exception as e:
             print(f"Failed to stop EvoFlow thread cleanly: {e}")

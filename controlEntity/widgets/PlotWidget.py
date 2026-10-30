@@ -86,7 +86,7 @@ class PlotWidget(QWidget):
                             background-color: #d6d6d6;
                             color: Black; }
                         QLineEdit:disabled {
-                            background-color: #d9d9d9;
+                            background-color: #333333;
                             color: #888888; } 
                         """
         
@@ -188,6 +188,24 @@ class PlotWidget(QWidget):
             )
             return line
 
+        def add_floating_legend(axis, handles, columns):
+            legend = axis.legend(
+                handles=handles,
+                loc="upper center",
+                bbox_to_anchor=(0.5, 0.99),
+                ncol=columns,
+                fontsize=9,
+                framealpha=0.4,
+                facecolor="#252525",
+                edgecolor="#636363",
+                labelcolor="#e9e9e9",
+                borderpad=0.35,
+                handlelength=1.5,
+                handletextpad=0.45,
+                columnspacing=0.8,
+            )
+            legend.set_zorder(10)
+
         self.fig, (self.ax0, self.ax1, self.ax2) = plt.subplots(3, 1)
         self.fig.suptitle("EvoFlow Data Visualization", color="white", fontweight="bold")
 
@@ -223,8 +241,8 @@ class PlotWidget(QWidget):
         style_axis(self.ax1)
         self.temp_bioReactor = style_line(self.ax1, "Temp", "orange", style="-", linewidth=1, opacity=0.5)
         self.temp_lagoon = style_line(self.ax1, "Temp Lagoon", "yellow", style="-", linewidth=1, opacity=0.5)
-        self.temp_bioReactor_sp = style_line(self.ax1, "Temp Bioreactor Setpoint", "orange", style="-.", linewidth=0.5, opacity=0.25)
-        self.temp_lagoon_sp = style_line(self.ax1, "Temp Lagoon Setpoint", "yellow", style="-.", linewidth=0.5, opacity=0.25)
+        self.temp_bioReactor_sp = style_line(self.ax1, "Temp Bioreactor Setpoint", "orange", style="-.", linewidth=1, opacity=0.25)
+        self.temp_lagoon_sp = style_line(self.ax1, "Temp Lagoon Setpoint", "yellow", style="-.", linewidth=1, opacity=0.25)
         # OD on right y-axis
         self.ax1_r = self.ax1.twinx()
         self.ax1_r.set_ylabel("Optical Density\n(OD)")
@@ -239,12 +257,35 @@ class PlotWidget(QWidget):
         self.ax2.yaxis.set_label_coords(-0.045, 0.5)  # Move y-axis label to the left
         self.ax2.set_yticks([])
         self.ax2.set_yticklabels([])
-        self.ax2.set_ylim(0.5, 2.5)
+        self.ax2.set_ylim(0.5, 3.5)
         self.ax2.xaxis.set_major_formatter(FuncFormatter(self._format_unix_seconds_as_datetime))
         # self.ax2.set_xlabel("Date / Time")
         style_axis(self.ax2)
         self.sample_extraction_events, = self.ax2.plot([], [], label="Sample Extraction", marker="o", linestyle="", color="white", markersize=5)
         self.annotation_events, = self.ax2.plot([], [], label="Markdown", marker="*", linestyle="", color="Yellow", markersize=5)
+
+        add_floating_legend(
+            self.ax0_r,
+            [self.flowRate_pump1, self.flowRate_pump2, self.flowRate_pump3, self.flowRate_pump4, self.phtCount_lagoon],
+            columns=5,
+        )
+        add_floating_legend(
+            self.ax1_r,
+            [
+                self.temp_bioReactor,
+                self.temp_lagoon,
+                self.temp_bioReactor_sp,
+                self.temp_lagoon_sp,
+                self.od_bioReactor,
+                self.od_lagoon,
+            ],
+            columns=6,
+        )
+        add_floating_legend(
+            self.ax2,
+            [self.sample_extraction_events, self.annotation_events],
+            columns=2,
+        )
 
         # Remove Matplotlib's default horizontal data padding.
         self.ax0.margins(x=0)
@@ -697,7 +738,7 @@ class PlotWidget(QWidget):
         self.temp_lagoon_sp.set_data(x_values, payload.get("temp_lagoon_sp", []))
         self.od_bioReactor.set_data(x_values, payload.get("od_bioreactor", []))
         self.od_lagoon.set_data(x_values, payload.get("od_lagoon", []))
-        self.sample_extraction_events.set_data(x_values, payload.get("sample_event", []))
+        self.sample_extraction_events.set_data(x_values, payload.get("sample_extraction_event_to_be_logged", []))
 
         # if annotations exist, set the annotation_event scatter points to 2 so they appear above the sample extraction events
         annotation_str = payload.get("annotation_event", [])
@@ -906,4 +947,3 @@ class PlotWidget(QWidget):
                 self._suppress_scrollbar_events = False
 
         self._queue_plot_view_request()
-

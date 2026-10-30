@@ -51,7 +51,7 @@ class MainUI(QMainWindow):
         main_layout.setContentsMargins(0, 0, 0, 0)
 
         self.evoflow_widget = EvoFlowWidget(1800, 450)
-        self.sample_extraction_widget = SampleExtractionWidget(560, 195)
+        self.sample_extraction_widget = SampleExtractionWidget(560, 225)
         self.plot_widget = PlotWidget(self)
         self.plot_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
@@ -62,7 +62,7 @@ class MainUI(QMainWindow):
 
         # Overlay the sample extraction widget on top of the EvoFlow widget.
         self.sample_extraction_widget.setParent(self.evoflow_widget)
-        self.sample_extraction_widget.move(1218, 75)
+        self.sample_extraction_widget.move(1218, 45)
         self.sample_extraction_widget.raise_()
         self.sample_extraction_widget.show()
 
@@ -103,6 +103,7 @@ class MainUI(QMainWindow):
 
         # Buttons
         self.evoflow_widget.pump_sp_update_requested.connect(self.logic.evoflow_worker.set_setpoint_pumps)
+        self.evoflow_widget.pump_4_flow_for_sample_update_requested.connect(self.logic.sampling_policy_worker.handle_pump_4_flow_rate)
         self.evoflow_widget.magneticStirrer_sp_update_requested.connect(self.logic.evoflow_worker.set_setpoint_magnetic_stirrers)
         self.evoflow_widget.tempCtrl_sp_update_requested.connect(self.logic.evoflow_worker.set_setpoint_temp_ctrls)
         self.evoflow_widget.od_control_bioreactor_customized_btn_requested.connect(self.logic.ODController_bioreactor_worker.set_od_control_enabled)
@@ -117,10 +118,24 @@ class MainUI(QMainWindow):
         # Sample Extraction signals
         # =====================================
 
-        self.sample_extraction_widget.start_sample_extraction_requested.connect(self.logic.sample_extraction_worker.start_sample_extraction)
-        self.sample_extraction_widget.test_read_position_requested.connect(self.logic.sample_extraction_worker.get_all_telemetry)
-        self.logic.sample_extraction_worker.telemetry_updated.connect(self.sample_extraction_widget.update_telemetry)
+        self.sample_extraction_widget.start_manual_sample_extraction_requested.connect(self.logic.sampling_policy_worker.start_manual_sample_extraction)
+        self.sample_extraction_widget.start_auto_sample_extraction_requested.connect(self.logic.sampling_policy_worker.start_auto_sample_extraction)
+        self.sample_extraction_widget.stop_auto_sample_extraction_requested.connect(self.logic.sampling_policy_worker.stop_auto_sample_extraction)
+
+        self.sample_extraction_widget.sample_extraction_auto_mode_changed.connect(self.logic.sampling_policy_worker.handle_sample_extraction_auto_mode)
+        self.sample_extraction_widget.auto_mode_start_position_changed.connect(self.logic.sampling_policy_worker.set_auto_mode_start_position)
+        self.sample_extraction_widget.auto_mode_sampling_interval_changed.connect(self.logic.sampling_policy_worker.set_sampling_interval)
+        self.sample_extraction_widget.auto_mode_volume_per_sample_changed.connect(self.logic.sampling_policy_worker.set_volume_per_sample)
+        self.logic.sample_extraction_worker.telemetry_updated.connect(self.sample_extraction_widget.update_telemetry_sample_extraction,Qt.ConnectionType.QueuedConnection,)
+        self.logic.sample_extraction_worker.telemetry_updated.connect(self.evoflow_widget.update_telemetry_sample_extraction,Qt.ConnectionType.QueuedConnection,)
         self.logic.sample_extraction_worker.telemetry_updated.connect(self.logic.data_logging_worker.update_sample_extraction_telemetry)
+        self.logic.sample_extraction_worker.sample_extraction_comm_status_updated.connect(self.evoflow_widget.update_sample_extraction_comm_status,Qt.ConnectionType.QueuedConnection,)
+        self.logic.sample_extraction_worker.sample_extraction_moving_status_updated.connect(self.logic.sampling_policy_worker.handle_sample_extraction_moving_status)
+        self.logic.sampling_policy_worker.blink_timer_timeout.connect(self.sample_extraction_widget.handle_blink_timer_timeout,Qt.ConnectionType.QueuedConnection,)
+        self.logic.sampling_policy_worker.append_rack_filled_position_requested.connect(self.sample_extraction_widget.sample_extraction_rack.mark_filled_position,Qt.ConnectionType.QueuedConnection,)
+        self.logic.sampling_policy_worker.sample_extraction_requested.connect(self.logic.sample_extraction_worker.start_sample_extraction)
+        self.logic.sampling_policy_worker.turn_pump_4_on_off.connect(self.evoflow_widget.handle_turn_pump_4_on_off,Qt.ConnectionType.QueuedConnection,)
+        self.logic.sampling_policy_worker.sample_extraction_event.connect(self.logic.data_logging_worker.handle_sample_extraction_event)
 
         # =====================================
         # Plot / Data logging signals

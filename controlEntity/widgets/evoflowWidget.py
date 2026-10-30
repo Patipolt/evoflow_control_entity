@@ -19,6 +19,7 @@ from PySide6.QtGui import QKeyEvent, QTextCharFormat, QStandardItemModel, QStand
 from controlEntity.widgets.TapSwitchWidget import TapSwitch
 from controlEntity.widgets.glassVialThermometerWidget import GlassVialThermometerWidget
 from controlEntity.widgets.customizedImageButton import CustomizedImageButton
+from controlEntity.widgets.sampleExtractionWidget import SampleExtractionTelemetry
 from controlEntity.utils import resource_path, Utils
 from evoflow.device.evoflow import EvoFlowTelemetry
 
@@ -40,6 +41,7 @@ class EvoFlowWidget(QWidget):
     phtCount_on_off_requested = Signal(bool)
 
     pump_sp_update_requested = Signal(float, float, float, float)
+    pump_4_flow_for_sample_update_requested = Signal(float)
     magneticStirrer_sp_update_requested = Signal(float, float)
     tempCtrl_sp_update_requested = Signal(float, float)
     od_control_bioreactor_customized_btn_requested = Signal(bool)
@@ -48,6 +50,8 @@ class EvoFlowWidget(QWidget):
     reset_evoflow_requested = Signal()
     level_sensor_customized_btn_status_updated = Signal(bool)
     reset_ntfy_requested = Signal()
+
+    pump_4_flow_changed = Signal(float)
 
     
     def __init__(self, width: int=1800, height: int=450):
@@ -59,6 +63,9 @@ class EvoFlowWidget(QWidget):
         self._evoflow_comm_led_reset_timer = QTimer(self)
         self._evoflow_comm_led_reset_timer.setSingleShot(True)
         self._evoflow_comm_led_reset_timer.timeout.connect(self._reset_evoflow_comm_led)
+        self._sample_extraction_led_reset_timer = QTimer(self)
+        self._sample_extraction_led_reset_timer.setSingleShot(True)
+        self._sample_extraction_led_reset_timer.timeout.connect(self._reset_sample_extraction_comm_led)
         self.utils = Utils()
         self.setup_ui()
         self.connect_signals()
@@ -216,11 +223,6 @@ class EvoFlowWidget(QWidget):
         info_sugar.setGeometry(432, 45, 100, 25)
         info_sugar.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
         info_sugar.setStyleSheet("""font-weight: bold; font-size: 18px; color: white""")
-
-        info_waste = QLabel("Waste", self)
-        info_waste.setGeometry(1315, 170, 100, 25)
-        info_waste.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
-        info_waste.setStyleSheet("""font-weight: bold; font-size: 18px; color: black""")
 
         info_temp_bioreactor = QLabel("Temp:", self)
         info_temp_bioreactor.setGeometry(237, 153, 100, 25)
@@ -381,7 +383,7 @@ class EvoFlowWidget(QWidget):
                             background-color: #d6d6d6;
                             color: Black; }
                         QLineEdit:disabled {
-                            background-color: #d9d9d9;
+                            background-color: #333333;
                             color: #888888; }
                         """
 
@@ -454,17 +456,17 @@ class EvoFlowWidget(QWidget):
 
         evoflow_status_label = QLabel("Evoflow Status:", controller_status_groupbox)
         evoflow_status_label.setStyleSheet(font_small_value)
-        se_status_label = QLabel("SE Status:", controller_status_groupbox)
-        se_status_label.setStyleSheet(font_small_value)
         self.led_evoflow_status = QLabel("⚪", controller_status_groupbox)  #🔴🟢
-        self.led_se_status = QLabel("⚪", controller_status_groupbox)  #🔴🟢
         evoflow_comm_label = QLabel("Evoflow Comm.:", controller_status_groupbox)
         evoflow_comm_label.setStyleSheet(font_small_value)
         self.led_evoflow_comm = QLabel("⚪", controller_status_groupbox)  #🔴🟢
+        sample_extraction_comm_status_label = QLabel("SE Comm.:", controller_status_groupbox)
+        sample_extraction_comm_status_label.setStyleSheet(font_small_value)
+        self.led_sample_extraction_comm = QLabel("⚪", controller_status_groupbox)  #🔴🟢
         self.reset_evoflow_btn = QPushButton("Reset Evoflow", controller_status_groupbox)
         self.reset_evoflow_btn.setStyleSheet(self.button_style)
-        self.reset_se_btn = QPushButton("Reset SE", controller_status_groupbox)
-        self.reset_se_btn.setStyleSheet(self.button_style)
+        self.reset_sample_extraction_btn = QPushButton("Reset SE", controller_status_groupbox)
+        self.reset_sample_extraction_btn.setStyleSheet(self.button_style)
         rpi_temp_label = QLabel("RPI Temp: ", controller_status_groupbox)
         rpi_temp_label.setStyleSheet(font_small_value)
         self.rpi_temp_label = QLabel("0 °C", controller_status_groupbox)
@@ -473,24 +475,31 @@ class EvoFlowWidget(QWidget):
         evoflow_temp_label.setStyleSheet(font_small_value)
         self.evoflow_temp_label = QLabel("0 °C", controller_status_groupbox)
         self.evoflow_temp_label.setStyleSheet(font_small_value)
-        no_of_evoflow_reset_label = QLabel("No. of Evoflow Resets:", controller_status_groupbox)
+        se_temp_label = QLabel("SE Temp:", controller_status_groupbox)
+        se_temp_label.setStyleSheet(font_small_value)
+        self.se_temp_label = QLabel("0 °C", controller_status_groupbox)
+        self.se_temp_label.setStyleSheet(font_small_value)
+        no_of_evoflow_reset_label = QLabel("Evoflow Resets:", controller_status_groupbox)
         no_of_evoflow_reset_label.setStyleSheet(font_small_value)
         self.no_of_evoflow_reset_label = QLabel("0", controller_status_groupbox)
         self.no_of_evoflow_reset_label.setStyleSheet(font_small_value)
 
+
         controller_status_first_row_layout.addWidget(evoflow_status_label)
         controller_status_first_row_layout.addWidget(self.led_evoflow_status)
-        controller_status_first_row_layout.addWidget(se_status_label)
-        controller_status_first_row_layout.addWidget(self.led_se_status)
         controller_status_second_row_layout.addWidget(evoflow_comm_label)
         controller_status_second_row_layout.addWidget(self.led_evoflow_comm)
+        controller_status_second_row_layout.addWidget(sample_extraction_comm_status_label)
+        controller_status_second_row_layout.addWidget(self.led_sample_extraction_comm)
         controller_status_second_row_layout.addStretch()
         controller_status_third_row_layout.addWidget(self.reset_evoflow_btn)
-        controller_status_third_row_layout.addWidget(self.reset_se_btn)
+        controller_status_third_row_layout.addWidget(self.reset_sample_extraction_btn)
         controller_status_forth_row_layout.addWidget(rpi_temp_label)
         controller_status_forth_row_layout.addWidget(self.rpi_temp_label)
         controller_status_forth_row_layout.addWidget(evoflow_temp_label)
         controller_status_forth_row_layout.addWidget(self.evoflow_temp_label)
+        controller_status_fifth_row_layout.addWidget(se_temp_label)
+        controller_status_fifth_row_layout.addWidget(self.se_temp_label)
         controller_status_fifth_row_layout.addWidget(no_of_evoflow_reset_label)
         controller_status_fifth_row_layout.addWidget(self.no_of_evoflow_reset_label)
 
@@ -769,8 +778,10 @@ class EvoFlowWidget(QWidget):
             config.get("flowRateConversionFactors", "pump_4"),
         )
         self.q_lagoon_max_ml_per_sec = config.getfloat("ODController", "q_lagoon_max", fallback=0.00778)
-        self._sampling_rate_ms = config.getint("HMI", "sampling_rate_ms", fallback=50)
-        self._evoflow_comm_led_hold_ms = self._sampling_rate_ms * 0.75
+        self._sampling_rate_evoflow_ms = config.getint("HMI", "sampling_rate_ms", fallback=50)
+        self._evoflow_comm_led_hold_ms = self._sampling_rate_evoflow_ms * 0.75
+        self._sampling_rate_sample_extraction_ms = config.getint("SampleExtraction", "sampling_rate_ms", fallback=50)
+        self._sample_extraction_led_hold_ms = self._sampling_rate_sample_extraction_ms * 0.75
         self.motor_cut_off_temp = config.getfloat("Evoflow", "motor_cut_off_temp", fallback=50.0)
 
     def handle_pump_toggle(self, checked):
@@ -829,6 +840,7 @@ class EvoFlowWidget(QWidget):
             new_sp_2 = float(self.pump_2_sp_edit.text())
             new_sp_3 = float(self.pump_3_sp_edit.text())
             new_sp_4 = float(self.pump_4_sp_edit.text())
+            self.pump_4_flow_for_sample_update_requested.emit(new_sp_4)
 
             if new_sp_2 > self.q_lagoon_max_ml_per_sec*60*1000:
                 new_sp_2 = self.q_lagoon_max_ml_per_sec*60*1000
@@ -971,6 +983,10 @@ class EvoFlowWidget(QWidget):
             self.slide_switch_tempCtrl_bioreactor.setChecked(False)
             self.slide_switch_magneticStirrer_bioreactor.setChecked(False)
             self.slide_switch_od_bioreactor.setChecked(False)
+
+    @Slot(SampleExtractionTelemetry)
+    def update_telemetry_sample_extraction(self, telemetry):
+        self.se_temp_label.setText(f"{telemetry.nucleo_temp:.0f} °C")
 
     @Slot(EvoFlowTelemetry)
     def update_telemetry(self, evoflow_telemetry):
@@ -1181,9 +1197,21 @@ class EvoFlowWidget(QWidget):
         # Reuse one timer to avoid creating unbounded timer objects during long runs.
         self._evoflow_comm_led_reset_timer.start(self._evoflow_comm_led_hold_ms)
 
+    @Slot(bool)
+    def update_sample_extraction_comm_status(self, sample_extraction_comm_status):
+        """Update Sample Extraction communication status LED"""
+        self.led_sample_extraction_comm.setText("🔵" if sample_extraction_comm_status else "🔴")
+
+        # Reuse one timer to avoid creating unbounded timer objects during long runs.
+        self._sample_extraction_led_reset_timer.start(self._sample_extraction_led_hold_ms)
+
     @Slot()
     def _reset_evoflow_comm_led(self):
         self.led_evoflow_comm.setText("⚪")
+
+    @Slot()
+    def _reset_sample_extraction_comm_led(self):
+        self.led_sample_extraction_comm.setText("⚪")
 
     @Slot(int)
     def update_rpi_temp(self, rpi_temp):
@@ -1202,6 +1230,13 @@ class EvoFlowWidget(QWidget):
         else:
             self.reset_ntfy_btn.setStyleSheet(self.button_style)
 
+    @Slot(bool)
+    def handle_turn_pump_4_on_off(self, state: bool):
+        """Handle the turn pump 4 on/off signal"""
+        if state:
+            self.slide_switch_pump_4.setChecked(True)
+        else:
+            self.slide_switch_pump_4.setChecked(False)
 
     def extract_flow_conversion_factors(self, pump1_str_list: str, pump2_str_list: str, pump3_str_list: str, pump4_str_list: str) -> tuple[list[float], list[float], list[float], list[float]]:
         """Extract flow conversion factors from string lists and store them as floats"""

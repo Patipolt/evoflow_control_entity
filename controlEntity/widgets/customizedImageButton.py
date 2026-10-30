@@ -128,3 +128,10 @@ class CustomizedImageButton(QPushButton):
             self._apply_pixmap(self.icon_path_inactive_pressed)
         else:
             self.update_icon(self.isChecked())
+
+    def change_icon_paths(self, icon_path_unchecked: str, icon_path_checked: str, icon_path_inactive_pressed: str = None):
+        """Change the icon paths for the button."""
+        self.icon_path_unchecked = icon_path_unchecked
+        self.icon_path_checked = icon_path_checked
+        self.icon_path_inactive_pressed = icon_path_inactive_pressed
+        self.update_icon(self.isChecked())

@@ -50,6 +50,7 @@ class EvoFlowWorker(QObject):
         self.utils = Utils()
         self.pump_cut_off_temp = self.utils.config.getfloat("Evoflow", "motor_cut_off_temp", fallback=50.0)
         self._level_sensor_active = False
+        self._evoflow_ok = False
 
     @Slot()
     def start(self):
@@ -243,14 +244,14 @@ class EvoFlowWorker(QObject):
             return
 
         try:
-            evoflow_ok = self.evoflow.is_evoflow_ok()
+            self._evoflow_ok = self.evoflow.is_evoflow_ok()
             self.rpi_temp = self.get_rpi_temp()
             self.rpi_temp = self.low_pass_filter(self.rpi_temp, self.old_rpi_temp, alpha=0.1)
             self.old_rpi_temp = self.rpi_temp
-            self.evoflow_status_updated.emit(evoflow_ok)
+            self.evoflow_status_updated.emit(self._evoflow_ok)
             self.rpi_temp_updated.emit(self.rpi_temp)
 
-            if not evoflow_ok:
+            if not self._evoflow_ok:
                 self._consecutive_not_ok_count += 1
             else:
                 self._consecutive_not_ok_count = 0
