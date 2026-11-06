@@ -199,7 +199,8 @@ class SamplingPolicy(QObject):
             if not self.sample_extraction_auto_mode:
                 return
             # print("Returning the needle to waste position after taking sample.")
-            self.start_manual_sample_extraction((255, 255))  # 255, 255 is the waste position
+            self.sample_extraction_requested.emit((255, 255))
+            self.sample_extraction_event.emit((255, 255), "auto")
             self.sample_extraction_moving_done = False
             self._sleep(1000)    # small delay to allow the sample extraction device to start moving before waiting for the moving done flag
             if not self._wait_for_flag('sample_extraction_moving_done', 'Sample Extraction moving to waste position', timeout_ms=18000000):   # just make it 5 hours for now

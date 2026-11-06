@@ -28,6 +28,8 @@ magneticStirrer_swapping_mode_enabled = True
 
 class EvoFlowWidget(QWidget):
     """EvoFlowWidget for graphical representation of the EvoFlow system"""
+    _PHT_COUNT_SETTLING_SECONDS = 1.5
+
     # ================================
     # Signals required for widget
     # ================================
@@ -66,6 +68,10 @@ class EvoFlowWidget(QWidget):
         self._sample_extraction_led_reset_timer = QTimer(self)
         self._sample_extraction_led_reset_timer.setSingleShot(True)
         self._sample_extraction_led_reset_timer.timeout.connect(self._reset_sample_extraction_comm_led)
+        self._pht_count_settling_until = 0.0
+        self._pht_count_mismatch_corrected = False
+        self._pht_count_device_status = False
+        self._od_lagoon_waiting_for_pht = False
         self.utils = Utils()
         self.setup_ui()
         self.connect_signals()
@@ -802,10 +808,18 @@ class EvoFlowWidget(QWidget):
         """Handle all OD toggles"""
         od_bioreactor_status = self.slide_switch_od_bioreactor.isChecked()
         od_lagoon_status = self.slide_switch_od_lagoon.isChecked()
-        # turn off the photon counter when the od measurement for lagoon is on, to avoid interference
+        # the lagoon od may only run once the photon counter is confirmed off by the device
         if od_lagoon_status:
-            self.slide_switch_phtCount_Lagoon.setChecked(False)
-            self.handle_phtCount_toggle(False)
+            if self.slide_switch_phtCount_Lagoon.isChecked():
+                self.slide_switch_phtCount_Lagoon.setChecked(False)
+                self.handle_phtCount_toggle(False)
+            if self._pht_count_device_status:
+                self._od_lagoon_waiting_for_pht = True
+                od_lagoon_status = False
+            else:
+                self._od_lagoon_waiting_for_pht = False
+        else:
+            self._od_lagoon_waiting_for_pht = False
         self.od_on_off_requested.emit(od_bioreactor_status, od_lagoon_status)
 
     def handle_tempCtrl_toggle(self, checked):
@@ -831,6 +845,8 @@ class EvoFlowWidget(QWidget):
         if phtCount_lagoon_status:
             self.slide_switch_od_lagoon.setChecked(False)
             self.handle_od_toggle(False)
+        self._pht_count_settling_until = time.monotonic() + self._PHT_COUNT_SETTLING_SECONDS
+        self._pht_count_mismatch_corrected = False
         self.phtCount_on_off_requested.emit(phtCount_lagoon_status)
 
     def handle_pump_sp_update(self):
@@ -1019,15 +1035,30 @@ class EvoFlowWidget(QWidget):
         if temp_ctrl_status_mismatch and not self.od_bioreactor_running:
             self.handle_tempCtrl_toggle(False)
 
+        pht_count_switch_status = self.slide_switch_phtCount_Lagoon.isChecked()
+        pht_count_status_mismatch = (
+            evoflow_telemetry.phtCount_lagoon_status != pht_count_switch_status
+        )
+        if not pht_count_status_mismatch:
+            self._pht_count_mismatch_corrected = False
+        elif (
+            time.monotonic() >= self._pht_count_settling_until
+            and not self._pht_count_mismatch_corrected
+        ):
+            self.phtCount_on_off_requested.emit(pht_count_switch_status)
+            self._pht_count_mismatch_corrected = True
+
+        self._pht_count_device_status = evoflow_telemetry.phtCount_lagoon_status
+        if self._od_lagoon_waiting_for_pht and not self._pht_count_device_status:
+            # photon counter confirmed off, now the lagoon od can be switched on
+            self.handle_od_toggle(False)
+
         od_status_mismatch = (
             evoflow_telemetry.od_bioreactor_status != self.slide_switch_od_bioreactor.isChecked()
             or evoflow_telemetry.od_lagoon_status != self.slide_switch_od_lagoon.isChecked()
         )
         if od_status_mismatch and not self.od_bioreactor_running:
             self.handle_od_toggle(False)
-
-        if evoflow_telemetry.phtCount_lagoon_status != self.slide_switch_phtCount_Lagoon.isChecked():
-            self.handle_phtCount_toggle(False)
 
         valve_status_mismatch = (
             evoflow_telemetry.valve_bio2lag_status != self.slide_switch_valve_bio2lag.isChecked()
@@ -1272,4 +1303,3 @@ class EvoFlowWidget(QWidget):
         config = configparser.ConfigParser()
         config.read(str(config_path))
         return config
-
