@@ -281,15 +281,15 @@ class SampleExtractionWidget(QWidget):
         info_volume_per_sample.setStyleSheet(font_component)
 
         self.start_position_edit = QLineEdit(self)
-        self.start_position_edit.setGeometry(112, 100, 80, 20)
+        self.start_position_edit.setGeometry(122, 100, 70, 20)
         self.start_position_edit.setStyleSheet(self.edit_style)
         self.start_position_edit.setEnabled(False)
         self.sampling_interval_edit = QLineEdit(self)
-        self.sampling_interval_edit.setGeometry(112, 130, 80, 20)
+        self.sampling_interval_edit.setGeometry(122, 130, 70, 20)
         self.sampling_interval_edit.setStyleSheet(self.edit_style)
         self.sampling_interval_edit.setEnabled(False)
         self.volume_per_sample_edit = QLineEdit(self)
-        self.volume_per_sample_edit.setGeometry(112, 160, 80, 20)
+        self.volume_per_sample_edit.setGeometry(122, 160, 70, 20)
         self.volume_per_sample_edit.setStyleSheet(self.edit_style)
         self.volume_per_sample_edit.setEnabled(False)   
 

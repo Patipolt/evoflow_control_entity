@@ -734,7 +734,7 @@ class EvoFlowWidget(QWidget):
             od_lagoon_on_label.setGeometry(965, 90, 100, 20)
             od_lagoon_on_label.setStyleSheet(font_small_value)
             self.od_lagoon_on_edit = QLineEdit(self)
-            self.od_lagoon_on_edit.setText("3600")
+            self.od_lagoon_on_edit.setText("5")
             self.od_lagoon_on_edit.setGeometry(1005, 90, 50, 20)
             self.od_lagoon_on_edit.setStyleSheet(self.edit_style)
 
@@ -742,7 +742,7 @@ class EvoFlowWidget(QWidget):
             od_lagoon_off_label.setGeometry(965, 115, 100, 20)
             od_lagoon_off_label.setStyleSheet(font_small_value)
             self.od_lagoon_off_edit = QLineEdit(self)
-            self.od_lagoon_off_edit.setText("3600")
+            self.od_lagoon_off_edit.setText("600")
             self.od_lagoon_off_edit.setGeometry(1005, 115, 50, 20)
             self.od_lagoon_off_edit.setStyleSheet(self.edit_style)
 
