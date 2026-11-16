@@ -272,7 +272,7 @@ class SampleExtractionWidget(QWidget):
         info_start_position.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         info_start_position.setStyleSheet(font_component)
         info_sampling_interval = QLabel("Sampling Interval:", self)
-        info_sampling_interval.setGeometry(8, 130, 105, 20)
+        info_sampling_interval.setGeometry(8, 130, 115, 20)
         info_sampling_interval.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         info_sampling_interval.setStyleSheet(font_component)
         info_volume_per_sample = QLabel("Volume/Sample:", self)
