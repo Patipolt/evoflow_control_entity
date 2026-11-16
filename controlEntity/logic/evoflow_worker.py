@@ -190,7 +190,7 @@ class EvoFlowWorker(QObject):
         try:
             if self.evoflow.get_all_telemetry():
                 self.telemetry_updated.emit(self.evoflow.evoflow_telemetry)
-                self._check_safety_guard()
+                # self._check_safety_guard()
                 self.evoflow_comm_status_updated.emit(True)
             else:
                 self.evoflow_comm_status_updated.emit(False)

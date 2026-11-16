@@ -151,6 +151,7 @@ class SampleExtractionWidget(QWidget):
     auto_mode_sampling_interval_changed = Signal(int)
     auto_mode_volume_per_sample_changed = Signal(int)
     sample_extraction_auto_mode_changed = Signal(bool)
+    reset_filled_tray_requested = Signal()
 
     def __init__(self, width: int=560, height: int=195):
         """"Initialize the SampleExtractionWidget"""
@@ -307,6 +308,8 @@ class SampleExtractionWidget(QWidget):
         self.auto_manual_customized_btn.clicked.connect(self.handle_sample_extraction_auto_manual_mode_toggle)
         self.sample_extraction_rack.rack_position_selected.connect(self._on_rack_position_selected)
         self.reset_filled_tray_btn.clicked.connect(self.sample_extraction_rack.reset_filled_positions)
+        self.reset_filled_tray_btn.clicked.connect(self.reset_filled_tray_requested)
+
 
     def _on_rack_position_selected(self, position):
         """Track the latest selected rack position in (row, col)"""

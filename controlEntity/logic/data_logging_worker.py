@@ -1310,6 +1310,12 @@ class DataLoggingWorker(QObject):
         self.sample_extraction_event_list.append((sample_data[0], sample_data[1], event_type))
         self.sample_extraction_event_to_be_logged = True
 
+    @Slot()
+    def handle_reset_filled_tray_event(self):
+        """Handle reset filled tray events and clear the sample extraction event list"""
+        self.sample_extraction_event_list.clear()
+        self.sample_extraction_event_to_be_logged = False
+
     @staticmethod
     def _is_valid_telemetry_db(db_path: Path) -> bool:
         """Check if DB contains the expected telemetry table"""

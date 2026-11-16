@@ -126,6 +126,7 @@ class MainUI(QMainWindow):
         self.sample_extraction_widget.auto_mode_start_position_changed.connect(self.logic.sampling_policy_worker.set_auto_mode_start_position)
         self.sample_extraction_widget.auto_mode_sampling_interval_changed.connect(self.logic.sampling_policy_worker.set_sampling_interval)
         self.sample_extraction_widget.auto_mode_volume_per_sample_changed.connect(self.logic.sampling_policy_worker.set_volume_per_sample)
+        self.sample_extraction_widget.reset_filled_tray_requested.connect(self.logic.data_logging_worker.handle_reset_filled_tray_event)
         self.logic.sample_extraction_worker.telemetry_updated.connect(self.sample_extraction_widget.update_telemetry_sample_extraction,Qt.ConnectionType.QueuedConnection,)
         self.logic.sample_extraction_worker.telemetry_updated.connect(self.evoflow_widget.update_telemetry_sample_extraction,Qt.ConnectionType.QueuedConnection,)
         self.logic.sample_extraction_worker.telemetry_updated.connect(self.logic.data_logging_worker.update_sample_extraction_telemetry)

@@ -24,6 +24,7 @@ from controlEntity.utils import resource_path, Utils
 from evoflow.device.evoflow import EvoFlowTelemetry
 
 magneticStirrer_swapping_mode_enabled = True
+od_lagoon_pth_count_swapping_mode_enabled = True
 
 
 class EvoFlowWidget(QWidget):
@@ -721,6 +722,39 @@ class EvoFlowWidget(QWidget):
             self.magneticStirrer_bioreactor_swapping_mode_timer.timeout.connect(self.handle_magneticStirrer_bioreactor_swapping_mode_timeout)
             self.magneticStirrer_lagoon_swapping_mode_timer.timeout.connect(self.handle_magneticStirrer_lagoon_swapping_mode_timeout)
 
+        if od_lagoon_pth_count_swapping_mode_enabled:
+            self.od_lagoon_swapping_mode_slide_switch = TapSwitch(self)
+            self.od_lagoon_swapping_mode_slide_switch.setGeometry(990, 50, 40, 20)
+
+            od_lagoon_swapping_mode_label = QLabel("Swapping Mode", self)
+            od_lagoon_swapping_mode_label.setGeometry(965, 70, 100, 20)
+            od_lagoon_swapping_mode_label.setStyleSheet(font_component)
+
+            od_lagoon_on_label = QLabel("On(s):", self)
+            od_lagoon_on_label.setGeometry(965, 90, 100, 20)
+            od_lagoon_on_label.setStyleSheet(font_small_value)
+            self.od_lagoon_on_edit = QLineEdit(self)
+            self.od_lagoon_on_edit.setText("3600")
+            self.od_lagoon_on_edit.setGeometry(1005, 90, 50, 20)
+            self.od_lagoon_on_edit.setStyleSheet(self.edit_style)
+
+            od_lagoon_off_label = QLabel("Off(s):", self)
+            od_lagoon_off_label.setGeometry(965, 115, 100, 20)
+            od_lagoon_off_label.setStyleSheet(font_small_value)
+            self.od_lagoon_off_edit = QLineEdit(self)
+            self.od_lagoon_off_edit.setText("3600")
+            self.od_lagoon_off_edit.setGeometry(1005, 115, 50, 20)
+            self.od_lagoon_off_edit.setStyleSheet(self.edit_style)
+
+            self.od_lagoon_duration_on = 0
+            self.od_lagoon_duration_off = 0
+
+            self.od_lagoon_swapping_mode_on_status = False
+
+            # Timer for swapping mode
+            self.od_lagoon_swapping_mode_timer = QTimer(self)
+            self.od_lagoon_swapping_mode_timer.timeout.connect(self.handle_od_lagoon_swapping_mode_timeout)
+
     def connect_signals(self):
         """Connect signals to their respective slots"""
         self.slide_switch_pump_1.toggled.connect(self.handle_pump_toggle)
@@ -764,6 +798,8 @@ class EvoFlowWidget(QWidget):
         if magneticStirrer_swapping_mode_enabled:
             self.magneticStirrer_bioreactor_swapping_mode_slide_switch.toggled.connect(self.handle_magneticStirrer_bioreactor_swapping_mode_toggle)
             self.magneticStirrer_lagoon_swapping_mode_slide_switch.toggled.connect(self.handle_magneticStirrer_lagoon_swapping_mode_toggle)
+        if od_lagoon_pth_count_swapping_mode_enabled:
+            self.od_lagoon_swapping_mode_slide_switch.toggled.connect(self.handle_od_lagoon_swapping_mode_toggle)
 
 
     def load_default_config(self):
@@ -984,6 +1020,30 @@ class EvoFlowWidget(QWidget):
             on_duration = int(self.magneticStirrer_lagoon_on_edit.text())
             self.magneticStirrer_lagoon_swapping_mode_timer.start(on_duration * 1000)  # Convert seconds to milliseconds
         self.slide_switch_magneticStirrer_lagoon.setChecked(not magneticStirrer_lagoon_status)
+
+    def handle_od_lagoon_swapping_mode_toggle(self, checked):
+        """Handle OD lagoon swapping mode toggle"""
+        off_duration = int(self.od_lagoon_off_edit.text())
+        if checked:
+            self.od_lagoon_swapping_mode_timer.start(off_duration * 1000)  # Convert seconds to milliseconds
+        else:
+            self.od_lagoon_swapping_mode_timer.stop()
+
+    def handle_od_lagoon_swapping_mode_timeout(self):
+        """Handle timeout for OD lagoon swapping mode"""
+        od_lagoon_status = self.slide_switch_od_lagoon.isChecked()
+        self.od_lagoon_swapping_mode_timer.stop()  # Stop the timer before starting it again
+        if od_lagoon_status:
+            off_duration = int(self.od_lagoon_off_edit.text())
+            self.od_lagoon_swapping_mode_timer.start(off_duration * 1000)  # Convert seconds to milliseconds
+            # turn on phtCount (the protection of these two devices is handled in the handle_od_toggle and handle_phtCount_toggle functions)
+            self.slide_switch_phtCount_Lagoon.setChecked(True)
+        else:
+            on_duration = int(self.od_lagoon_on_edit.text())
+            self.od_lagoon_swapping_mode_timer.start(on_duration * 1000)  # Convert seconds to milliseconds
+            # turn on od lagoon (the protection of these two devices is handled in the handle_od_toggle and handle_phtCount_toggle functions)
+            self.slide_switch_od_lagoon.setChecked(True)
+
 
     @Slot(bool)
     def handle_od_running_state_changed(self, is_running):
