@@ -1206,6 +1206,7 @@ class EvoFlowWidget(QWidget):
         self.magneticStirrer_lagoon_feedback.setText(f"FB: {evoflow_telemetry.magneticStirrer_lagoon_sp:.0f} rpm\n{evoflow_telemetry.magneticStirrer_lagoon_speed:.0f} rpm, {evoflow_telemetry.magneticStirrer_lagoon_fan_duty_cycle*100:.1f} %")
 
         # Update temperature controller bioreactor
+        print(f"Bioreactor: {evoflow_telemetry.tempCtrl_bioreactor_status}, Lagoon: {evoflow_telemetry.tempCtrl_lagoon_status}")
         if evoflow_telemetry.tempCtrl_bioreactor_status == 0:
             self.led_tempCtrl_bioreactor.setText("⚪")
         elif evoflow_telemetry.tempCtrl_bioreactor_status == 1:

@@ -72,12 +72,12 @@ class EvoFlowTelemetry:
         self.od_lagoon_status       : bool = False
         self.od_lagoon_value        : float = 0.0
 
-        self.tempCtrl_bioreactor_status             : bool = False
+        self.tempCtrl_bioreactor_status             : int = 0
         self.tempCtrl_bioreactor_sp                 : float = 0.0
         self.tempCtrl_bioreactor_value              : float = 0.0
         self.tempCtrl_bioreactor_heater_duty_cycle  : float = 0.0
 
-        self.tempCtrl_lagoon_status             : bool = False
+        self.tempCtrl_lagoon_status             : int = 0
         self.tempCtrl_lagoon_sp                 : float = 0.0
         self.tempCtrl_lagoon_value              : float = 0.0
         self.tempCtrl_lagoon_heater_duty_cycle  : float = 0.0
@@ -978,8 +978,8 @@ class EvoFlowDevice:
                 self.evoflow_telemetry.pump_4_speed = read_f32(32)
                 self.evoflow_telemetry.valve_bio2lag_status = bool(payload[36])
                 self.evoflow_telemetry.valve_sug2lag_status = bool(payload[37])
-                self.evoflow_telemetry.tempCtrl_bioreactor_status = bool(payload[38])
-                self.evoflow_telemetry.tempCtrl_lagoon_status = bool(payload[39])
+                self.evoflow_telemetry.tempCtrl_bioreactor_status = int(payload[38])
+                self.evoflow_telemetry.tempCtrl_lagoon_status = int(payload[39])
                 self.evoflow_telemetry.tempCtrl_bioreactor_sp = read_f32(40)
                 self.evoflow_telemetry.tempCtrl_lagoon_sp = read_f32(44)
                 self.evoflow_telemetry.tempCtrl_bioreactor_value = read_f32(48)
