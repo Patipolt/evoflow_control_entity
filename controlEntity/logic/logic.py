@@ -127,7 +127,7 @@ class Logic(QObject):
         # Notification Worker Setup
         # ===============================
         self.ntfy_worker_thread = QThread()
-        self.ntfy_worker = NtfyWorker(topic=config.get("EvoFlow", "notification_topic", fallback="evoflow_notifications"))
+        self.ntfy_worker = NtfyWorker(topic=config.get("Evoflow", "notification_topic", fallback="evoflow_notifications"))
         self.ntfy_worker.moveToThread(self.ntfy_worker_thread)
         self.ntfy_worker_thread.start()
 
