@@ -203,12 +203,12 @@ class DataLoggingWorker(QObject):
         # self.od_lagoon_status       : bool = False
         # self.od_lagoon_value        : float = 0.0
 
-        # self.tempCtrl_bioreactor_status             : bool = False
+        # self.tempCtrl_bioreactor_status             : int = 0
         # self.tempCtrl_bioreactor_sp                 : float = 0.0
         # self.tempCtrl_bioreactor_value              : float = 0.0
         # self.tempCtrl_bioreactor_heater_duty_cycle  : float = 0.0
 
-        # self.tempCtrl_lagoon_status             : bool = False
+        # self.tempCtrl_lagoon_status             : int = 0
         # self.tempCtrl_lagoon_sp                 : float = 0.0
         # self.tempCtrl_lagoon_value              : float = 0.0
         # self.tempCtrl_lagoon_heater_duty_cycle  : float = 0.0
@@ -254,11 +254,11 @@ class DataLoggingWorker(QObject):
             "od_bioreactor_value": float(getattr(telemetry, "od_bioreactor_value", 0.0)),
             "od_lagoon_status": 1 if bool(getattr(telemetry, "od_lagoon_status", False)) else 0,
             "od_lagoon_value": float(getattr(telemetry, "od_lagoon_value", 0.0)),
-            "tempCtrl_bioreactor_status": 1 if bool(getattr(telemetry, "tempCtrl_bioreactor_status", False)) else 0,
+            "tempCtrl_bioreactor_status": 1 if int(getattr(telemetry, "tempCtrl_bioreactor_status", 0)) else 0,
             "tempCtrl_bioreactor_sp": float(getattr(telemetry, "tempCtrl_bioreactor_sp", 0.0)),
             "tempCtrl_bioreactor_value": float(getattr(telemetry, "tempCtrl_bioreactor_value", 0.0)),
             "tempCtrl_bioreactor_heater_duty_cycle": float(getattr(telemetry, "tempCtrl_bioreactor_heater_duty_cycle", 0.0)),
-            "tempCtrl_lagoon_status": 1 if bool(getattr(telemetry, "tempCtrl_lagoon_status", False)) else 0,
+            "tempCtrl_lagoon_status": 1 if int(getattr(telemetry, "tempCtrl_lagoon_status", 0)) else 0,
             "tempCtrl_lagoon_sp": float(getattr(telemetry, "tempCtrl_lagoon_sp", 0.0)),
             "tempCtrl_lagoon_value": float(getattr(telemetry, "tempCtrl_lagoon_value", 0.0)),
             "tempCtrl_lagoon_heater_duty_cycle": float(getattr(telemetry, "tempCtrl_lagoon_heater_duty_cycle", 0.0)),
