@@ -202,58 +202,86 @@ class EvoFlowWorker(QObject):
         """Check the safety status of the EvoFlow device and take appropriate action if necessary."""
         try:
             # Check if the level sensor is active and if any of the safety conditions are met
-            if self._level_sensor_active:
-                if self.evoflow.evoflow_telemetry.ntc2_pump1_temp > self.pump_cut_off_temp:
-                    self.safety_guard_requested.emit(True)
-                    self.ntfy_notification_requested.emit("Evoflow Safety Guard Activated", f"Pump 1 temperature exceeded cut-off limit({self.evoflow.evoflow_telemetry.ntc2_pump1_temp:.2f}).", 1)
-                elif self.evoflow.evoflow_telemetry.ntc3_pump2_temp > self.pump_cut_off_temp:
-                    self.safety_guard_requested.emit(True)
-                    self.ntfy_notification_requested.emit("Evoflow Safety Guard Activated", f"Pump 2 temperature exceeded cut-off limit({self.evoflow.evoflow_telemetry.ntc3_pump2_temp:.2f}).", 1)
-                elif self.evoflow.evoflow_telemetry.ntc4_pump3_temp > self.pump_cut_off_temp:
-                    self.safety_guard_requested.emit(True)
-                    self.ntfy_notification_requested.emit("Evoflow Safety Guard Activated", f"Pump 3 temperature exceeded cut-off limit({self.evoflow.evoflow_telemetry.ntc4_pump3_temp:.2f}).", 1)
-                elif self.evoflow.evoflow_telemetry.ntc5_pump4_temp > self.pump_cut_off_temp:
-                    self.safety_guard_requested.emit(True)
-                    self.ntfy_notification_requested.emit("Evoflow Safety Guard Activated", f"Pump 4 temperature exceeded cut-off limit({self.evoflow.evoflow_telemetry.ntc5_pump4_temp:.2f}).", 1)
-                elif self.evoflow.evoflow_telemetry.level_sensor_bioreactor_status == 1:
-                    self.safety_guard_requested.emit(True)
-                    self.ntfy_notification_requested.emit("Evoflow Safety Guard Activated", f"Level sensor in bioreactor is active. Watch out for potential overflow!", 1)
-                elif self.evoflow.evoflow_telemetry.level_sensor_lagoon_status == 1:
-                    self.safety_guard_requested.emit(True)
-                    self.ntfy_notification_requested.emit("Evoflow Safety Guard Activated", f"Level sensor in lagoon is active. Watch out for potential overflow!", 1)
-                elif self.evoflow.evoflow_telemetry.tempCtrl_bioreactor_status == 2:
-                    self.ntfy_notification_requested.emit("Evoflow Bioreactor Temperature Control Error", f"Bioreactor temperature control error detected(SENSOR_INVALID). Check the device.", 1)
-                elif self.evoflow.evoflow_telemetry.tempCtrl_bioreactor_status == 3:
-                    self.ntfy_notification_requested.emit("Evoflow Bioreactor Temperature Control Error", f"Bioreactor temperature control error detected(OVER_TEMPERATURE). Check the device.", 1)
-                elif self.evoflow.evoflow_telemetry.tempCtrl_bioreactor_status == 4:
-                    self.ntfy_notification_requested.emit("Evoflow Bioreactor Temperature Control Error", f"Bioreactor temperature control error detected(INVALID_SETPOINT). Check the device.", 1)
-                elif self.evoflow.evoflow_telemetry.tempCtrl_bioreactor_status == 5:
-                    self.ntfy_notification_requested.emit("Evoflow Bioreactor Temperature Control Error", f"Bioreactor temperature control error detected(INVALID_CALIBRATION). Check the device.", 1)
-                elif self.evoflow.evoflow_telemetry.tempCtrl_bioreactor_status == 6:
-                    self.ntfy_notification_requested.emit("Evoflow Bioreactor Temperature Control Error", f"Bioreactor temperature control error detected(INVALID_CONTROLLER_OUTPUT). Check the device.", 1)
-                elif self.evoflow.evoflow_telemetry.tempCtrl_lagoon_status == 2:
-                    self.ntfy_notification_requested.emit("Evoflow Lagoon Temperature Control Error", f"Lagoon temperature control error detected(SENSOR_INVALID). Check the device.", 1)
-                elif self.evoflow.evoflow_telemetry.tempCtrl_lagoon_status == 3:
-                    self.ntfy_notification_requested.emit("Evoflow Lagoon Temperature Control Error", f"Lagoon temperature control error detected(OVER_TEMPERATURE). Check the device.", 1)
-                elif self.evoflow.evoflow_telemetry.tempCtrl_lagoon_status == 4:
-                    self.ntfy_notification_requested.emit("Evoflow Lagoon Temperature Control Error", f"Lagoon temperature control error detected(INVALID_SETPOINT). Check the device.", 1)
-                elif self.evoflow.evoflow_telemetry.tempCtrl_lagoon_status == 5:
-                    self.ntfy_notification_requested.emit("Evoflow Lagoon Temperature Control Error", f"Lagoon temperature control error detected(INVALID_CALIBRATION). Check the device.", 1)
-                elif self.evoflow.evoflow_telemetry.tempCtrl_lagoon_status == 6:
-                    self.ntfy_notification_requested.emit("Evoflow Lagoon Temperature Control Error", f"Lagoon temperature control error detected(INVALID_CONTROLLER_OUTPUT). Check the device.", 1)
-            else:
-                if self.evoflow.evoflow_telemetry.ntc2_pump1_temp > self.pump_cut_off_temp:
-                    self.safety_guard_requested.emit(True)
-                    self.ntfy_notification_requested.emit("Evoflow Safety Guard Activated", f"Pump 1 temperature exceeded cut-off limit({self.evoflow.evoflow_telemetry.ntc2_pump1_temp:.2f}).", 1)
-                elif self.evoflow.evoflow_telemetry.ntc3_pump2_temp > self.pump_cut_off_temp:
-                    self.safety_guard_requested.emit(True)
-                    self.ntfy_notification_requested.emit("Evoflow Safety Guard Activated", f"Pump 2 temperature exceeded cut-off limit({self.evoflow.evoflow_telemetry.ntc3_pump2_temp:.2f}).", 1)
-                elif self.evoflow.evoflow_telemetry.ntc4_pump3_temp > self.pump_cut_off_temp:
-                    self.safety_guard_requested.emit(True)
-                    self.ntfy_notification_requested.emit("Evoflow Safety Guard Activated", f"Pump 3 temperature exceeded cut-off limit({self.evoflow.evoflow_telemetry.ntc4_pump3_temp:.2f}).", 1)
-                elif self.evoflow.evoflow_telemetry.ntc5_pump4_temp > self.pump_cut_off_temp:
-                    self.safety_guard_requested.emit(True)
-                    self.ntfy_notification_requested.emit("Evoflow Safety Guard Activated", f"Pump 4 temperature exceeded cut-off limit({self.evoflow.evoflow_telemetry.ntc5_pump4_temp:.2f}).", 1)
+            # if self._level_sensor_active:
+            #     if self.evoflow.evoflow_telemetry.ntc2_pump1_temp > self.pump_cut_off_temp:
+            #         self.safety_guard_requested.emit(True)
+            #         self.ntfy_notification_requested.emit("Evoflow Safety Guard Activated", f"Pump 1 temperature exceeded cut-off limit({self.evoflow.evoflow_telemetry.ntc2_pump1_temp:.2f}).", 1)
+            #     elif self.evoflow.evoflow_telemetry.ntc3_pump2_temp > self.pump_cut_off_temp:
+            #         self.safety_guard_requested.emit(True)
+            #         self.ntfy_notification_requested.emit("Evoflow Safety Guard Activated", f"Pump 2 temperature exceeded cut-off limit({self.evoflow.evoflow_telemetry.ntc3_pump2_temp:.2f}).", 1)
+            #     elif self.evoflow.evoflow_telemetry.ntc4_pump3_temp > self.pump_cut_off_temp:
+            #         self.safety_guard_requested.emit(True)
+            #         self.ntfy_notification_requested.emit("Evoflow Safety Guard Activated", f"Pump 3 temperature exceeded cut-off limit({self.evoflow.evoflow_telemetry.ntc4_pump3_temp:.2f}).", 1)
+            #     elif self.evoflow.evoflow_telemetry.ntc5_pump4_temp > self.pump_cut_off_temp:
+            #         self.safety_guard_requested.emit(True)
+            #         self.ntfy_notification_requested.emit("Evoflow Safety Guard Activated", f"Pump 4 temperature exceeded cut-off limit({self.evoflow.evoflow_telemetry.ntc5_pump4_temp:.2f}).", 1)
+            #     elif self.evoflow.evoflow_telemetry.level_sensor_bioreactor_status == 1:
+            #         self.safety_guard_requested.emit(True)
+            #         self.ntfy_notification_requested.emit("Evoflow Safety Guard Activated", f"Level sensor in bioreactor is active. Watch out for potential overflow!", 1)
+            #     elif self.evoflow.evoflow_telemetry.level_sensor_lagoon_status == 1:
+            #         self.safety_guard_requested.emit(True)
+            #         self.ntfy_notification_requested.emit("Evoflow Safety Guard Activated", f"Level sensor in lagoon is active. Watch out for potential overflow!", 1)
+            #     elif self.evoflow.evoflow_telemetry.tempCtrl_bioreactor_status == 2:
+            #         self.ntfy_notification_requested.emit("Evoflow Bioreactor Temperature Control Error", f"Bioreactor temperature control error detected(SENSOR_INVALID). Check the device.", 1)
+            #     elif self.evoflow.evoflow_telemetry.tempCtrl_bioreactor_status == 3:
+            #         self.ntfy_notification_requested.emit("Evoflow Bioreactor Temperature Control Error", f"Bioreactor temperature control error detected(OVER_TEMPERATURE). Check the device.", 1)
+            #     elif self.evoflow.evoflow_telemetry.tempCtrl_bioreactor_status == 4:
+            #         self.ntfy_notification_requested.emit("Evoflow Bioreactor Temperature Control Error", f"Bioreactor temperature control error detected(INVALID_SETPOINT). Check the device.", 1)
+            #     elif self.evoflow.evoflow_telemetry.tempCtrl_bioreactor_status == 5:
+            #         self.ntfy_notification_requested.emit("Evoflow Bioreactor Temperature Control Error", f"Bioreactor temperature control error detected(INVALID_CALIBRATION). Check the device.", 1)
+            #     elif self.evoflow.evoflow_telemetry.tempCtrl_bioreactor_status == 6:
+            #         self.ntfy_notification_requested.emit("Evoflow Bioreactor Temperature Control Error", f"Bioreactor temperature control error detected(INVALID_CONTROLLER_OUTPUT). Check the device.", 1)
+            #     elif self.evoflow.evoflow_telemetry.tempCtrl_lagoon_status == 2:
+            #         self.ntfy_notification_requested.emit("Evoflow Lagoon Temperature Control Error", f"Lagoon temperature control error detected(SENSOR_INVALID). Check the device.", 1)
+            #     elif self.evoflow.evoflow_telemetry.tempCtrl_lagoon_status == 3:
+            #         self.ntfy_notification_requested.emit("Evoflow Lagoon Temperature Control Error", f"Lagoon temperature control error detected(OVER_TEMPERATURE). Check the device.", 1)
+            #     elif self.evoflow.evoflow_telemetry.tempCtrl_lagoon_status == 4:
+            #         self.ntfy_notification_requested.emit("Evoflow Lagoon Temperature Control Error", f"Lagoon temperature control error detected(INVALID_SETPOINT). Check the device.", 1)
+            #     elif self.evoflow.evoflow_telemetry.tempCtrl_lagoon_status == 5:
+            #         self.ntfy_notification_requested.emit("Evoflow Lagoon Temperature Control Error", f"Lagoon temperature control error detected(INVALID_CALIBRATION). Check the device.", 1)
+            #     elif self.evoflow.evoflow_telemetry.tempCtrl_lagoon_status == 6:
+            #         self.ntfy_notification_requested.emit("Evoflow Lagoon Temperature Control Error", f"Lagoon temperature control error detected(INVALID_CONTROLLER_OUTPUT). Check the device.", 1)
+            # else:
+            #     if self.evoflow.evoflow_telemetry.ntc2_pump1_temp > self.pump_cut_off_temp:
+            #         self.safety_guard_requested.emit(True)
+            #         self.ntfy_notification_requested.emit("Evoflow Safety Guard Activated", f"Pump 1 temperature exceeded cut-off limit({self.evoflow.evoflow_telemetry.ntc2_pump1_temp:.2f}).", 1)
+            #     elif self.evoflow.evoflow_telemetry.ntc3_pump2_temp > self.pump_cut_off_temp:
+            #         self.safety_guard_requested.emit(True)
+            #         self.ntfy_notification_requested.emit("Evoflow Safety Guard Activated", f"Pump 2 temperature exceeded cut-off limit({self.evoflow.evoflow_telemetry.ntc3_pump2_temp:.2f}).", 1)
+            #     elif self.evoflow.evoflow_telemetry.ntc4_pump3_temp > self.pump_cut_off_temp:
+            #         self.safety_guard_requested.emit(True)
+            #         self.ntfy_notification_requested.emit("Evoflow Safety Guard Activated", f"Pump 3 temperature exceeded cut-off limit({self.evoflow.evoflow_telemetry.ntc4_pump3_temp:.2f}).", 1)
+            #     elif self.evoflow.evoflow_telemetry.ntc5_pump4_temp > self.pump_cut_off_temp:
+            #         self.safety_guard_requested.emit(True)
+            #         self.ntfy_notification_requested.emit("Evoflow Safety Guard Activated", f"Pump 4 temperature exceeded cut-off limit({self.evoflow.evoflow_telemetry.ntc5_pump4_temp:.2f}).", 1)
+
+            # For testing
+            if self.evoflow.evoflow_telemetry.level_sensor_bioreactor_status == 1:
+                self.safety_guard_requested.emit(True)
+                self.ntfy_notification_requested.emit("Evoflow Safety Guard Activated", f"Level sensor in bioreactor is active. Watch out for potential overflow!", 1)
+            elif self.evoflow.evoflow_telemetry.level_sensor_lagoon_status == 1:
+                self.safety_guard_requested.emit(True)
+                self.ntfy_notification_requested.emit("Evoflow Safety Guard Activated", f"Level sensor in lagoon is active. Watch out for potential overflow!", 1)
+            elif self.evoflow.evoflow_telemetry.tempCtrl_bioreactor_status == 2:
+                self.ntfy_notification_requested.emit("Evoflow Bioreactor Temperature Control Error", f"Bioreactor temperature control error detected(SENSOR_INVALID). Check the device.", 1)
+            elif self.evoflow.evoflow_telemetry.tempCtrl_bioreactor_status == 3:
+                self.ntfy_notification_requested.emit("Evoflow Bioreactor Temperature Control Error", f"Bioreactor temperature control error detected(OVER_TEMPERATURE). Check the device.", 1)
+            elif self.evoflow.evoflow_telemetry.tempCtrl_bioreactor_status == 4:
+                self.ntfy_notification_requested.emit("Evoflow Bioreactor Temperature Control Error", f"Bioreactor temperature control error detected(INVALID_SETPOINT). Check the device.", 1)
+            elif self.evoflow.evoflow_telemetry.tempCtrl_bioreactor_status == 5:
+                self.ntfy_notification_requested.emit("Evoflow Bioreactor Temperature Control Error", f"Bioreactor temperature control error detected(INVALID_CALIBRATION). Check the device.", 1)
+            elif self.evoflow.evoflow_telemetry.tempCtrl_bioreactor_status == 6:
+                self.ntfy_notification_requested.emit("Evoflow Bioreactor Temperature Control Error", f"Bioreactor temperature control error detected(INVALID_CONTROLLER_OUTPUT). Check the device.", 1)
+            elif self.evoflow.evoflow_telemetry.tempCtrl_lagoon_status == 2:
+                self.ntfy_notification_requested.emit("Evoflow Lagoon Temperature Control Error", f"Lagoon temperature control error detected(SENSOR_INVALID). Check the device.", 1)
+            elif self.evoflow.evoflow_telemetry.tempCtrl_lagoon_status == 3:
+                self.ntfy_notification_requested.emit("Evoflow Lagoon Temperature Control Error", f"Lagoon temperature control error detected(OVER_TEMPERATURE). Check the device.", 1)
+            elif self.evoflow.evoflow_telemetry.tempCtrl_lagoon_status == 4:
+                self.ntfy_notification_requested.emit("Evoflow Lagoon Temperature Control Error", f"Lagoon temperature control error detected(INVALID_SETPOINT). Check the device.", 1)
+            elif self.evoflow.evoflow_telemetry.tempCtrl_lagoon_status == 5:
+                self.ntfy_notification_requested.emit("Evoflow Lagoon Temperature Control Error", f"Lagoon temperature control error detected(INVALID_CALIBRATION). Check the device.", 1)
+            elif self.evoflow.evoflow_telemetry.tempCtrl_lagoon_status == 6:
+                self.ntfy_notification_requested.emit("Evoflow Lagoon Temperature Control Error", f"Lagoon temperature control error detected(INVALID_CONTROLLER_OUTPUT). Check the device.", 1)
         except Exception as e:
             print(f"Failed to check safety status: {e}")
 
