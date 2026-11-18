@@ -1206,17 +1206,21 @@ class EvoFlowWidget(QWidget):
         self.magneticStirrer_lagoon_feedback.setText(f"FB: {evoflow_telemetry.magneticStirrer_lagoon_sp:.0f} rpm\n{evoflow_telemetry.magneticStirrer_lagoon_speed:.0f} rpm, {evoflow_telemetry.magneticStirrer_lagoon_fan_duty_cycle*100:.1f} %")
 
         # Update temperature controller bioreactor
-        if evoflow_telemetry.tempCtrl_bioreactor_status:
+        if evoflow_telemetry.tempCtrl_bioreactor_status == 0:
+            self.led_tempCtrl_bioreactor.setText("⚪")
+        elif evoflow_telemetry.tempCtrl_bioreactor_status == 1:
             self.led_tempCtrl_bioreactor.setText("🟢")
         else:
-            self.led_tempCtrl_bioreactor.setText("⚪")
+            self.led_tempCtrl_bioreactor.setText("🟠") # orange
         self.tempCtrl_bioreactor_feedback.setText(f"{evoflow_telemetry.tempCtrl_bioreactor_value:.1f} °C")
         self.tempCtrl_bioreactor_feedback_sp_htr.setText(f"FB: {evoflow_telemetry.tempCtrl_bioreactor_sp:.1f} °C, Duty: {evoflow_telemetry.tempCtrl_bioreactor_heater_duty_cycle*100:.1f} %")
         # Update temperature controller lagoon
-        if evoflow_telemetry.tempCtrl_lagoon_status:
+        if evoflow_telemetry.tempCtrl_lagoon_status == 0:
+            self.led_tempCtrl_lagoon.setText("⚪")
+        elif evoflow_telemetry.tempCtrl_lagoon_status == 1:
             self.led_tempCtrl_lagoon.setText("🟢")
         else:
-            self.led_tempCtrl_lagoon.setText("⚪")
+            self.led_tempCtrl_lagoon.setText("🟠") # orange
         self.tempCtrl_lagoon_feedback.setText(f"{evoflow_telemetry.tempCtrl_lagoon_value:.1f} °C")
         self.tempCtrl_lagoon_feedback_sp_htr.setText(f"FB: {evoflow_telemetry.tempCtrl_lagoon_sp:.1f} °C, Duty: {evoflow_telemetry.tempCtrl_lagoon_heater_duty_cycle*100:.1f} %")
 
