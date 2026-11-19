@@ -217,8 +217,8 @@ class PlotWidget(QWidget):
         self.ax0.set_ylim(self.y_axis_flowRate_min, self.y_axis_flowRate_max)
         # self.ax0.yaxis.set_major_formatter(FormatStrFormatter('%.1f'))  # Format y-axis ticks to 1 decimal place
         style_axis(self.ax0)
-        self.flowRate_pump3 = style_line(self.ax0, "Flow Rate Pump 3", "magenta", style="-", linewidth=0.75, opacity=0.5)
-        self.flowRate_pump1 = style_line(self.ax0, "Flow Rate Pump 1", "lime", style="-", linewidth=0.75, opacity=0.5)
+        self.flowRate_pump3 = style_line(self.ax0, "Flow Rate Pump 3", "magenta", style="-", linewidth=0.6, opacity=0.5)
+        self.flowRate_pump1 = style_line(self.ax0, "Flow Rate Pump 1", "lime", style="-", linewidth=0.6, opacity=0.5)
         self.flowRate_pump2 = style_line(self.ax0, "Flow Rate Pump 2", "cyan", style="-", linewidth=1.2, opacity=1.0)
         self.flowRate_pump4 = style_line(self.ax0, "Flow Rate Pump 4", "yellow", style="-", linewidth=1.2, opacity=1.0)
         # self.flowRate_pump1_sp = style_line(self.ax0, "Flow Rate Pump 1 Setpoint", "lime", style="-", linewidth=0.5, opacity=0.7)
@@ -241,7 +241,7 @@ class PlotWidget(QWidget):
         style_axis(self.ax1)
         self.temp_bioReactor_sp = style_line(self.ax1, "Temp Bioreactor Setpoint", "orange", style="-.", linewidth=1, opacity=1.0)
         self.temp_lagoon_sp = style_line(self.ax1, "Temp Lagoon Setpoint", "yellow", style="-.", linewidth=1, opacity=1.0)
-        self.temp_bioReactor = style_line(self.ax1, "Temp", "orange", style="-", linewidth=1.2, opacity=1.0)
+        self.temp_bioReactor = style_line(self.ax1, "Temp Bioreactor", "orange", style="-", linewidth=1.2, opacity=1.0)
         self.temp_lagoon = style_line(self.ax1, "Temp Lagoon", "yellow", style="-", linewidth=1.2, opacity=1.0)
         # OD on right y-axis
         self.ax1_r = self.ax1.twinx()
@@ -249,8 +249,8 @@ class PlotWidget(QWidget):
         self.ax1_r.yaxis.set_label_coords(1.045, 0.5)  # Move y-axis label to the right
         self.ax1_r.set_ylim(self.y_axis_od_min, self.y_axis_od_max)
         style_axis(self.ax1_r)
-        self.od_bioReactor = style_line(self.ax1_r, "OD", "red", style="-", linewidth=2, opacity=1.0)
-        self.od_lagoon = style_line(self.ax1_r, "OD Lagoon", "tan", style="-", linewidth=2, opacity=1.0)
+        self.od_lagoon = style_line(self.ax1_r, "OD Lagoon", "tan", style="-", linewidth=2, opacity=0.75)
+        self.od_bioReactor = style_line(self.ax1_r, "OD Bioreactor", "red", style="-", linewidth=2, opacity=1.0)
 
         # Third subplot: scatter plot for the event when sample extraction takes a sample
         self.ax2.set_ylabel("SE/Mark\nEvent")
