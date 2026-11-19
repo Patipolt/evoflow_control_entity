@@ -321,7 +321,7 @@ class PlotWidget(QWidget):
         # These values preserve the same relative layout while scaling with canvas size.
         self.ax0.set_position([0.07, 0.59, 0.860, 0.33])
         self.ax1.set_position([0.07, 0.22, 0.860, 0.33])
-        self.ax2.set_position([0.07, 0.1, 0.860, 0.08])
+        self.ax2.set_position([0.07, 0.1, 0.860, 0.1])
 
 
         # -------------------------------
