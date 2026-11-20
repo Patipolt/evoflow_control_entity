@@ -250,8 +250,8 @@ class PlotWidget(QWidget):
         self.ax1_r.yaxis.set_label_coords(1.045, 0.5)  # Move y-axis label to the right
         self.ax1_r.set_ylim(self.y_axis_od_min, self.y_axis_od_max)
         style_axis(self.ax1_r)
-        self.od_lagoon = style_line(self.ax1_r, "OD Lagoon", "tan", style="-", linewidth=2, opacity=0.75)
-        self.od_bioReactor = style_line(self.ax1_r, "OD Bioreactor", "red", style="-", linewidth=2, opacity=1.0)
+        self.od_lagoon = style_line(self.ax1_r, "OD Lagoon", "red", style="-", linewidth=2, opacity=0.75)
+        self.od_bioReactor = style_line(self.ax1_r, "OD Bioreactor", "cyan", style="-", linewidth=2, opacity=1.0)
 
         # Third subplot: scatter plot for the event when sample extraction takes a sample
         self.ax2.set_ylabel("SE/Mark\nEvent")
