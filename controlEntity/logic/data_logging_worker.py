@@ -536,7 +536,7 @@ class DataLoggingWorker(QObject):
         evoflow_snapshot["flow_rate_pump4"] = float(flow_rate_4)
 
         # Compute the phtOnOD_lagoon value based on the current data
-        phtOnOD_lagoon = float(evoflow_snapshot.get("phtCount_lagoon_value", 0.0)) / float(evoflow_snapshot.get("od_lagoon_value", 0.0))
+        phtOnOD_lagoon = float(evoflow_snapshot.get("phtCount_lagoon_value", 0.0)) / float(evoflow_snapshot.get("od_lagoon_value", 0.0)) if float(evoflow_snapshot.get("od_lagoon_value", 0.0)) != 0.0 else 0.0
 
         row = (
             ts_ms,
