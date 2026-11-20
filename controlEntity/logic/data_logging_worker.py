@@ -535,6 +535,10 @@ class DataLoggingWorker(QObject):
         evoflow_snapshot["flow_rate_pump3"] = float(flow_rate_3)
         evoflow_snapshot["flow_rate_pump4"] = float(flow_rate_4)
 
+        # Compute the phtOnOD_lagoon value based on the current data
+        phtOnOD_lagoon = format(float(evoflow_snapshot.get("phtCount_lagoon_value", 0.0)), ".4f") / format(float(evoflow_snapshot.get("od_lagoon_value", 0.0)), ".4f")
+
+
         row = (
             ts_ms,
             iso_utc,
@@ -575,6 +579,7 @@ class DataLoggingWorker(QObject):
             int(evoflow_snapshot.get("phtCount_lagoon_status", 0)),
             format(float(evoflow_snapshot.get("phtCount_lagoon_value", 0.0)), ".4f"),
             int(evoflow_snapshot.get("phtCount_lagoon_overlight", 0)),
+            format(float(phtOnOD_lagoon), ".4f"),
             format(float(evoflow_snapshot.get("nucleo_temperature", 0.0)), ".2f"),
             format(float(evoflow_snapshot.get("ntc1_ambient_temp", 0.0)), ".2f"),
             format(float(evoflow_snapshot.get("ntc2_pump1_temp", 0.0)), ".2f"),
@@ -665,6 +670,7 @@ class DataLoggingWorker(QObject):
                 phtCount_lagoon_status,
                 phtCount_lagoon_value,
                 phtCount_lagoon_overlight,
+                phtOnOD_lagoon,
                 nucleo_temperature_evoflow,
                 ntc1_ambient_temp,
                 ntc2_pump1_temp,
@@ -719,7 +725,7 @@ class DataLoggingWorker(QObject):
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                ?, ?, ''
+                ?, ?, ?, ''
             )
             """,
             row,
@@ -857,6 +863,7 @@ class DataLoggingWorker(QObject):
                 phtCount_lagoon_status INTEGER,
                 phtCount_lagoon_value REAL,
                 phtCount_lagoon_overlight INTEGER,
+                phtOnOD_lagoon REAL,
                 nucleo_temperature_evoflow REAL,
                 ntc1_ambient_temp REAL,
                 ntc2_pump1_temp REAL,
@@ -956,6 +963,7 @@ class DataLoggingWorker(QObject):
             "temp_lagoon_sp": [],
             "od_bioreactor": [],
             "od_lagoon": [],
+            "pht_count_on_od_lagoon": [],
             "sample_extraction_event_to_be_logged": [],
             "annotation_event": [],
         }
@@ -985,6 +993,7 @@ class DataLoggingWorker(QObject):
                         od_bioreactor_value,
                         od_lagoon_value,
                         phtCount_lagoon_value,
+                        phtOnOD_lagoon,
                         tempCtrl_bioreactor_value,
                         tempCtrl_lagoon_value,
                         tempCtrl_bioreactor_sp,
@@ -1016,16 +1025,17 @@ class DataLoggingWorker(QObject):
             payload["od_bioreactor"].append(float(item[1]))
             payload["od_lagoon"].append(float(item[2]))
             payload["pht_count_lagoon"].append(float(item[3]))
-            payload["temp_bioreactor"].append(float(item[4]))
-            payload["temp_lagoon"].append(float(item[5]))
-            payload["temp_bioreactor_sp"].append(float(item[6]))
-            payload["temp_lagoon_sp"].append(float(item[7]))
-            payload["flow_rate_pump1"].append(float(item[8]))
-            payload["flow_rate_pump2"].append(float(item[9]))
-            payload["flow_rate_pump3"].append(float(item[10]))
-            payload["flow_rate_pump4"].append(float(item[11]))
-            payload["sample_extraction_event_to_be_logged"].append(int(item[12]))
-            payload["annotation_event"].append(str(item[13]) if item[13] is not None else "")
+            payload["pht_count_on_od_lagoon"].append(float(item[4]))
+            payload["temp_bioreactor"].append(float(item[5]))
+            payload["temp_lagoon"].append(float(item[6]))
+            payload["temp_bioreactor_sp"].append(float(item[7]))
+            payload["temp_lagoon_sp"].append(float(item[8]))
+            payload["flow_rate_pump1"].append(float(item[9]))
+            payload["flow_rate_pump2"].append(float(item[10]))
+            payload["flow_rate_pump3"].append(float(item[11]))
+            payload["flow_rate_pump4"].append(float(item[12]))
+            payload["sample_extraction_event_to_be_logged"].append(int(item[13]))
+            payload["annotation_event"].append(str(item[14]) if item[14] is not None else "")
 
         return payload
 

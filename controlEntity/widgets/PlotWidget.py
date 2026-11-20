@@ -226,11 +226,12 @@ class PlotWidget(QWidget):
 
         # phtCount on right y-axis
         self.ax0_r = self.ax0.twinx()
-        self.ax0_r.set_ylabel("Photon Count\n(MHz)", color="white")
+        self.ax0_r.set_ylabel("Pht (MHz)\nPht/OD lagoon", color="white")
         self.ax0_r.yaxis.set_label_coords(1.045, 0.5)  # Move y-axis label to the right
         self.ax0_r.set_ylim(self.y_axis_phtCount_min, self.y_axis_phtCount_max)
         style_axis(self.ax0_r)
         self.phtCount_lagoon = style_line(self.ax0_r, "phtCount", "red", style="-", linewidth=2, opacity=1.0)
+        self.phtOnOD_lagoon = style_line(self.ax0_r, "phtCount/OD Lagoon", "white", style="-", linewidth=2, opacity=1.0)
 
         # Second subplot: Temperature, OD
         self.ax1.set_xticklabels([])    # remove the x-axis ticks and labels
@@ -266,8 +267,8 @@ class PlotWidget(QWidget):
 
         add_floating_legend(
             self.ax0_r,
-            [self.flowRate_pump1, self.flowRate_pump2, self.flowRate_pump3, self.flowRate_pump4, self.phtCount_lagoon],
-            columns=5,
+            [self.flowRate_pump1, self.flowRate_pump2, self.flowRate_pump3, self.flowRate_pump4, self.phtCount_lagoon, self.phtOnOD_lagoon],
+            columns=6,
         )
         add_floating_legend(
             self.ax1_r,
@@ -732,6 +733,7 @@ class PlotWidget(QWidget):
         self.flowRate_pump3.set_data(x_values, payload.get("flow_rate_pump3", []))
         self.flowRate_pump4.set_data(x_values, payload.get("flow_rate_pump4", []))
         self.phtCount_lagoon.set_data(x_values, payload.get("pht_count_lagoon", []))
+        self.phtOnOD_lagoon.set_data(x_values, payload.get("pht_count_on_od_lagoon", []))
         self.temp_bioReactor.set_data(x_values, payload.get("temp_bioreactor", []))
         self.temp_lagoon.set_data(x_values, payload.get("temp_lagoon", []))
         self.temp_bioReactor_sp.set_data(x_values, payload.get("temp_bioreactor_sp", []))
